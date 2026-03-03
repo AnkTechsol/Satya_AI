@@ -1,1 +1,9 @@
 Session started for agent: anktechsol-pr-agency at 2026-03-03 13:35:36.050434
+[2026-03-03T13:35:37.397490] Creating task: PR Agency: mark_published
+[2026-03-03T13:35:38.604768] Updating task 335ee043 to In Progress
+[2026-03-03T13:35:39.858056] Started command: mark_published. Details: Archiving draft mock_post_002 with URL: https://linkedin.com/posts/anktechsol-mock-post-2
+[2026-03-03T13:35:39.859403] Moved draft to published: /Users/anujkarn/Anktechsol/agents/ank-pr-agency/content/published/mock_post_002.md
+[2026-03-03T13:35:39.860782] Updated archive.json with entry: mock_post_002
+[2026-03-03T13:35:39.860936] Updating task 335ee043 to Done
+[2026-03-03T13:35:41.105554] Successfully archived mock_post_002.
+[2026-03-03T13:35:41.106117] Finished command with status: Done
