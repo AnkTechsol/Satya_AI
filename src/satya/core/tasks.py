@@ -14,7 +14,7 @@ class Tasks:
         self.git_handler = GitHandler(repo_path)
         storage.ensure_satya_dirs()
 
-    def create_task(self, title, description, assignee=None, priority="Medium"):
+    def create_task(self, title, description, assignee=None, priority="Medium", agent_name="System"):
         task_id = str(uuid.uuid4())[:8]
         now = datetime.now().isoformat()
 
@@ -27,7 +27,13 @@ class Tasks:
             "assignee": assignee or "Unassigned",
             "created_at": now,
             "updated_at": now,
-            "comments": []
+            "comments": [],
+            "audit_trail": [{
+                "timestamp": now,
+                "agent": agent_name,
+                "action": "Task Created",
+                "details": f"Created with status '{STATUS_TODO}' and priority '{priority}'"
+            }]
         }
 
         filepath = storage.get_task_path(task_id)
@@ -36,32 +42,61 @@ class Tasks:
             return task
         return None
 
-    def update_task_status(self, task_id, new_status):
+    def update_task_status(self, task_id, new_status, agent_name="System"):
         filepath = storage.get_task_path(task_id)
         task = storage.load_json(filepath)
 
         if not task:
             return False
 
+        old_status = task.get("status", "Unknown")
+        now = datetime.now().isoformat()
         task["status"] = new_status
-        task["updated_at"] = datetime.now().isoformat()
+        task["updated_at"] = now
+
+        if "audit_trail" not in task:
+            task["audit_trail"] = []
+
+        task["audit_trail"].append({
+            "timestamp": now,
+            "agent": agent_name,
+            "action": "Status Changed",
+            "details": f"Status changed from '{old_status}' to '{new_status}'"
+        })
 
         if storage.save_json(filepath, task):
             self.git_handler.commit_and_push([filepath], f"Task {task_id} moved to {new_status}")
             return True
         return False
 
-    def update_task(self, task_id, updates):
+    def update_task(self, task_id, updates, agent_name="System"):
         filepath = storage.get_task_path(task_id)
         task = storage.load_json(filepath)
 
         if not task:
             return False
 
+        now = datetime.now().isoformat()
+        changed_fields = []
         for key, value in updates.items():
             if key != "id":
+                old_val = task.get(key)
+                if old_val != value:
+                    changed_fields.append(f"{key}: '{old_val}' -> '{value}'")
                 task[key] = value
-        task["updated_at"] = datetime.now().isoformat()
+
+        task["updated_at"] = now
+
+        if changed_fields:
+            if "audit_trail" not in task:
+                task["audit_trail"] = []
+
+            task["audit_trail"].append({
+                "timestamp": now,
+                "agent": agent_name,
+                "action": "Task Updated",
+                "details": ", ".join(changed_fields)
+            })
 
         if storage.save_json(filepath, task):
             self.git_handler.commit_and_push([filepath], f"Task {task_id} updated")
@@ -82,7 +117,7 @@ class Tasks:
         filepath = storage.get_task_path(task_id)
         return storage.load_json(filepath)
 
-    def add_comment(self, task_id, comment, commit=False):
+    def add_comment(self, task_id, comment, commit=False, agent_name="System"):
         filepath = storage.get_task_path(task_id)
         task = storage.load_json(filepath)
 
@@ -95,10 +130,21 @@ class Tasks:
         now = datetime.now().isoformat()
         entry = {
             "timestamp": now,
+            "agent": agent_name,
             "text": comment
         }
         task["comments"].append(entry)
         task["updated_at"] = now
+
+        if "audit_trail" not in task:
+            task["audit_trail"] = []
+
+        task["audit_trail"].append({
+            "timestamp": now,
+            "agent": agent_name,
+            "action": "Comment Added",
+            "details": f"Comment: '{comment[:50]}...'" if len(comment) > 50 else f"Comment: '{comment}'"
+        })
 
         if storage.save_json(filepath, task):
             if commit:
