@@ -40,7 +40,7 @@ class SatyaClient:
         if self.current_task:
             try:
                 # Add comment to the task file
-                self.tasks.add_comment(self.current_task["id"], message, commit=False)
+                self.tasks.add_comment(self.current_task["id"], message, commit=False, agent_name=self.agent_name)
             except Exception as e:
                 print(f"Failed to add comment to task: {e}")
 
@@ -48,12 +48,29 @@ class SatyaClient:
         self.git.commit_and_push([self.log_path], f"Update logs for {self.agent_name}")
 
     def create_task(self, title, description):
+        # GOVERNANCE RULE 1: Tasks must have meaningful descriptions
+        if not description or len(description.strip()) < 10:
+            err_msg = "Governance Error: Task description must be at least 10 characters."
+            print(err_msg)
+            raise ValueError(err_msg)
+
         self.log(f"Creating task: {title}")
-        return self.tasks.create_task(title, description, assignee=self.agent_name)
+        return self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name)
 
     def update_task(self, task_id, status):
+        # GOVERNANCE RULE 2: Tasks cannot be marked Done without at least one log entry
+        if status == "Done":
+            task_data = self.tasks.get_task(task_id)
+            if task_data:
+                comments = task_data.get("comments", [])
+                agent_comments = [c for c in comments if c.get("agent") == self.agent_name]
+                if not agent_comments:
+                    err_msg = f"Governance Error: Agent '{self.agent_name}' cannot mark task '{task_id}' as Done without logging any progress."
+                    print(err_msg)
+                    raise ValueError(err_msg)
+
         self.log(f"Updating task {task_id} to {status}")
-        return self.tasks.update_task_status(task_id, status)
+        return self.tasks.update_task_status(task_id, status, agent_name=self.agent_name)
 
     def scrape_url(self, url):
         self.log(f"Scraping URL: {url}")
@@ -110,7 +127,7 @@ class SatyaClient:
         self.tasks.update_task(best_task["id"], {
             "status": "In Progress",
             "assignee": self.agent_name
-        })
+        }, agent_name=self.agent_name)
         # Refresh task data to ensure we have latest state
         self.current_task = self.tasks.get_task(best_task["id"])
         return self.current_task
@@ -124,9 +141,23 @@ class SatyaClient:
             return False
 
         task_id = self.current_task["id"]
+
+        # Check governance before finishing
+        if status == "Done":
+            # the task is kept in self.current_task but it might not have the latest comments loaded
+            # lets reload it from storage to be sure
+            latest_task = self.tasks.get_task(task_id)
+            if latest_task:
+                comments = latest_task.get("comments", [])
+                agent_comments = [c for c in comments if c.get("agent") == self.agent_name]
+                if not agent_comments:
+                    err_msg = f"Governance Error: Cannot finish task '{self.current_task['title']}' without logging any progress."
+                    print(err_msg)
+                    raise ValueError(err_msg)
+
         self.log(f"Finishing task: {self.current_task['title']} -> {status}")
 
-        self.tasks.update_task_status(task_id, status)
+        self.tasks.update_task_status(task_id, status, agent_name=self.agent_name)
         self.current_task = None
         self.flush_logs()
         return True

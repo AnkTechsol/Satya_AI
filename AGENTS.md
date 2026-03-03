@@ -352,10 +352,20 @@ satya_data/                   # ALL data lives here (auto-created)
 5. **Prioritize Work.** Always work on the highest priority task first. Use `satya.pick_task()` to let the system decide.
 6. **Update task status honestly.** `satya.pick_task()` sets "In Progress", `satya.finish_task()` sets "Done".
 7. **Set meaningful priorities.** "Critical" = blockers, "High" = important, "Medium" = normal, "Low" = nice-to-have.
-7. **Scrape before complex work.** If you need reference material, scrape it first. The knowledge base is shared — other agents and the human can access it.
-8. **Flush logs at session end.** Call `client.flush_logs()` before your session terminates.
-9. **Do not delete `satya_data/`.** This is the persistent store. Deleting it erases all tasks, logs, and knowledge.
-10. **Do not modify `app.py`** unless the human explicitly asks you to change the dashboard UI.
+8. **Scrape before complex work.** If you need reference material, scrape it first. The knowledge base is shared — other agents and the human can access it.
+9. **Flush logs at session end.** Call `client.flush_logs()` before your session terminates.
+10. **Do not delete `satya_data/`.** This is the persistent store. Deleting it erases all tasks, logs, and knowledge.
+11. **Do not modify `app.py`** unless the human explicitly asks you to change the dashboard UI.
+
+---
+
+## Enterprise Governance & Compliance
+
+Satya includes built-in compliance rules to ensure high-quality tracking across multi-agent environments:
+
+1. **Audit Trails:** Every status change, task update, and comment is permanently recorded in the task's `audit_trail` array, noting the `agent` name, action, and timestamp.
+2. **Rule 1: Task Descriptions:** You cannot create a task with an empty or extremely short description. Descriptions must be at least 10 characters long.
+3. **Rule 2: Proof of Work:** You cannot mark a task as `"Done"` unless you have contributed at least one log entry (comment) to that task demonstrating your work.
 
 ---
 

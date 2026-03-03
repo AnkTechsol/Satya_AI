@@ -448,6 +448,20 @@ with st.sidebar:
     else:
         completion = 0
 
+    all_tasks_for_metrics = tasks_manager.list_all()
+    # Agent performance dict: { "agent_name": {"completed": 0, "in_progress": 0} }
+    agent_metrics = {}
+    for t in all_tasks_for_metrics:
+        assignee = t.get("assignee", "Unassigned")
+        if assignee not in agent_metrics:
+            agent_metrics[assignee] = {"completed": 0, "in_progress": 0, "total": 0}
+
+        agent_metrics[assignee]["total"] += 1
+        if t.get("status") == "Done":
+            agent_metrics[assignee]["completed"] += 1
+        elif t.get("status") == "In Progress":
+            agent_metrics[assignee]["in_progress"] += 1
+
     st.markdown(f"""
     <div style="padding: 0.5rem;">
         <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
@@ -591,6 +605,46 @@ if page == "Dashboard":
             })
             st.bar_chart(chart_data, x="Status", y="Count", color="#6C5CE7", height=200)
 
+        if agent_metrics:
+            st.markdown("#### Agent Performance")
+            agent_data = []
+            for agent, data in agent_metrics.items():
+                agent_data.append({"Agent": agent, "Completed": data["completed"], "In Progress": data["in_progress"]})
+
+            df_agents = pd.DataFrame(agent_data)
+            st.bar_chart(df_agents, x="Agent", y=["Completed", "In Progress"], height=200)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("#### Audit Trail (Governance)")
+    # Extract audit trails across all tasks and sort by timestamp
+    audit_events = []
+    for task in all_tasks:
+        audit_trail = task.get("audit_trail", [])
+        for event in audit_trail:
+            # add task title to the event for display
+            event_copy = event.copy()
+            event_copy["task_title"] = task.get("title", "Unknown Task")
+            audit_events.append(event_copy)
+
+    if audit_events:
+        # Sort newest first
+        audit_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
+        # Display top 10
+        for event in audit_events[:10]:
+            ts = format_date(event.get('timestamp', ''))
+            agent = event.get('agent', 'System')
+            action = event.get('action', 'Unknown Action')
+            details = event.get('details', '')
+            task_title = event.get('task_title', '')
+
+            st.markdown(f"""
+            <div style="font-size: 0.85rem; padding: 0.5rem; border-left: 3px solid var(--info); margin-bottom: 0.5rem; background: var(--bg-card); border-radius: 4px;">
+                <span style="color: var(--text-secondary); font-size: 0.75rem;">{ts}</span> &mdash;
+                <strong>{agent}</strong> <span style="color: var(--primary-light);">{action}</span> on <em>{task_title}</em>: {details}
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.markdown("<p style='color: var(--text-secondary); font-size: 0.85rem;'>No audit events recorded yet.</p>", unsafe_allow_html=True)
 
 # ─── TASK BOARD PAGE ────────────────────────────────────
 elif page == "Task Board":
@@ -919,6 +973,23 @@ client.flush_logs()</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    st.markdown("#### Governance Rules")
+
+    st.markdown(f"""
+    <div class="api-section">
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            Satya includes an enterprise governance layer to enforce high-quality multi-agent coordination:
+        </p>
+        <ul style="color: var(--text-primary); font-size: 0.85rem; line-height: 1.6;">
+            <li><strong>Audit Trails:</strong> Every creation, status change, comment, and update is permanently recorded per task, tied to the agent's name.</li>
+            <li><strong>Descriptive Tasks:</strong> Tasks cannot be created with less than 10 characters of description.</li>
+            <li><strong>Proof of Work:</strong> An agent cannot mark a task as <code>"Done"</code> without providing at least one log entry explaining their progress.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
