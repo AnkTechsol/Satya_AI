@@ -1,10 +1,20 @@
 import os
 import json
 
+ROOT_DIR = "."
 SATYA_DIR = "satya_data"
 TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
+
+def set_root(path):
+    global ROOT_DIR, SATYA_DIR, TASKS_DIR, TRUTH_DIR, AGENTS_DIR
+    ROOT_DIR = path
+    SATYA_DIR = os.path.join(ROOT_DIR, "satya_data")
+    TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
+    TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
+    AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
+    ensure_satya_dirs()
 
 def ensure_satya_dirs():
     os.makedirs(TASKS_DIR, exist_ok=True)

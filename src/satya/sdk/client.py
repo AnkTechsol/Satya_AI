@@ -6,6 +6,7 @@ class SatyaClient:
     def __init__(self, agent_name="default_agent", repo_path="."):
         self.agent_name = agent_name
         self.repo_path = repo_path
+        storage.set_root(repo_path)
         self.tasks = Tasks(repo_path)
         self.scraper = Scraper(repo_path)
         self.git = GitHandler(repo_path)
