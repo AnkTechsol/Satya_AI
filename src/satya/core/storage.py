@@ -1,5 +1,6 @@
 import os
 import json
+import fcntl
 
 SATYA_DIR = "satya_data"
 TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
@@ -12,20 +13,51 @@ def ensure_satya_dirs():
     os.makedirs(AGENTS_DIR, exist_ok=True)
 
 def save_json(filepath, data):
+    tmp_filepath = filepath + ".tmp"
+    lock_filepath = filepath + ".lock"
+
     try:
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=4)
-        return True
+        # Create a separate lock file
+        with open(lock_filepath, 'w') as lock_f:
+            # Acquire exclusive lock
+            fcntl.flock(lock_f, fcntl.LOCK_EX)
+            try:
+                # Write to temp file
+                with open(tmp_filepath, 'w') as tmp_f:
+                    json.dump(data, tmp_f, indent=4)
+
+                # Atomic rename
+                os.rename(tmp_filepath, filepath)
+                return True
+            finally:
+                # Release lock
+                fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
         print(f"Error saving JSON to {filepath}: {e}")
+        # Clean up tmp file if rename failed
+        if os.path.exists(tmp_filepath):
+            try:
+                os.remove(tmp_filepath)
+            except:
+                pass
         return False
 
 def load_json(filepath):
     if not os.path.exists(filepath):
         return {}
+
+    lock_filepath = filepath + ".lock"
+
     try:
-        with open(filepath, 'r') as f:
-            return json.load(f)
+        # We need to lock while reading to avoid reading an incomplete file
+        # Even with atomic rename, it's safer to acquire a shared lock
+        with open(lock_filepath, 'a+') as lock_f:
+            fcntl.flock(lock_f, fcntl.LOCK_SH)
+            try:
+                with open(filepath, 'r') as f:
+                    return json.load(f)
+            finally:
+                fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
         print(f"Error loading JSON from {filepath}: {e}")
         return {}

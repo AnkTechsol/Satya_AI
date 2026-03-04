@@ -47,6 +47,21 @@ class SatyaClient:
     def flush_logs(self):
         self.git.commit_and_push([self.log_path], f"Update logs for {self.agent_name}")
 
+    def can_do(self, action: str, task_id: str) -> bool:
+        task = self.tasks.get_task(task_id)
+        if not task:
+            self.log(f"BLOCKED: Task {task_id} not found")
+            return False
+
+        allowed = task.get("allowed_actions", [])
+        forbidden = task.get("forbidden_actions", [])
+
+        if action in allowed and action not in forbidden:
+            return True
+
+        self.log(f"BLOCKED: '{action}' not permitted for task {task_id}")
+        return False
+
     def create_task(self, title, description):
         # GOVERNANCE RULE 1: Tasks must have meaningful descriptions
         if not description or len(description.strip()) < 10:

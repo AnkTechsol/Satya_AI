@@ -39,3 +39,9 @@ def finish_task(status="Done"):
     if _client:
         return _client.finish_task(status)
     return False
+
+def can_do(action: str, task_id: str) -> bool:
+    """Check if an action is allowed for a task."""
+    if _client:
+        return _client.can_do(action, task_id)
+    return False

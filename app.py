@@ -498,6 +498,13 @@ if page == "Dashboard":
     st.markdown('<div class="hero-header">Dashboard</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Overview of your AI agent operations and task progress</div>', unsafe_allow_html=True)
 
+    from satya.core import get_stale_tasks
+    stale = get_stale_tasks()
+    if stale:
+        st.warning(f"⚠️ {len(stale)} stale task(s) detected — agent may be stuck")
+        for t in stale:
+            st.write(f"- {t['title']} | locked by {t['locked_by']} | {t['elapsed_minutes']}m elapsed")
+
     stats = tasks_manager.get_stats()
 
     c1, c2, c3, c4 = st.columns(4)
@@ -515,7 +522,7 @@ if page == "Dashboard":
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-icon">&#128204;</div>
-            <div class="metric-value" style="color: var(--info);">{stats['todo']}</div>
+            <div class="metric-value" style="color: var(--info);">{stats['queued']}</div>
             <div class="metric-label">To Do</div>
         </div>
         """, unsafe_allow_html=True)
@@ -601,7 +608,7 @@ if page == "Dashboard":
             import pandas as pd
             chart_data = pd.DataFrame({
                 "Status": ["To Do", "In Progress", "Done"],
-                "Count": [stats["todo"], stats["in_progress"], stats["done"]]
+                "Count": [stats["queued"], stats["in_progress"], stats["done"]]
             })
             st.bar_chart(chart_data, x="Status", y="Count", color="#6C5CE7", height=200)
 
@@ -674,11 +681,11 @@ elif page == "Task Board":
 
     all_tasks = tasks_manager.list_all()
 
-    tasks_by_status = {"To Do": [], "In Progress": [], "Done": []}
+    tasks_by_status = {"queued": [], "in_progress": [], "done": []}
     for task in all_tasks:
-        status = task.get("status", "To Do")
+        status = task.get("status", "queued")
         if status not in tasks_by_status:
-            status = "To Do"
+            status = "queued"
         tasks_by_status[status].append(task)
 
     for status_key in tasks_by_status:
@@ -689,9 +696,9 @@ elif page == "Task Board":
     col1, col2, col3 = st.columns(3)
 
     headers = {
-        "To Do": ("header-todo", "&#128204; To Do", col1),
-        "In Progress": ("header-progress", "&#9889; In Progress", col2),
-        "Done": ("header-done", "&#9989; Done", col3)
+        "queued": ("header-todo", "&#128204; To Do", col1),
+        "in_progress": ("header-progress", "&#9889; In Progress", col2),
+        "done": ("header-done", "&#9989; Done", col3)
     }
 
     for status, (css_class, label, col) in headers.items():
@@ -728,28 +735,31 @@ elif page == "Task Board":
 
                 btn_cols = st.columns(3)
 
-                if status == "To Do":
+                if status == "queued":
                     if btn_cols[1].button("Start", key=f"start_{task['id']}", use_container_width=True):
-                        tasks_manager.update_task_status(task['id'], "In Progress")
+                        tasks_manager.update_task_status(task['id'], "in_progress")
                         st.rerun()
                     if btn_cols[2].button("Delete", key=f"del_todo_{task['id']}", use_container_width=True):
                         tasks_manager.delete_task(task['id'])
                         st.rerun()
 
-                elif status == "In Progress":
-                    if btn_cols[0].button("Back", key=f"back_{task['id']}", use_container_width=True):
-                        tasks_manager.update_task_status(task['id'], "To Do")
-                        st.rerun()
+                elif status == "in_progress":
+                    # Cannot move back to queued legally in the data model
                     if btn_cols[1].button("Done", key=f"done_{task['id']}", use_container_width=True):
-                        tasks_manager.update_task_status(task['id'], "Done")
-                        st.rerun()
+                        try:
+                            tasks_manager.update_task_status(task['id'], "done")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(str(e))
                     if btn_cols[2].button("Delete", key=f"del_prog_{task['id']}", use_container_width=True):
                         tasks_manager.delete_task(task['id'])
                         st.rerun()
 
-                elif status == "Done":
+                elif status == "done":
                     if btn_cols[0].button("Reopen", key=f"reopen_{task['id']}", use_container_width=True):
-                        tasks_manager.update_task_status(task['id'], "In Progress")
+                        # Moving from done back to in_progress is invalid based on task transitions,
+                        # so let's handle this gracefully or remove the option.
+                        st.warning("Cannot reopen done tasks.")
                         st.rerun()
                     if btn_cols[2].button("Delete", key=f"del_done_{task['id']}", use_container_width=True):
                         tasks_manager.delete_task(task['id'])

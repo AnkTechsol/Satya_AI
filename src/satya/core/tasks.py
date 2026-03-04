@@ -1,11 +1,12 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from . import storage
 from .git_handler import GitHandler
 
-STATUS_TODO = "To Do"
-STATUS_IN_PROGRESS = "In Progress"
-STATUS_DONE = "Done"
+STATUS_QUEUED = "queued"
+STATUS_IN_PROGRESS = "in_progress"
+STATUS_DONE = "done"
+STATUS_FAILED = "failed"
 PRIORITIES = ["Low", "Medium", "High", "Critical"]
 
 class Tasks:
@@ -14,25 +15,35 @@ class Tasks:
         self.git_handler = GitHandler(repo_path)
         storage.ensure_satya_dirs()
 
-    def create_task(self, title, description, assignee=None, priority="Medium", agent_name="System"):
+    def create_task(self, title, description, assignee=None, priority="Medium", agent_name="System", time_limit_minutes=30):
         task_id = str(uuid.uuid4())[:8]
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat() + "Z"
 
         task = {
             "id": task_id,
             "title": title,
             "description": description,
-            "status": STATUS_TODO,
+            "status": STATUS_QUEUED,
             "priority": priority,
             "assignee": assignee or "Unassigned",
+            "allowed_actions": [],
+            "forbidden_actions": [],
+            "output_path": "",
+            "completion_criteria": {
+                "type": "manual"
+            },
+            "time_limit_minutes": time_limit_minutes,
+            "locked_by": None,
+            "locked_at": None,
             "created_at": now,
             "updated_at": now,
+            "completed_at": None,
             "comments": [],
             "audit_trail": [{
                 "timestamp": now,
                 "agent": agent_name,
                 "action": "Task Created",
-                "details": f"Created with status '{STATUS_TODO}' and priority '{priority}'"
+                "details": f"Created with status '{STATUS_QUEUED}' and priority '{priority}'"
             }]
         }
 
@@ -50,9 +61,36 @@ class Tasks:
             return False
 
         old_status = task.get("status", "Unknown")
-        now = datetime.now().isoformat()
+
+        # Validate status transitions
+        valid_transitions = {
+            STATUS_QUEUED: [STATUS_IN_PROGRESS],
+            STATUS_IN_PROGRESS: [STATUS_DONE, STATUS_FAILED],
+            STATUS_DONE: [],
+            STATUS_FAILED: []
+        }
+
+        if old_status in valid_transitions and new_status not in valid_transitions[old_status]:
+            raise Exception(f"InvalidStatusTransition: Cannot move from {old_status} to {new_status}")
+
+        if new_status == STATUS_DONE:
+            from .completion import CompletionChecker, CompletionCriteriaNotMet, TaskNotFound
+            checker = CompletionChecker(self.repo_path)
+            try:
+                if not checker.check(task):
+                    raise CompletionCriteriaNotMet(f"CompletionCriteriaNotMet: Criteria not met for task {task_id}")
+            except (CompletionCriteriaNotMet, TaskNotFound) as e:
+                raise CompletionCriteriaNotMet(f"CompletionCriteriaNotMet: {str(e)}")
+
+        now = datetime.now(timezone.utc).isoformat() + "Z"
         task["status"] = new_status
         task["updated_at"] = now
+
+        if new_status == STATUS_IN_PROGRESS:
+            task["locked_by"] = agent_name
+            task["locked_at"] = now
+        elif new_status in [STATUS_DONE, STATUS_FAILED]:
+            task["completed_at"] = now
 
         if "audit_trail" not in task:
             task["audit_trail"] = []
@@ -69,6 +107,43 @@ class Tasks:
             return True
         return False
 
+    def lock_task(self, task_id, agent_name):
+        filepath = storage.get_task_path(task_id)
+        task = storage.load_json(filepath)
+
+        if not task:
+            return False
+
+        if task.get("locked_by") is not None and task.get("locked_by") != agent_name:
+            raise Exception(f"Task already locked by {task.get('locked_by')}")
+
+        now = datetime.now(timezone.utc).isoformat() + "Z"
+        task["locked_by"] = agent_name
+        task["locked_at"] = now
+        task["updated_at"] = now
+
+        if storage.save_json(filepath, task):
+            self.git_handler.commit_and_push([filepath], f"Task {task_id} locked by {agent_name}")
+            return True
+        return False
+
+    def unlock_task(self, task_id):
+        filepath = storage.get_task_path(task_id)
+        task = storage.load_json(filepath)
+
+        if not task:
+            return False
+
+        now = datetime.now(timezone.utc).isoformat() + "Z"
+        task["locked_by"] = None
+        task["locked_at"] = None
+        task["updated_at"] = now
+
+        if storage.save_json(filepath, task):
+            self.git_handler.commit_and_push([filepath], f"Task {task_id} unlocked")
+            return True
+        return False
+
     def update_task(self, task_id, updates, agent_name="System"):
         filepath = storage.get_task_path(task_id)
         task = storage.load_json(filepath)
@@ -76,7 +151,7 @@ class Tasks:
         if not task:
             return False
 
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat() + "Z"
         changed_fields = []
         for key, value in updates.items():
             if key != "id":
@@ -113,6 +188,17 @@ class Tasks:
     def list_all(self):
         return storage.list_tasks()
 
+    def get_tasks(self, status=None, assignee=None):
+        all_tasks = self.list_all()
+        filtered_tasks = []
+        for task in all_tasks:
+            if status and task.get("status") != status:
+                continue
+            if assignee and task.get("assignee") != assignee:
+                continue
+            filtered_tasks.append(task)
+        return filtered_tasks
+
     def get_task(self, task_id):
         filepath = storage.get_task_path(task_id)
         return storage.load_json(filepath)
@@ -127,7 +213,7 @@ class Tasks:
         if "comments" not in task:
             task["comments"] = []
 
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat() + "Z"
         entry = {
             "timestamp": now,
             "agent": agent_name,
@@ -155,7 +241,8 @@ class Tasks:
     def get_stats(self):
         tasks = self.list_all()
         total = len(tasks)
-        todo = sum(1 for t in tasks if t.get("status") == STATUS_TODO)
+        queued = sum(1 for t in tasks if t.get("status") == STATUS_QUEUED)
         in_progress = sum(1 for t in tasks if t.get("status") == STATUS_IN_PROGRESS)
         done = sum(1 for t in tasks if t.get("status") == STATUS_DONE)
-        return {"total": total, "todo": todo, "in_progress": in_progress, "done": done}
+        failed = sum(1 for t in tasks if t.get("status") == STATUS_FAILED)
+        return {"total": total, "queued": queued, "in_progress": in_progress, "done": done, "failed": failed}
