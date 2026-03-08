@@ -1,18 +1,22 @@
 import os
 import json
 import fcntl
+import logging
+from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 SATYA_DIR = "satya_data"
 TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
 
-def ensure_satya_dirs():
+def ensure_satya_dirs() -> None:
     os.makedirs(TASKS_DIR, exist_ok=True)
     os.makedirs(TRUTH_DIR, exist_ok=True)
     os.makedirs(AGENTS_DIR, exist_ok=True)
 
-def save_json(filepath, data):
+def save_json(filepath: str, data: Any) -> bool:
     tmp_filepath = filepath + ".tmp"
     lock_filepath = filepath + ".lock"
 
@@ -33,16 +37,16 @@ def save_json(filepath, data):
                 # Release lock
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
-        print(f"Error saving JSON to {filepath}: {e}")
+        logger.error(f"Error saving JSON to {filepath}: {e}")
         # Clean up tmp file if rename failed
         if os.path.exists(tmp_filepath):
             try:
                 os.remove(tmp_filepath)
-            except:
+            except Exception:
                 pass
         return False
 
-def load_json(filepath):
+def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
@@ -59,28 +63,28 @@ def load_json(filepath):
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
-        print(f"Error loading JSON from {filepath}: {e}")
+        logger.error(f"Error loading JSON from {filepath}: {e}")
         return {}
 
-def save_markdown(filename, content):
+def save_markdown(filename: str, content: str) -> Optional[str]:
     filepath = os.path.join(TRUTH_DIR, filename)
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
         return filepath
     except Exception as e:
-        print(f"Error saving markdown to {filepath}: {e}")
+        logger.error(f"Error saving markdown to {filepath}: {e}")
         return None
 
-def list_truth_files():
+def list_truth_files() -> List[str]:
     if not os.path.exists(TRUTH_DIR):
         return []
     return [f for f in os.listdir(TRUTH_DIR) if f.endswith('.md')]
 
-def get_task_path(task_id):
+def get_task_path(task_id: str) -> str:
     return os.path.join(TASKS_DIR, f"{task_id}.json")
 
-def list_tasks():
+def list_tasks() -> List[Dict[str, Any]]:
     if not os.path.exists(TASKS_DIR):
         return []
     tasks = []
@@ -89,14 +93,14 @@ def list_tasks():
             tasks.append(load_json(os.path.join(TASKS_DIR, f)))
     return tasks
 
-def delete_task_file(task_id):
+def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
         return True
     return False
 
-def delete_truth_file(filename):
+def delete_truth_file(filename: str) -> bool:
     filepath = os.path.join(TRUTH_DIR, filename)
     if os.path.exists(filepath):
         os.remove(filepath)
