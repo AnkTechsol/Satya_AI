@@ -3,7 +3,7 @@ import os
 import sys
 import json
 import html
-from datetime import datetime
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
@@ -411,8 +411,21 @@ def format_date(iso_str):
 
 def format_time_ago(iso_str):
     try:
-        dt = datetime.fromisoformat(iso_str)
-        diff = datetime.now() - dt
+        # Handle 'Z' suffix and possible double offset in Python 3.11+
+        clean_iso = iso_str
+        if clean_iso.endswith('Z'):
+            clean_iso = clean_iso[:-1]
+            if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
+                clean_iso += '+00:00'
+
+        dt = datetime.fromisoformat(clean_iso)
+
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+
+        diff = datetime.now(timezone.utc) - dt
+        if diff.total_seconds() < 0:
+            return "Just now"
         if diff.days > 0:
             return f"{diff.days}d ago"
         hours = diff.seconds // 3600
