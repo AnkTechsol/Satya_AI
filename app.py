@@ -407,7 +407,7 @@ def format_date(iso_str):
         dt = datetime.fromisoformat(iso_str)
         return dt.strftime("%b %d, %Y")
     except:
-        return iso_str or "N/A"
+        return html.escape(str(iso_str or "N/A"))
 
 def format_time_ago(iso_str):
     try:
@@ -421,7 +421,7 @@ def format_time_ago(iso_str):
         minutes = diff.seconds // 60
         return f"{minutes}m ago" if minutes > 0 else "Just now"
     except:
-        return ""
+        return html.escape(str(iso_str or ""))
 
 
 with st.sidebar:
@@ -779,8 +779,11 @@ elif page == "Task Board":
                     comments = task.get("comments", [])
                     if comments:
                         for c in reversed(comments):
-                            ts_obj = datetime.fromisoformat(c.get("timestamp", ""))
-                            ts_str = ts_obj.strftime("%H:%M:%S")
+                            try:
+                                ts_obj = datetime.fromisoformat(c.get("timestamp", ""))
+                                ts_str = ts_obj.strftime("%H:%M:%S")
+                            except ValueError:
+                                ts_str = html.escape(str(c.get("timestamp", "")))
                             txt = html.escape(c.get("text", ""))
                             st.markdown(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>", unsafe_allow_html=True)
                     else:
