@@ -442,25 +442,40 @@ with st.sidebar:
 
     st.markdown("---")
 
-    stats = tasks_manager.get_stats()
-    if stats["total"] > 0:
-        completion = int((stats["done"] / stats["total"]) * 100)
-    else:
-        completion = 0
+    all_tasks = tasks_manager.list_all()
 
-    all_tasks_for_metrics = tasks_manager.list_all()
-    # Agent performance dict: { "agent_name": {"completed": 0, "in_progress": 0} }
+    # Calculate stats and agent metrics in a single pass to avoid multiple file reads
+    stats = {
+        "total": len(all_tasks),
+        "queued": 0,
+        "in_progress": 0,
+        "done": 0,
+        "failed": 0
+    }
+
     agent_metrics = {}
-    for t in all_tasks_for_metrics:
+
+    for t in all_tasks:
+        # Update overall stats
+        status = t.get("status", "queued")
+        if status in stats:
+            stats[status] += 1
+
+        # Update agent metrics
         assignee = t.get("assignee", "Unassigned")
         if assignee not in agent_metrics:
             agent_metrics[assignee] = {"completed": 0, "in_progress": 0, "total": 0}
 
         agent_metrics[assignee]["total"] += 1
-        if t.get("status") == "Done":
+        if status == "done":
             agent_metrics[assignee]["completed"] += 1
-        elif t.get("status") == "In Progress":
+        elif status == "in_progress":
             agent_metrics[assignee]["in_progress"] += 1
+
+    if stats["total"] > 0:
+        completion = int((stats["done"] / stats["total"]) * 100)
+    else:
+        completion = 0
 
     st.markdown(f"""
     <div style="padding: 0.5rem;">
@@ -504,8 +519,6 @@ if page == "Dashboard":
         st.warning(f"⚠️ {len(stale)} stale task(s) detected — agent may be stuck")
         for t in stale:
             st.write(f"- {t['title']} | locked by {t['locked_by']} | {t['elapsed_minutes']}m elapsed")
-
-    stats = tasks_manager.get_stats()
 
     c1, c2, c3, c4 = st.columns(4)
 
@@ -551,7 +564,6 @@ if page == "Dashboard":
 
     with col_left:
         st.markdown("#### Recent Tasks")
-        all_tasks = tasks_manager.list_all()
         sorted_tasks = sorted(all_tasks, key=lambda t: t.get("updated_at", ""), reverse=True)[:5]
 
         if sorted_tasks:
@@ -678,8 +690,6 @@ elif page == "Task Board":
                 st.warning("Please enter a task title.")
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
-    all_tasks = tasks_manager.list_all()
 
     tasks_by_status = {"queued": [], "in_progress": [], "done": []}
     for task in all_tasks:
