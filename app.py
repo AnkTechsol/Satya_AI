@@ -817,7 +817,8 @@ elif page == "Truth Source":
         st.markdown(f"#### Knowledge Base ({len(files)} sources)")
 
         for idx, fname in enumerate(files):
-            file_path = os.path.join(storage.TRUTH_DIR, fname)
+            safe_fname = os.path.basename(fname)
+            file_path = os.path.join(storage.TRUTH_DIR, safe_fname)
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
             size_str = f"{file_size / 1024:.1f} KB" if file_size > 1024 else f"{file_size} B"
 
@@ -845,7 +846,8 @@ elif page == "Truth Source":
 
         selected_file = st.selectbox("View Source Content", files, label_visibility="collapsed", placeholder="Select a file to preview...")
         if selected_file:
-            file_path = os.path.join(storage.TRUTH_DIR, selected_file)
+            safe_selected_file = os.path.basename(selected_file)
+            file_path = os.path.join(storage.TRUTH_DIR, safe_selected_file)
             if os.path.exists(file_path):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
@@ -894,7 +896,8 @@ elif page == "Agent Logs":
                     st.rerun()
 
             if selected_log:
-                log_path = os.path.join(storage.AGENTS_DIR, selected_log)
+                safe_selected_log = os.path.basename(selected_log)
+                log_path = os.path.join(storage.AGENTS_DIR, safe_selected_log)
 
                 mod_time = datetime.fromtimestamp(os.path.getmtime(log_path))
                 file_size = os.path.getsize(log_path)
