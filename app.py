@@ -514,7 +514,10 @@ if page == "Dashboard":
     st.markdown('<div class="page-subtitle">Overview of your AI agent operations and task progress</div>', unsafe_allow_html=True)
 
     from satya.core import get_stale_tasks
-    stale = get_stale_tasks()
+    # ⚡ Bolt Optimization:
+    # We already fetched all_tasks via tasks_manager.list_all().
+    # Passing them here prevents N+1 file reads, drastically speeding up the render.
+    stale = get_stale_tasks(all_tasks)
     if stale:
         st.warning(f"⚠️ {len(stale)} stale task(s) detected — agent may be stuck")
         for t in stale:
