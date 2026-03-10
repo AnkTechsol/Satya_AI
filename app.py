@@ -3,7 +3,7 @@ import os
 import sys
 import json
 import html
-from datetime import datetime
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
@@ -161,10 +161,10 @@ section[data-testid="stSidebar"] [data-testid="stMarkdown"] {{
     box-shadow: 0 4px 20px var(--shadow-color);
 }}
 
-.task-card.priority-critical {{ border-left-color: #E17055; }}
-.task-card.priority-high {{ border-left-color: #FDCB6E; }}
-.task-card.priority-medium {{ border-left-color: #74B9FF; }}
-.task-card.priority-low {{ border-left-color: #00B894; }}
+.task-card.priority-critical {{ border-left-color: var(--danger); }}
+.task-card.priority-high {{ border-left-color: var(--warning); }}
+.task-card.priority-medium {{ border-left-color: var(--info); }}
+.task-card.priority-low {{ border-left-color: var(--success); }}
 
 .task-title {{
     font-weight: 600;
@@ -188,10 +188,10 @@ section[data-testid="stSidebar"] [data-testid="stMarkdown"] {{
     letter-spacing: 0.5px;
 }}
 
-.badge-critical {{ background: rgba(225,112,85,0.2); color: #E17055; }}
-.badge-high {{ background: rgba(253,203,110,0.2); color: #FDCB6E; }}
-.badge-medium {{ background: rgba(116,185,255,0.2); color: #74B9FF; }}
-.badge-low {{ background: rgba(0,184,148,0.2); color: #00B894; }}
+.badge-critical {{ background: rgba(225,112,85,0.15); color: var(--danger); }}
+.badge-high {{ background: rgba(253,203,110,0.15); color: var(--warning); }}
+.badge-medium {{ background: rgba(116,185,255,0.15); color: var(--info); }}
+.badge-low {{ background: rgba(0,184,148,0.15); color: var(--success); }}
 
 .column-header {{
     padding: 0.6rem 1rem;
@@ -402,26 +402,52 @@ def get_priority_badge(priority):
 def get_priority_class(priority):
     return f"priority-{html.escape((priority or 'medium').lower())}"
 
-def format_date(iso_str):
+def parse_iso(iso_str):
+    """Robust ISO parser that handles Z and ensures timezone awareness."""
+    if not iso_str:
+        return None
     try:
-        dt = datetime.fromisoformat(iso_str)
-        return dt.strftime("%b %d, %Y")
+        # Handle cases like '2023-10-27T10:00:00+00:00Z'
+        if iso_str.endswith('Z'):
+            clean_iso = iso_str.replace('Z', '+00:00')
+        else:
+            clean_iso = iso_str
+
+        dt = datetime.fromisoformat(clean_iso)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
     except:
+        return None
+
+def format_date(iso_str):
+    dt = parse_iso(iso_str)
+    if not dt:
         return iso_str or "N/A"
+    return dt.strftime("%b %d, %Y")
 
 def format_time_ago(iso_str):
-    try:
-        dt = datetime.fromisoformat(iso_str)
-        diff = datetime.now() - dt
-        if diff.days > 0:
-            return f"{diff.days}d ago"
-        hours = diff.seconds // 3600
-        if hours > 0:
-            return f"{hours}h ago"
-        minutes = diff.seconds // 60
-        return f"{minutes}m ago" if minutes > 0 else "Just now"
-    except:
+    dt = parse_iso(iso_str)
+    if not dt:
         return ""
+
+    now = datetime.now(timezone.utc)
+    diff = now - dt
+    seconds = int(diff.total_seconds())
+
+    if seconds < 0:
+        return "Just now"
+    if seconds < 60:
+        return f"{seconds}s ago"
+    if seconds < 3600:
+        return f"{seconds // 60}m ago"
+    if seconds < 86400:
+        return f"{seconds // 3600}h ago"
+    if diff.days < 30:
+        return f"{diff.days}d ago"
+    if diff.days < 365:
+        return f"{diff.days // 30}mo ago"
+    return f"{diff.days // 365}y ago"
 
 
 with st.sidebar:
@@ -737,6 +763,7 @@ elif page == "Task Board":
                         {html.escape(task.get('description', '')[:80])}{'...' if len(task.get('description', '')) > 80 else ''}
                     </div>
                     <div class="task-meta">
+                        <span title="Task ID" style="font-family: monospace; background: var(--border); padding: 1px 4px; border-radius: 4px; font-size: 0.7rem;">{html.escape(task.get('id', ''))}</span> &middot;
                         &#128100; {html.escape(task.get('assignee', 'Unassigned'))} &middot;
                         &#128197; {format_date(task.get('created_at', ''))}
                     </div>
@@ -746,32 +773,27 @@ elif page == "Task Board":
                 btn_cols = st.columns(3)
 
                 if status == "queued":
-                    if btn_cols[1].button("Start", key=f"start_{task['id']}", use_container_width=True):
+                    if btn_cols[1].button("Start", key=f"start_{task['id']}", use_container_width=True, help="Move task to In Progress"):
                         tasks_manager.update_task_status(task['id'], "in_progress")
                         st.rerun()
-                    if btn_cols[2].button("Delete", key=f"del_todo_{task['id']}", use_container_width=True):
+                    if btn_cols[2].button("Delete", key=f"del_todo_{task['id']}", use_container_width=True, help="Permanently delete this task"):
                         tasks_manager.delete_task(task['id'])
                         st.rerun()
 
                 elif status == "in_progress":
                     # Cannot move back to queued legally in the data model
-                    if btn_cols[1].button("Done", key=f"done_{task['id']}", use_container_width=True):
+                    if btn_cols[1].button("Done", key=f"done_{task['id']}", use_container_width=True, help="Mark task as Completed"):
                         try:
                             tasks_manager.update_task_status(task['id'], "done")
                             st.rerun()
                         except Exception as e:
                             st.error(str(e))
-                    if btn_cols[2].button("Delete", key=f"del_prog_{task['id']}", use_container_width=True):
+                    if btn_cols[2].button("Delete", key=f"del_prog_{task['id']}", use_container_width=True, help="Permanently delete this task"):
                         tasks_manager.delete_task(task['id'])
                         st.rerun()
 
                 elif status == "done":
-                    if btn_cols[0].button("Reopen", key=f"reopen_{task['id']}", use_container_width=True):
-                        # Moving from done back to in_progress is invalid based on task transitions,
-                        # so let's handle this gracefully or remove the option.
-                        st.warning("Cannot reopen done tasks.")
-                        st.rerun()
-                    if btn_cols[2].button("Delete", key=f"del_done_{task['id']}", use_container_width=True):
+                    if btn_cols[2].button("Delete", key=f"del_done_{task['id']}", use_container_width=True, help="Permanently delete this task"):
                         tasks_manager.delete_task(task['id'])
                         st.rerun()
 
