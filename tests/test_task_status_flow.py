@@ -19,6 +19,8 @@ def temp_tasks():
     tasks = Tasks(repo_path)
     yield tasks
 
+    storage._json_cache.clear()
+
     shutil.rmtree(repo_path)
     # Restore old storage
     storage.SATYA_DIR = old_dir

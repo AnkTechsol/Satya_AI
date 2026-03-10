@@ -22,6 +22,8 @@ def temp_tasks_and_checker():
     checker.tasks = tasks
     yield tasks, checker, repo_path
 
+    storage._json_cache.clear()
+
     shutil.rmtree(repo_path)
     storage.SATYA_DIR = old_dir
     storage.TASKS_DIR = os.path.join(storage.SATYA_DIR, "tasks")
