@@ -1,8 +1,33 @@
 import requests
 from bs4 import BeautifulSoup
 import markdownify
+import socket
+import ipaddress
+from urllib.parse import urlparse
 from . import storage
 from .git_handler import GitHandler
+
+def is_safe_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        ip = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip)
+
+        # Ensure the IP is a globally routable public address
+        # This blocks loopback, private, link-local (e.g., AWS metadata), multicast, etc.
+        if not ip_obj.is_global:
+            return False
+
+        return True
+    except Exception:
+        return False
 
 class Scraper:
     def __init__(self, repo_path="."):
@@ -11,6 +36,10 @@ class Scraper:
         storage.ensure_satya_dirs()
 
     def fetch_and_save(self, url, title=None):
+        if not is_safe_url(url):
+            print(f"Security Error: URL '{url}' is unsafe and cannot be scraped.")
+            return None
+
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
