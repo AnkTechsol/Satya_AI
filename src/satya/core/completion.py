@@ -1,5 +1,6 @@
 import os
 import subprocess
+import shlex
 from .tasks import Tasks, STATUS_DONE
 
 class CompletionCriteriaNotMet(Exception):
@@ -41,7 +42,13 @@ class CompletionChecker:
                 raise CompletionCriteriaNotMet("No test_command specified.")
 
             try:
-                result = subprocess.run(test_command, shell=True, capture_output=True, text=True)
+                # Security Fix: Avoid shell=True to prevent arbitrary command injection.
+                # By using shell=False and shlex.split, we ensure that operators like &&, |, ;
+                # are not interpreted by a shell. This is a breaking change for tasks that
+                # rely on shell features, but it is necessary for security in an environment
+                # where agents can programmatically set these commands.
+                args = shlex.split(test_command)
+                result = subprocess.run(args, shell=False, capture_output=True, text=True)
                 if result.returncode != required_code:
                     raise CompletionCriteriaNotMet(f"Test command failed with exit code {result.returncode} (expected {required_code}).\nOutput: {result.stdout}\nError: {result.stderr}")
                 return True

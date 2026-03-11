@@ -67,7 +67,8 @@ def load_json(filepath: str) -> Dict[str, Any]:
         return {}
 
 def save_markdown(filename: str, content: str) -> Optional[str]:
-    filepath = os.path.join(TRUTH_DIR, filename)
+    safe_filename = os.path.basename(filename)
+    filepath = os.path.join(TRUTH_DIR, safe_filename)
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -82,7 +83,8 @@ def list_truth_files() -> List[str]:
     return [f for f in os.listdir(TRUTH_DIR) if f.endswith('.md')]
 
 def get_task_path(task_id: str) -> str:
-    return os.path.join(TASKS_DIR, f"{task_id}.json")
+    safe_task_id = os.path.basename(task_id)
+    return os.path.join(TASKS_DIR, f"{safe_task_id}.json")
 
 def list_tasks() -> List[Dict[str, Any]]:
     if not os.path.exists(TASKS_DIR):
@@ -101,7 +103,8 @@ def delete_task_file(task_id: str) -> bool:
     return False
 
 def delete_truth_file(filename: str) -> bool:
-    filepath = os.path.join(TRUTH_DIR, filename)
+    safe_filename = os.path.basename(filename)
+    filepath = os.path.join(TRUTH_DIR, safe_filename)
     if os.path.exists(filepath):
         os.remove(filepath)
         return True

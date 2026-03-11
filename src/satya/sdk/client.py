@@ -14,7 +14,8 @@ class SatyaClient:
         storage.ensure_satya_dirs()
         # use daily log file format: agent_name_YYYYMMDD.log
         today_str = datetime.now().strftime("%Y%m%d")
-        self.log_filename = f"{self.agent_name}_{today_str}.log"
+        safe_agent_name = os.path.basename(self.agent_name)
+        self.log_filename = f"{safe_agent_name}_{today_str}.log"
         self.log_path = os.path.join(storage.AGENTS_DIR, self.log_filename)
 
         try:

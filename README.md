@@ -51,6 +51,15 @@ Satya separates **who does the work** from **who watches the work**:
 
 ---
 
+## What's New: Agent Chat & Manual Overrides 🚀
+
+Humans now have direct control over their AI workforce! The new **Agent Chat** control panel allows you to interact with your agents in real-time.
+* Monitor live agent logs directly in a chat interface.
+* Issue manual overrides and commands (e.g. "Create task: Fix the login button").
+* Agents poll for these messages continuously, keeping them on task and aligned with your agenda.
+
+---
+
 ## Why Satya?
 
 Modern AI agents work autonomously — but humans still need visibility. **Satya** (Sanskrit for "truth") bridges that gap:
@@ -293,7 +302,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ## About
 
-**Satya** is built and maintained by **[Anktechsol.com](https://anktechsol.com)** — building open-source tools for the AI agent ecosystem.
+**Satya** is proudly built and maintained by **[Anktechsol.com](https://anktechsol.com)**. Need help building enterprise-grade AI applications, custom agent swarms, or robust software architectures? We can help. Check out our services to accelerate your AI adoption!
 
 - **Website**: [anktechsol.com](https://anktechsol.com)
 - **GitHub**: [github.com/anktechsol/Satya_AI](https://github.com/anktechsol/Satya_AI)
