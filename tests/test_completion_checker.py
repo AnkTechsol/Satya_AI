@@ -157,3 +157,35 @@ def test_manual_type_always_returns_false(temp_tasks_and_checker):
 
     with pytest.raises(Exception, match="CompletionCriteriaNotMet"):
         tasks.update_task_status(task_id, STATUS_DONE)
+
+def test_tests_pass_prevents_command_injection(temp_tasks_and_checker):
+    tasks, checker, repo_path = temp_tasks_and_checker
+
+    exploit_file = os.path.join(repo_path, "exploit_test.txt")
+    if os.path.exists(exploit_file):
+        os.remove(exploit_file)
+
+    task = tasks.create_task("Exploit Task", "Testing command injection")
+    task_id = task["id"]
+
+    # Malicious command that uses shell features (redirection)
+    # With shell=False and shlex.split, this will fail or execute 'echo' with the rest as arguments
+    malicious_cmd = f"echo vulnerable > {exploit_file}"
+
+    tasks.update_task(task_id, {
+        "completion_criteria": {
+            "type": "tests_pass",
+            "test_command": malicious_cmd,
+            "required_exit_code": 0
+        }
+    })
+
+    tasks.update_task_status(task_id, STATUS_IN_PROGRESS)
+
+    # Triggering the check should not create the exploit file
+    try:
+        tasks.update_task_status(task_id, STATUS_DONE)
+    except Exception:
+        pass
+
+    assert not os.path.exists(exploit_file), "Vulnerability: exploit file was created!"
