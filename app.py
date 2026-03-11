@@ -35,7 +35,7 @@ DARK_VARS = """
     --bg-card-hover: #222240;
     --bg-sidebar: linear-gradient(180deg, #16162B 0%, #0F0F1A 100%);
     --text-primary: #EAEAF0;
-    --text-secondary: #9090A7;
+    --text-secondary: #B0B0C5;
     --border: #2D2D44;
     --input-bg: #1E1E36;
     --shadow-color: rgba(108, 92, 231, 0.15);
@@ -618,6 +618,15 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # Handle Navigation via Query Parameters
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    query_params = st.query_params
+    default_index = 0
+    if "page" in query_params:
+        target_page = query_params["page"].replace("+", " ")
+        if target_page in nav_options:
+            default_index = nav_options.index(target_page)
+
     page = st.radio(
         "Navigation",
         ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs"],
@@ -683,6 +692,21 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # Variant Selection for A/B Testing Demo
+    headline_variant = "A" if datetime.now().second % 2 == 0 else "B"
+    cta_variant = "1" if datetime.now().second % 4 < 2 else "2"
+
+    mobile_headlines = {"A": "Main Owner", "B": "Lead Mission"}
+    mobile_ctas = {"1": "Setup", "2": "Start"}
+    st.markdown(f"""
+    <div class="promo-card promo-mobile" style="margin: 0.5rem; padding: 1rem;">
+        <div class="promo-icon" style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128081;</div>
+        <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">{mobile_headlines[headline_variant]}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.8rem;">Establish Mission Authority</div>
+        <a href="?page=Main+Owner+Guide" class="promo-cta" style="padding: 0.3rem 0.8rem; font-size: 0.7rem; display: block;">{mobile_ctas[cta_variant]}</a>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.markdown("""
     <div style="text-align: center; padding: 0.5rem;">
         <div style="font-size: 0.7rem; color: var(--text-secondary);">
@@ -692,8 +716,34 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 
+def log_analytics(event_name, payload=None):
+    """Mock analytics event logging."""
+    # Simple deduplication for Streamlit reruns
+    last_event = st.session_state.get("last_analytics_event")
+    last_payload = st.session_state.get("last_analytics_payload")
+
+    if last_event == event_name and last_payload == payload:
+        return None
+
+    st.session_state.last_analytics_event = event_name
+    st.session_state.last_analytics_payload = payload
+
+    now = datetime.now().isoformat()
+    log_entry = {
+        "timestamp": now,
+        "event": event_name,
+        "payload": payload or {}
+    }
+    # For demo purposes, we'll log to a file
+    os.makedirs("satya_data/analytics", exist_ok=True)
+    with open("satya_data/analytics/events.log", "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
+    return log_entry
+
+
 # ─── DASHBOARD PAGE ─────────────────────────────────────
 if page == "Dashboard":
+    log_analytics("page_view", {"page": "Dashboard"})
     st.markdown('<div class="hero-header">Dashboard</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Overview of your AI agent operations and task progress</div>', unsafe_allow_html=True)
 
@@ -758,6 +808,28 @@ if page == "Dashboard":
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
+    # Variant Selection for A/B Testing Demo
+    headline_variant = "A" if datetime.now().second % 2 == 0 else "B"
+    cta_variant = "1" if datetime.now().second % 4 < 2 else "2"
+
+    hero_headlines = {
+        "A": "Command Your Mission: Meet the Main Owner",
+        "B": "Single Source of Truth, Single Point of Authority"
+    }
+    hero_ctas = {
+        "1": "Setup Main Owner",
+        "2": "Start Leading Now"
+    }
+
+    st.markdown(f"""
+    <div class="promo-card promo-hero" onclick="window.location.href='?page=Main+Owner+Guide'">
+        <div class="promo-tag">New Feature</div>
+        <div class="promo-title">{hero_headlines[headline_variant]}</div>
+        <div class="promo-subtitle">Establish ultimate accountability and truth with the Main Owner feature—the single source of authority for your AI agent's mission.</div>
+        <a href="?page=Main+Owner+Guide" class="promo-cta">{hero_ctas[cta_variant]}</a>
+    </div>
+    """, unsafe_allow_html=True)
+
     col_left, col_right = st.columns([3, 2])
 
     with col_left:
@@ -810,6 +882,19 @@ if page == "Dashboard":
                 <span style="color: var(--text-secondary);">Completion Rate</span>
                 <span style="font-weight: 700; font-size: 1.2rem; color: var(--success);">{completion}%</span>
             </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        compact_headlines = {"A": "Unlock Main Owner", "B": "Enable Priority Ownership"}
+        compact_ctas = {"1": "Get Started", "2": "Enable Now"}
+
+        st.markdown(f"""
+        <div class="promo-card promo-compact">
+            <div>
+                <div style="font-weight: 700; color: var(--text-primary);">{compact_headlines[headline_variant]}</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">Unify your agent's mission today.</div>
+            </div>
+            <a href="?page=Main+Owner+Guide" class="promo-cta" style="padding: 0.4rem 1rem; font-size: 0.75rem;">{compact_ctas[cta_variant]}</a>
         </div>
         """, unsafe_allow_html=True)
 
