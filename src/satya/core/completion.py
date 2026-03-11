@@ -42,7 +42,11 @@ class CompletionChecker:
                 raise CompletionCriteriaNotMet("No test_command specified.")
 
             try:
-                # Use shlex.split and shell=False to prevent command injection
+                # Security Fix: Avoid shell=True to prevent arbitrary command injection.
+                # By using shell=False and shlex.split, we ensure that operators like &&, |, ;
+                # are not interpreted by a shell. This is a breaking change for tasks that
+                # rely on shell features, but it is necessary for security in an environment
+                # where agents can programmatically set these commands.
                 args = shlex.split(test_command)
                 result = subprocess.run(args, shell=False, capture_output=True, text=True)
                 if result.returncode != required_code:
