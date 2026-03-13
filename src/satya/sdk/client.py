@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from ..core import storage, Tasks, Scraper, GitHandler
 
 class SatyaClient:
@@ -26,8 +26,19 @@ class SatyaClient:
         except Exception as e:
             print(f"Failed to initialize log file: {e}")
 
+    def heartbeat(self, status: str = "online"):
+        """Sends a heartbeat to indicate the agent is alive."""
+        now = datetime.now(timezone.utc).isoformat() + "Z"
+        heartbeat_data = {
+            "last_seen": now,
+            "status": status,
+            "agent_name": self.agent_name,
+            "current_task_id": self.current_task["id"] if self.current_task else None
+        }
+        storage.save_heartbeat(self.agent_name, heartbeat_data)
+
     def log(self, message):
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat() + "Z"
         entry = f"[{timestamp}] {message}\n"
 
         # Log to file (always)

@@ -646,6 +646,30 @@ with st.sidebar:
         "failed": 0
     }
 
+    # Read heartbeats for live agents
+    heartbeats = storage.get_heartbeats()
+    live_agents_count = 0
+
+    for agent_name, hb in heartbeats.items():
+        if hb.get("status") == "online":
+            try:
+                # Handle 'Z' suffix and possible double offset in Python 3.11+
+                clean_iso = hb.get("last_seen", "")
+                if clean_iso.endswith('Z'):
+                    clean_iso = clean_iso[:-1]
+                    if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
+                        clean_iso += '+00:00'
+
+                dt = datetime.fromisoformat(clean_iso)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+
+                diff = datetime.now(timezone.utc) - dt
+                if diff.total_seconds() < 300: # 5 minutes
+                    live_agents_count += 1
+            except:
+                pass
+
     agent_metrics = {}
 
     for t in all_tasks:
@@ -871,6 +895,10 @@ if page == "Dashboard":
         st.markdown(f"""
         <div class="metric-card" style="margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0;">
+                <span style="color: var(--text-secondary);">Live Agents</span>
+                <span style="font-weight: 700; font-size: 1.2rem; color: var(--success);">{live_agents_count}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0;">
                 <span style="color: var(--text-secondary);">Knowledge Sources</span>
                 <span style="font-weight: 700; font-size: 1.2rem; color: var(--primary-light);">{len(truth_files)}</span>
             </div>
@@ -908,7 +936,21 @@ if page == "Dashboard":
             st.bar_chart(chart_data, x="Status", y="Count", color="#6C5CE7", height=200)
 
         if agent_metrics:
-            st.markdown("#### Agent Performance")
+            st.markdown("#### Agent Performance & Health")
+
+            # Show live agents first
+            if heartbeats:
+                for agent_name, hb in heartbeats.items():
+                    status_color = "var(--success)" if hb.get("status") == "online" else "var(--danger)"
+                    status_text = "Online" if hb.get("status") == "online" else "Offline"
+                    st.markdown(f"""
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background-color: {status_color}; margin-right: 0.5rem;"></div>
+                        <div style="flex-grow: 1; font-weight: 600; color: var(--text-primary);">{html.escape(agent_name)}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">{status_text} &middot; {format_time_ago(hb.get('last_seen', ''))}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
             agent_data = []
             for agent, data in agent_metrics.items():
                 agent_data.append({"Agent": agent, "Completed": data["completed"], "In Progress": data["in_progress"]})
