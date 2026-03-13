@@ -16,6 +16,19 @@ def ensure_satya_dirs() -> None:
     os.makedirs(TRUTH_DIR, exist_ok=True)
     os.makedirs(AGENTS_DIR, exist_ok=True)
 
+# Global in-memory cache to avoid disk I/O when reading JSON files
+# Format: {filepath: {"mtime": float, "raw_str": str}}
+_cache: Dict[str, Dict[str, Any]] = {}
+MAX_CACHE_SIZE = 1000
+
+def _update_cache(filepath: str, mtime: float, raw_str: str) -> None:
+    """Helper to update cache with simple FIFO eviction if full."""
+    if filepath not in _cache and len(_cache) >= MAX_CACHE_SIZE:
+        # Evict oldest entry (first item in dictionary insertion order)
+        oldest_key = next(iter(_cache))
+        del _cache[oldest_key]
+    _cache[filepath] = {"mtime": mtime, "raw_str": raw_str}
+
 def save_json(filepath: str, data: Any) -> bool:
     tmp_filepath = filepath + ".tmp"
     lock_filepath = filepath + ".lock"
@@ -32,6 +45,15 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                try:
+                    # Update cache on write to avoid mtime race conditions in fast test suites
+                    # We store the raw string representation
+                    raw_str = json.dumps(data)
+                    _update_cache(filepath, os.path.getmtime(filepath), raw_str)
+                except Exception as e:
+                    logger.debug(f"Failed to update cache after save for {filepath}: {e}")
+
                 return True
             finally:
                 # Release lock
@@ -50,6 +72,15 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        current_mtime = os.path.getmtime(filepath)
+        if filepath in _cache and _cache[filepath]["mtime"] == current_mtime:
+            # Parse the cached raw string using native JSON parsing to prevent object mutation
+            # and achieve faster performance compared to copy.deepcopy()
+            return json.loads(_cache[filepath]["raw_str"])
+    except Exception as e:
+        logger.debug(f"Cache check failed for {filepath}: {e}")
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -59,7 +90,16 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    raw_str = f.read()
+                    data = json.loads(raw_str)
+
+                    try:
+                        # Update cache after successful read
+                        _update_cache(filepath, os.path.getmtime(filepath), raw_str)
+                    except Exception as e:
+                        logger.debug(f"Failed to update cache for {filepath}: {e}")
+
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
@@ -99,6 +139,7 @@ def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
+        _cache.pop(filepath, None)
         return True
     return False
 
