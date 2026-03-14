@@ -1,4 +1,7 @@
 import requests
+import urllib.parse
+import socket
+import ipaddress
 from bs4 import BeautifulSoup
 import markdownify
 from . import storage
@@ -12,6 +15,27 @@ class Scraper:
 
     def fetch_and_save(self, url, title=None):
         try:
+            parsed_url = urllib.parse.urlparse(url)
+            if parsed_url.scheme not in ('http', 'https'):
+                print(f"Error scraping {url}: Invalid URL scheme")
+                return None
+
+            hostname = parsed_url.hostname
+            if not hostname:
+                print(f"Error scraping {url}: Invalid hostname")
+                return None
+
+            try:
+                ip = socket.gethostbyname(hostname)
+            except socket.gaierror:
+                print(f"Error scraping {url}: Could not resolve hostname")
+                return None
+
+            ip_obj = ipaddress.ip_address(ip)
+            if not ip_obj.is_global:
+                print(f"Error scraping {url}: URL resolves to a non-global IP address (SSRF blocked)")
+                return None
+
             response = requests.get(url, timeout=10)
             response.raise_for_status()
 
