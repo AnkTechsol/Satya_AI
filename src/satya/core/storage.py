@@ -11,6 +11,24 @@ TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
 
+# ⚡ Bolt Optimization: In-memory mtime cache for flat-file JSON storage
+# Prevents N+1 disk I/O problems during full scans (e.g. list_all())
+# We cache the raw JSON string instead of deepcopying dicts for faster parsing
+_JSON_CACHE = {}
+_CACHE_ORDER = []
+MAX_CACHE_SIZE = 1000
+
+def _update_cache(filepath: str, mtime: float, raw_str: str) -> None:
+    if filepath in _JSON_CACHE:
+        _CACHE_ORDER.remove(filepath)
+    _JSON_CACHE[filepath] = (mtime, raw_str)
+    _CACHE_ORDER.append(filepath)
+
+    # Evict oldest if bounded
+    if len(_CACHE_ORDER) > MAX_CACHE_SIZE:
+        oldest = _CACHE_ORDER.pop(0)
+        del _JSON_CACHE[oldest]
+
 def ensure_satya_dirs() -> None:
     os.makedirs(TASKS_DIR, exist_ok=True)
     os.makedirs(TRUTH_DIR, exist_ok=True)
@@ -27,11 +45,15 @@ def save_json(filepath: str, data: Any) -> bool:
             fcntl.flock(lock_f, fcntl.LOCK_EX)
             try:
                 # Write to temp file
+                raw_str = json.dumps(data, indent=4)
                 with open(tmp_filepath, 'w') as tmp_f:
-                    json.dump(data, tmp_f, indent=4)
+                    tmp_f.write(raw_str)
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                # ⚡ Bolt Optimization: Manually update cache on save to bypass slow mtime resolution in tests
+                _update_cache(filepath, os.path.getmtime(filepath), raw_str)
                 return True
             finally:
                 # Release lock
@@ -50,6 +72,17 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        current_mtime = os.path.getmtime(filepath)
+    except OSError:
+        return {}
+
+    # ⚡ Bolt Optimization: Check in-memory cache first
+    if filepath in _JSON_CACHE:
+        cached_mtime, cached_str = _JSON_CACHE[filepath]
+        if cached_mtime == current_mtime:
+            return json.loads(cached_str)
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -59,7 +92,10 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    raw_str = f.read()
+                    data = json.loads(raw_str)
+                    _update_cache(filepath, current_mtime, raw_str)
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
@@ -99,6 +135,9 @@ def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
+        if filepath in _JSON_CACHE:
+            del _JSON_CACHE[filepath]
+            _CACHE_ORDER.remove(filepath)
         return True
     return False
 
