@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from ..core import storage, Tasks, Scraper, GitHandler
+from ..core import storage, Tasks, Scraper, GitHandler, Orchestrator
 
 class SatyaClient:
     def __init__(self, agent_name="default_agent", repo_path="."):
@@ -9,6 +9,7 @@ class SatyaClient:
         self.tasks = Tasks(repo_path)
         self.scraper = Scraper(repo_path)
         self.git = GitHandler(repo_path)
+        self.orchestrator = Orchestrator(repo_path)
 
         self.current_task = None
         storage.ensure_satya_dirs()
@@ -44,6 +45,12 @@ class SatyaClient:
                 self.tasks.add_comment(self.current_task["id"], message, commit=False, agent_name=self.agent_name)
             except Exception as e:
                 print(f"Failed to add comment to task: {e}")
+
+    def send_heartbeat(self):
+        """
+        Sends a heartbeat to the Orchestrator to indicate the agent is still alive.
+        """
+        self.orchestrator.record_heartbeat(self.agent_name)
 
     def flush_logs(self):
         self.git.commit_and_push([self.log_path], f"Update logs for {self.agent_name}")
