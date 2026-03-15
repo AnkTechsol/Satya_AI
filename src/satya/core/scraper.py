@@ -1,6 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import markdownify
+import urllib.parse
+import socket
+import ipaddress
 from . import storage
 from .git_handler import GitHandler
 
@@ -12,6 +15,22 @@ class Scraper:
 
     def fetch_and_save(self, url, title=None):
         try:
+            parsed_url = urllib.parse.urlparse(url)
+            hostname = parsed_url.hostname
+            if not hostname:
+                print(f"Invalid URL: {url}")
+                return None
+
+            try:
+                ip = socket.gethostbyname(hostname)
+                ip_obj = ipaddress.ip_address(ip)
+                if not ip_obj.is_global:
+                    print(f"Security Error: SSRF Attempt blocked for non-global IP {ip} ({hostname})")
+                    return None
+            except socket.gaierror:
+                print(f"Error resolving hostname: {hostname}")
+                return None
+
             response = requests.get(url, timeout=10)
             response.raise_for_status()
 
