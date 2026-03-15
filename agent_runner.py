@@ -19,6 +19,7 @@ def run(agent_name: str, poll_interval: int):
 
     while True:
         try:
+            client.send_heartbeat()
             queued = get_tasks(status="queued", assignee=agent_name)
             if queued:
                 task = queued[0]
