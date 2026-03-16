@@ -11,6 +11,16 @@ TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
 
+_json_cache = {}
+MAX_CACHE_SIZE = 1000
+
+def _update_cache(filepath: str, mtime: float, raw_string: str):
+    if len(_json_cache) >= MAX_CACHE_SIZE:
+        # FIFO eviction
+        first_key = next(iter(_json_cache))
+        _json_cache.pop(first_key, None)
+    _json_cache[filepath] = {"mtime": mtime, "raw": raw_string}
+
 def ensure_satya_dirs() -> None:
     os.makedirs(TASKS_DIR, exist_ok=True)
     os.makedirs(TRUTH_DIR, exist_ok=True)
@@ -21,6 +31,7 @@ def save_json(filepath: str, data: Any) -> bool:
     lock_filepath = filepath + ".lock"
 
     try:
+        raw_str = json.dumps(data, indent=4)
         # Create a separate lock file
         with open(lock_filepath, 'w') as lock_f:
             # Acquire exclusive lock
@@ -28,10 +39,18 @@ def save_json(filepath: str, data: Any) -> bool:
             try:
                 # Write to temp file
                 with open(tmp_filepath, 'w') as tmp_f:
-                    json.dump(data, tmp_f, indent=4)
+                    tmp_f.write(raw_str)
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                # Proactively update cache with new mtime to prevent test race conditions
+                try:
+                    new_mtime = os.path.getmtime(filepath)
+                    _update_cache(filepath, new_mtime, raw_str)
+                except OSError:
+                    pass
+
                 return True
             finally:
                 # Release lock
@@ -50,6 +69,18 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        mtime = os.path.getmtime(filepath)
+    except OSError:
+        return {}
+
+    cached = _json_cache.get(filepath)
+    if cached and cached["mtime"] == mtime:
+        try:
+            return json.loads(cached["raw"])
+        except json.JSONDecodeError:
+            pass # fallback to disk read if cache corrupted
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -59,7 +90,10 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    raw_str = f.read()
+                    data = json.loads(raw_str)
+                    _update_cache(filepath, mtime, raw_str)
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
@@ -99,6 +133,7 @@ def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
+        _json_cache.pop(filepath, None)
         return True
     return False
 
