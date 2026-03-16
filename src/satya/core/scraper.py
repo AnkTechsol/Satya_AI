@@ -1,4 +1,7 @@
 import requests
+import socket
+import ipaddress
+from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import markdownify
 from . import storage
@@ -12,8 +15,37 @@ class Scraper:
 
     def fetch_and_save(self, url, title=None):
         try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
+            session = requests.Session()
+            current_url = url
+            for _ in range(5):
+                parsed = urlparse(current_url)
+                if not parsed.hostname:
+                    return None
+
+                try:
+                    ip = socket.gethostbyname(parsed.hostname)
+                    if not ipaddress.ip_address(ip).is_global:
+                        print(f"SSRF blocked: {current_url} resolves to non-global IP")
+                        return None
+                except Exception as e:
+                    print(f"DNS resolution failed for {current_url}: {e}")
+                    return None
+
+                response = session.get(current_url, timeout=10, allow_redirects=False)
+
+                if 300 <= response.status_code < 400:
+                    next_url = response.headers.get("Location")
+                    if not next_url:
+                        break
+                    from urllib.parse import urljoin
+                    current_url = urljoin(current_url, next_url)
+                else:
+                    response.raise_for_status()
+                    break
+
+            if response is None or (300 <= response.status_code < 400):
+                print(f"Too many redirects or missing location header for {url}")
+                return None
 
             soup = BeautifulSoup(response.content, 'html.parser')
             if not title:
