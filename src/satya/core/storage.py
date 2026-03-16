@@ -10,11 +10,15 @@ SATYA_DIR = "satya_data"
 TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
+HEARTBEATS_DIR = os.path.join(SATYA_DIR, "heartbeats")
+CHAT_DIR = os.path.join(SATYA_DIR, "chat")
 
 def ensure_satya_dirs() -> None:
     os.makedirs(TASKS_DIR, exist_ok=True)
     os.makedirs(TRUTH_DIR, exist_ok=True)
     os.makedirs(AGENTS_DIR, exist_ok=True)
+    os.makedirs(HEARTBEATS_DIR, exist_ok=True)
+    os.makedirs(CHAT_DIR, exist_ok=True)
 
 def save_json(filepath: str, data: Any) -> bool:
     tmp_filepath = filepath + ".tmp"

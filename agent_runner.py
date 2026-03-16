@@ -19,6 +19,14 @@ def run(agent_name: str, poll_interval: int):
 
     while True:
         try:
+            # Send heartbeat to Orchestrator
+            client.send_heartbeat()
+
+            # Check for manual overrides or chat messages
+            messages = client.poll_chat()
+            for msg in messages:
+                satya.log(f"Received chat message: {msg}")
+
             queued = get_tasks(status="queued", assignee=agent_name)
             if queued:
                 task = queued[0]
