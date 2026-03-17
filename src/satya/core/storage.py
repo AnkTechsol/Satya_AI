@@ -11,14 +11,12 @@ TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
 HEARTBEATS_DIR = os.path.join(SATYA_DIR, "heartbeats")
-CHAT_DIR = os.path.join(SATYA_DIR, "chat")
 
 def ensure_satya_dirs() -> None:
     os.makedirs(TASKS_DIR, exist_ok=True)
     os.makedirs(TRUTH_DIR, exist_ok=True)
     os.makedirs(AGENTS_DIR, exist_ok=True)
     os.makedirs(HEARTBEATS_DIR, exist_ok=True)
-    os.makedirs(CHAT_DIR, exist_ok=True)
 
 def save_json(filepath: str, data: Any) -> bool:
     tmp_filepath = filepath + ".tmp"
@@ -98,6 +96,21 @@ def list_tasks() -> List[Dict[str, Any]]:
         if f.endswith('.json'):
             tasks.append(load_json(os.path.join(TASKS_DIR, f)))
     return tasks
+
+def save_heartbeat(agent_name: str, heartbeat_data: Dict[str, Any]) -> bool:
+    safe_agent_name = os.path.basename(agent_name)
+    filepath = os.path.join(HEARTBEATS_DIR, f"{safe_agent_name}.json")
+    return save_json(filepath, heartbeat_data)
+
+def get_heartbeats() -> Dict[str, Dict[str, Any]]:
+    if not os.path.exists(HEARTBEATS_DIR):
+        return {}
+    heartbeats = {}
+    for f in os.listdir(HEARTBEATS_DIR):
+        if f.endswith('.json'):
+            agent_name = f[:-5] # remove .json
+            heartbeats[agent_name] = load_json(os.path.join(HEARTBEATS_DIR, f))
+    return heartbeats
 
 def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)

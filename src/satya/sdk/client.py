@@ -1,7 +1,5 @@
 import os
-from datetime import datetime
-import json
-from datetime import timezone
+from datetime import datetime, timezone
 from ..core import storage, Tasks, Scraper, GitHandler
 
 class SatyaClient:
@@ -28,38 +26,19 @@ class SatyaClient:
         except Exception as e:
             print(f"Failed to initialize log file: {e}")
 
-        # Send initial heartbeat
-        self.send_heartbeat()
-
-    def send_heartbeat(self):
-        """Records an ISO 8601 UTC timestamp in a flat JSON file to indicate the agent is alive."""
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "") + "Z"
-        data = {"timestamp": now}
-
-        safe_agent_name = os.path.basename(self.agent_name)
-        filepath = os.path.join(storage.HEARTBEATS_DIR, f"{safe_agent_name}.json")
-        storage.save_json(filepath, data)
-
-    def poll_chat(self) -> list[dict]:
-        """Reads from CHAT_DIR for any incoming real-time messages/overrides."""
-        safe_agent_name = os.path.basename(self.agent_name)
-        filepath = os.path.join(storage.CHAT_DIR, f"{safe_agent_name}.json")
-
-        if not os.path.exists(filepath):
-            return []
-
-        # Read the file and parse messages
-        data = storage.load_json(filepath)
-        messages = data.get("messages", [])
-
-        # After reading, clear the messages so we don't process them again
-        if messages:
-            storage.save_json(filepath, {"messages": []})
-
-        return messages
+    def heartbeat(self, status: str = "online"):
+        """Sends a heartbeat to indicate the agent is alive."""
+        now = datetime.now(timezone.utc).isoformat() + "Z"
+        heartbeat_data = {
+            "last_seen": now,
+            "status": status,
+            "agent_name": self.agent_name,
+            "current_task_id": self.current_task["id"] if self.current_task else None
+        }
+        storage.save_heartbeat(self.agent_name, heartbeat_data)
 
     def log(self, message):
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat() + "Z"
         entry = f"[{timestamp}] {message}\n"
 
         # Log to file (always)
