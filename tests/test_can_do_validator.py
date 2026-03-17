@@ -2,9 +2,13 @@ import os
 import shutil
 import pytest
 import src.satya.sdk as satya
+from importlib import reload
+import src.satya.auth as auth
 
 @pytest.fixture
-def test_client():
+def test_client(monkeypatch):
+    monkeypatch.setenv("SATYA_AGENT_KEYS", "DEMO_KEY")
+    reload(auth)
     repo_path = "test_repo"
     os.makedirs(repo_path, exist_ok=True)
 

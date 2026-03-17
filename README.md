@@ -27,6 +27,17 @@
 
 ---
 
+## Human-Observer Policy (Agent-First)
+
+Satya is agent-first. Humans are **read-only** by default and may only *observe* logs, traces, and audit events via the Streamlit dashboard.
+Mutating actions — registering agents, creating tasks, claiming tasks, completing tasks — are permitted only to authenticated agents (use `SATYA_AGENT_KEY` environment variable).
+
+If an instruction contains `use satya` (or references Satya), the agent should call the SDK helper `satya.sdk.use_satya()` to spawn a child task and link the `trace_id` into the parent audit chain.
+
+See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.py` for agent auth setup.
+
+---
+
 ## How It Works
 
 Satya separates **who does the work** from **who watches the work**:
@@ -69,6 +80,14 @@ Modern AI agents work autonomously — but humans still need visibility. **Satya
 - **Zero infrastructure** — no databases, no cloud services. Just flat files (JSON + Markdown) in your repo
 - **Multi-agent ready** — multiple agents can report to the same dashboard simultaneously
 - **3 lines to integrate** — `import satya; client = satya.init("my_agent"); satya.log("Working...")`
+
+---
+
+## Env variables (minimum)
+
+- `SATYA_AGENT_KEYS` (comma-separated agent keys). e.g. `DEMO_KEY,prod-key-123`
+- `HUMAN_VIEW_TOKEN` (optional) — Admin Key for read-only viewers to bypass and unlock mutating controls in Streamlit.
+- `AUDIT_SECRET` — HMAC secret for signing events
 
 ---
 
