@@ -92,13 +92,39 @@ class AIOrchestrator:
         for agent_name in active_agents:
             last_heartbeat = heartbeats.get(agent_name)
 
+            # Find the most recent task locked_at time for this agent
+            agent_tasks = [t for t in in_progress_tasks if t.get("assignee") == agent_name]
+            recent_lock_time = None
+            for t in agent_tasks:
+                locked_at_str = t.get("locked_at")
+                if locked_at_str:
+                    try:
+                        clean_iso = locked_at_str
+                        if clean_iso.endswith('Z'):
+                            clean_iso = clean_iso[:-1]
+                            if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
+                                clean_iso += '+00:00'
+                        dt = datetime.fromisoformat(clean_iso)
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=timezone.utc)
+                        if not recent_lock_time or dt > recent_lock_time:
+                            recent_lock_time = dt
+                    except ValueError:
+                        pass
+
+            grace_period_active = False
+            if recent_lock_time:
+                lock_elapsed = (now - recent_lock_time).total_seconds()
+                if lock_elapsed <= self.timeout_seconds:
+                    grace_period_active = True
+
+            if grace_period_active:
+                logger.debug(f"Agent {agent_name} is in grace period (locked a task recently).")
+                continue
+
             # If no heartbeat at all, or it's too old
             if not last_heartbeat:
-                # To be safe, maybe don't kill agents with NO heartbeat file,
-                # as they might be old agents that don't support it.
-                # But strict orchestrator requires heartbeats.
-                # Let's say if there is NO heartbeat file, we assume dead.
-                logger.warning(f"Agent {agent_name} has no heartbeat file. Reassigning tasks.")
+                logger.warning(f"Agent {agent_name} has no heartbeat file and no recent task lock. Reassigning tasks.")
                 self._reassign_tasks_for_agent(agent_name)
             else:
                 elapsed = (now - last_heartbeat).total_seconds()

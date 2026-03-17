@@ -16,22 +16,23 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 3. **Web Dashboard:** Streamlit-based UI for humans to monitor tasks, completion rates, and agent logs.
 4. **Governance Rules:** Built-in checks (e.g., tasks require minimum description lengths, completion requires agent comments).
 5. **Main Owner Role:** Master administrator oversight for the workspace.
+6. **AI Project Manager & Agent Heartbeats:** Centralized Orchestrator tool that monitors agent health via heartbeats and auto-reassigns tasks from crashed agents.
 
-## 4. New Feature: AI Project Manager & Agent Heartbeats
-**Problem:** Currently, if an AI agent crashes or gets stuck in an infinite loop while executing an "In Progress" task, the task remains locked indefinitely. The existing watchdog can identify stale tasks but lacks an active agent lifecycle manager.
-**Solution:** A centralized "AI Project Manager" (Orchestrator) tool that monitors agent health via a "Heartbeat" concept.
+## 4. New Features: Strict WIP Limits & Agent Optimization
+**Problem:** Currently, agents can pick up multiple tasks or get assigned multiple tasks simultaneously, causing load balancing issues. Furthermore, agents without heartbeats might be marked offline immediately even if they just started processing a task.
+**Solution:** Enforce strict Work-In-Progress (WIP) limits via the SDK and implement grace periods in the Orchestrator.
 
 ### 4.1. Requirements
-* **Agent Heartbeat (SDK):** Agents must be able to call `satya.heartbeat()` periodically. This writes a timestamp to a dedicated heartbeat file.
-* **Orchestrator Tool:** A new script (`project_manager.py` or similar) that runs continuously as the central "Scrum Master". It polls the heartbeat files.
-* **Task Re-assignment (Self-Healing):** If the Orchestrator detects that an agent has missed its heartbeat for X minutes, it declares the agent "Offline". Any "In Progress" tasks held by that agent are forcibly unlocked, marked "queued" (To Do), and the assignee is cleared so another agent can pick them up.
-* **UI Updates:** The dashboard must display real-time agent status (Online/Offline) based on heartbeat freshness.
+* **Strict WIP Limits (SDK):** The `satya.pick_task()` SDK method enforces a strict Work In Progress limit. It queries the data layer to ensure the agent has exactly 0 or 1 active tasks before allowing a new task to be picked.
+* **Orchestrator Grace Periods:** The Project Manager uses the `locked_at` property to provide a grace period. If an agent has no heartbeat file but just started a task (recent `locked_at`), they are not immediately declared offline.
 
 ## 5. Success Metrics
 * **Agent Reliability:** 100% of stuck tasks are automatically recovered and re-queued by the Project Manager.
+* **Load Balancing:** 0% of agents have more than 1 task in "In Progress" status simultaneously.
 * **Observability:** Users can identify crashed agents within X minutes via the Dashboard UI.
 
 ## 6. Future Roadmap
 * **REST API Layer:** Support for non-Python agents (Node.js, Go) to interact with Satya.
 * **WebSocket Real-Time Log Streaming:** Stream logs to the dashboard without full page reloads.
-* **Multi-Agent Collaboration Protocols:** Allow agents to pass tasks to specific specialized agents (e.g., "Reviewer Agent").
+* **Agent Roles / Skill-based Routing:** Allow agents to pick tasks specifically matching their specialized skills (e.g., "Reviewer Agent").
+* **Multi-Agent Collaboration Protocols:** Enable agents to spawn subtasks and pass them directly to other agents, building a cryptographically signed audit chain.

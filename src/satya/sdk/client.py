@@ -138,15 +138,19 @@ class SatyaClient:
 
         # Persistent check: Any task already assigned to me and In Progress?
         # This handles agent restarts.
-        for t in all_tasks:
-            if t.get("assignee") == self.agent_name and t.get("status") == "In Progress":
-                self.log(f"Resuming existing task: {t['title']}")
-                self.current_task = t
-                return t
+        active_agent_tasks = self.tasks.get_tasks(status="in_progress", assignee=self.agent_name)
 
-        # Guardrail: Check WIP limits (future: implement strict count)
+        if active_agent_tasks:
+            # Guardrail: Strict WIP limit of 1
+            if len(active_agent_tasks) > 1:
+                self.log(f"Guardrail Warning: Found {len(active_agent_tasks)} active tasks. Enforcing strict WIP limit and selecting the first one.")
 
-        todo_tasks = [t for t in all_tasks if t.get("status") == "To Do"]
+            resume_task = active_agent_tasks[0]
+            self.log(f"Resuming existing task: {resume_task['title']}")
+            self.current_task = resume_task
+            return resume_task
+
+        todo_tasks = [t for t in all_tasks if t.get("status") in ["To Do", "queued"]]
 
         if not todo_tasks:
             self.log("No tasks in 'To Do' column.")
@@ -166,7 +170,7 @@ class SatyaClient:
         # Assign and Start
         self.log(f"Picking highest priority task: {best_task['title']}")
         self.tasks.update_task(best_task["id"], {
-            "status": "In Progress",
+            "status": "in_progress",
             "assignee": self.agent_name
         }, agent_name=self.agent_name)
         # Refresh task data to ensure we have latest state

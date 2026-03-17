@@ -40,8 +40,10 @@ class TestProjectManager(unittest.TestCase):
         task_id = task["id"]
 
         # Assign it to agent_1 and set to in_progress
+        # Manually force the lock_time backwards to bypass the newly added grace period check
+        stale_lock_time = datetime.now(timezone.utc) - timedelta(seconds=20)
         self.tasks.update_task_status(task_id, STATUS_IN_PROGRESS, agent_name="agent_1")
-        self.tasks.update_task(task_id, {"assignee": "agent_1"}, agent_name="agent_1")
+        self.tasks.update_task(task_id, {"assignee": "agent_1", "locked_at": stale_lock_time.isoformat().replace("+00:00", "") + "Z"}, agent_name="agent_1")
 
         updated_task = self.tasks.get_task(task_id)
         self.assertEqual(updated_task["status"], STATUS_IN_PROGRESS)
