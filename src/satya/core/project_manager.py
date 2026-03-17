@@ -43,9 +43,17 @@ class AIOrchestrator:
 
         return heartbeats
 
-    def _reassign_tasks_for_agent(self, agent_name: str):
-        """Finds tasks locked by the dead agent and resets them to queued."""
-        all_tasks = self.tasks.get_tasks(status=STATUS_IN_PROGRESS, assignee=agent_name)
+    def _reassign_tasks_for_agent(self, agent_name: str, active_tasks_for_agent: list[dict] = None):
+        """Finds tasks locked by the dead agent and resets them to queued.
+
+        ⚡ Bolt Optimization:
+        Accepts an optional `active_tasks_for_agent` list to avoid redundant
+        file system scans (N+1 reads) for each dead agent in the orchestrator loop.
+        """
+        if active_tasks_for_agent is not None:
+            all_tasks = active_tasks_for_agent
+        else:
+            all_tasks = self.tasks.get_tasks(status=STATUS_IN_PROGRESS, assignee=agent_name)
 
         for task in all_tasks:
             logger.info(f"Orchestrator: Reassigning task {task['id']} from dead agent {agent_name}")
@@ -83,13 +91,13 @@ class AIOrchestrator:
         # but the standard is they must send heartbeats.
 
         in_progress_tasks = self.tasks.get_tasks(status=STATUS_IN_PROGRESS)
-        active_agents = set()
+        tasks_by_agent = {}
         for t in in_progress_tasks:
             assignee = t.get("assignee")
             if assignee and assignee != "Unassigned":
-                active_agents.add(assignee)
+                tasks_by_agent.setdefault(assignee, []).append(t)
 
-        for agent_name in active_agents:
+        for agent_name, agent_tasks in tasks_by_agent.items():
             last_heartbeat = heartbeats.get(agent_name)
 
             # If no heartbeat at all, or it's too old
@@ -99,12 +107,12 @@ class AIOrchestrator:
                 # But strict orchestrator requires heartbeats.
                 # Let's say if there is NO heartbeat file, we assume dead.
                 logger.warning(f"Agent {agent_name} has no heartbeat file. Reassigning tasks.")
-                self._reassign_tasks_for_agent(agent_name)
+                self._reassign_tasks_for_agent(agent_name, active_tasks_for_agent=agent_tasks)
             else:
                 elapsed = (now - last_heartbeat).total_seconds()
                 if elapsed > self.timeout_seconds:
                     logger.warning(f"Agent {agent_name} heartbeat timeout ({elapsed}s > {self.timeout_seconds}s). Reassigning tasks.")
-                    self._reassign_tasks_for_agent(agent_name)
+                    self._reassign_tasks_for_agent(agent_name, active_tasks_for_agent=agent_tasks)
 
     def run(self, poll_interval=10, run_once=False):
         """Main loop for the orchestrator."""
