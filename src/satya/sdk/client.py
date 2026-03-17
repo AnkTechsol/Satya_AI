@@ -16,6 +16,13 @@ class SatyaClient:
 
         self.current_task = None
         storage.ensure_satya_dirs()
+
+        # Load adapters based on environment configuration
+        self.adapters = []
+        if os.environ.get("SATYA_OTLP_ENDPOINT"):
+            from ..adapters import OTLPAdapter
+            self.adapters.append(OTLPAdapter(os.environ.get("SATYA_OTLP_ENDPOINT")))
+
         # use daily log file format: agent_name_YYYYMMDD.log
         today_str = datetime.now().strftime("%Y%m%d")
         safe_agent_name = os.path.basename(self.agent_name)
@@ -60,6 +67,9 @@ class SatyaClient:
             except Exception as e:
                 print(f"Failed to add comment to task: {e}")
 
+            for adapter in getattr(self, "adapters", []):
+                adapter.on_log(self.current_task["id"], message)
+
     def flush_logs(self):
         self.git.commit_and_push([self.log_path], f"Update logs for {self.agent_name}")
 
@@ -90,6 +100,8 @@ class SatyaClient:
         task = self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id)
         if task:
             append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {title}")
+            for adapter in getattr(self, "adapters", []):
+                adapter.on_task_created(task)
         return task
 
     def update_task(self, task_id, status):
@@ -110,6 +122,8 @@ class SatyaClient:
         if result:
             task = self.tasks.get_task(task_id)
             append_audit_event(self.agent_name, task_id, task.get("trace_id", "unknown"), "status_updated", f"Status changed to {status}")
+            for adapter in getattr(self, "adapters", []):
+                adapter.on_task_updated(task)
         return result
 
     def scrape_url(self, url):

@@ -4,6 +4,12 @@
 
 <h1 align="center">Satya — AI Agent Progress Tracker & Truth Source Manager</h1>
 
+<!-- ANALYTICS_START -->
+Last analytics run: Tue Mar 17 17:54:04 2026 +0530
+Open issues: N/A
+Recent CI status: N/A
+<!-- ANALYTICS_END -->
+
 <p align="center">
   <strong>Open-source dashboard & Python SDK that AI agents deploy themselves to track tasks, log progress, and build knowledge bases — while humans monitor everything from a real-time web UI.</strong>
 </p>
@@ -90,6 +96,20 @@ Modern AI agents work autonomously — but humans still need visibility. **Satya
 - `AUDIT_SECRET` — HMAC secret for signing events
 
 ---
+
+
+## SUSTAINABLE_FEATURES
+
+- **Repository Analytics & Competitor Matrix** (Added: 2026-03-06): Generates JSON/Markdown analytics locally. Validate by running `python run_analytics.py`.
+- **Export Adapter Framework (OTLP)** (Added: 2026-03-06): Pluggable adapter system for emitting agent logs and tasks to OpenTelemetry compatible endpoints. Validate by checking `src/satya/adapters`.
+- **Agent Self-Test Harness + CI job** (Added: 2026-03-06): Runs dummy tasks to evaluate system latency. Validate by running `python run_self_test.py`.
+- **Auto-README Updater** (Added: 2026-03-06): Automates updating README.md based on analytics. Validate by running `python README_UPDATER.py`.
+
+Links:
+- [Repository Analytics](REPO_ANALYTICS.md)
+- [Competitor Matrix](COMPETITOR_MATRIX.md)
+- [Changelog](CHANGELOG.md)
+
 
 ## Features
 

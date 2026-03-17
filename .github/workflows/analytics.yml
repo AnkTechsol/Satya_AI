@@ -1,0 +1,37 @@
+name: Analytics & Maintenance
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *' # Daily at midnight
+
+jobs:
+  run-analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install beautifulsoup4 gitpython markdownify pandas requests streamlit pytest
+
+      - name: Run Analytics
+        run: python run_analytics.py
+
+      - name: Run Self Test (Generates Telemetry)
+        run: python run_self_test.py
+
+      - name: Update README
+        run: python README_UPDATER.py
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update repository analytics"
+          file_pattern: "repo_analytics.json REPO_ANALYTICS.md README.md"
