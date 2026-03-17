@@ -1,0 +1,47 @@
+{
+  "git": {
+    "commits_last_90d": 1,
+    "last_commit_date": "Tue Mar 17 17:54:04 2026 +0530",
+    "authors": [
+      ""
+    ]
+  },
+  "largest_files": [
+    "-rw-rw-r-- 1 jules jules 1.1M Mar 17 14:30 ./attached_assets/Open-Source-Improvement_1770443530665.zip",
+    "-rw-rw-r-- 1 jules jules 183K Mar 17 14:30 ./uv.lock",
+    "-rw-rw-r-- 1 jules jules  58K Mar 17 14:30 ./app.py",
+    "-rw-rw-r-- 1 jules jules  16K Mar 17 14:30 ./AGENTS.md",
+    "-rw-rw-r-- 1 jules jules  14K Mar 17 14:30 ./README.md",
+    "-rw-rw-r-- 1 jules jules 9.5K Mar 17 14:30 ./src/satya/sdk/client.py",
+    "-rw-rw-r-- 1 jules jules 8.7K Mar 17 14:30 ./src/satya/core/tasks.py",
+    "-rw-rw-r-- 1 jules jules 6.5K Mar 17 14:30 ./tests/test_completion_checker.py",
+    "-rw-rw-r-- 1 jules jules 5.1K Mar 17 14:30 ./src/satya/core/project_manager.py",
+    "-rw-rw-r-- 1 jules jules 4.4K Mar 17 14:30 ./project_manager.py",
+    "-rw-rw-r-- 1 jules jules 4.3K Mar 17 14:30 ./src/satya/auth.py",
+    "-rw-rw-r-- 1 jules jules 4.2K Mar 17 14:30 ./src/satya/core/storage.py",
+    "-rw-rw-r-- 1 jules jules 4.2K Mar 17 14:30 ./main_owner_visual_specs.md",
+    "-rw-rw-r-- 1 jules jules 3.8K Mar 17 14:30 ./tests/test_task_status_flow.py",
+    "-rw-rw-r-- 1 jules jules 3.8K Mar 17 14:30 ./tests/test_orchestrator.py",
+    "-rw-rw-r-- 1 jules jules 3.6K Mar 17 14:30 ./tests/test_project_manager.py",
+    "-rw-rw-r-- 1 jules jules 3.5K Mar 17 14:30 ./tests/test_auth_and_audit.py",
+    "-rw-rw-r-- 1 jules jules 3.3K Mar 17 14:30 ./PRD.md",
+    "-rw-rw-r-- 1 jules jules 3.1K Mar 17 14:30 ./tests/test_watchdog.py",
+    "-rw-rw-r-- 1 jules jules 3.0K Mar 17 14:30 ./src/satya/core/completion.py"
+  ],
+  "ci": {
+    "has_github_actions": false
+  },
+  "tests": {
+    "has_tests": true,
+    "output": "============================= test session starts ==============================\nplatform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0\nrootdir: /app\nconfigfile: pyproject.toml\ncollected 35 items\n\ntests/test_auth_and_audit.py ....                                        [ 11%]\ntests/test_can_do_validator.py ....                                      [ 22%]\ntests/test_completion_checker.py ......                                  [ 40%]\ntests/test_orchestrator.py ...                                           [ 48%]\ntests/test_project_manager.py ..                                         [ 54%]\ntests/test_sdk_create_task.py .....                                      [ 68%]\ntests/test_storage.py ....                                               [ 80%]\ntests/test_task_status_flow.py ....                                      [ 91%]\ntests/test_watchdog.py ...                                               [100%]\n\n============================== 35 passed in 0.41s =============================="
+  },
+  "dependencies": {
+    "pyproject": "[project]\nname = \"repl-nix-workspace\"\nversion = \"0.1.0\"\ndescription = \"Add your description here\"\nrequires-python = \">=3.11\"\ndependencies = [\n    \"beautifulsoup4>=4.14.3\",\n    \"gitpython>=3.1.46\",\n    \"markdownify>=1.2.2\",\n    \"pandas>=2.3.3\",\n    \"requests>=2.32.5\",\n    \"streamlit>=1.54.0\",\n]"
+  },
+  "runtime_simulation": {
+    "median_latency_s": 0.06906867027282715,
+    "p95_latency_s": 0.10410552024841309,
+    "p99_latency_s": 0.10885058403015137,
+    "total_test_tasks_processed": 5
+  }
+}
