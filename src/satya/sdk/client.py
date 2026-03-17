@@ -1,9 +1,13 @@
 import os
 from datetime import datetime, timezone
 from ..core import storage, Tasks, Scraper, GitHandler
+from ..auth import require_agent, get_agent_key_from_env, append_audit_event
 
 class SatyaClient:
     def __init__(self, agent_name="default_agent", repo_path="."):
+        self.agent_key = get_agent_key_from_env()
+        require_agent(self.agent_key)
+
         self.agent_name = agent_name
         self.repo_path = repo_path
         self.tasks = Tasks(repo_path)
@@ -74,7 +78,8 @@ class SatyaClient:
         self.log(f"BLOCKED: '{action}' not permitted for task {task_id}")
         return False
 
-    def create_task(self, title, description):
+    def create_task(self, title, description, parent_trace_id=None):
+        require_agent(self.agent_key)
         # GOVERNANCE RULE 1: Tasks must have meaningful descriptions
         if not description or len(description.strip()) < 10:
             err_msg = "Governance Error: Task description must be at least 10 characters."
@@ -82,9 +87,13 @@ class SatyaClient:
             raise ValueError(err_msg)
 
         self.log(f"Creating task: {title}")
-        return self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name)
+        task = self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id)
+        if task:
+            append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {title}")
+        return task
 
     def update_task(self, task_id, status):
+        require_agent(self.agent_key)
         # GOVERNANCE RULE 2: Tasks cannot be marked Done without at least one log entry
         if status == "Done":
             task_data = self.tasks.get_task(task_id)
@@ -97,9 +106,14 @@ class SatyaClient:
                     raise ValueError(err_msg)
 
         self.log(f"Updating task {task_id} to {status}")
-        return self.tasks.update_task_status(task_id, status, agent_name=self.agent_name)
+        result = self.tasks.update_task_status(task_id, status, agent_name=self.agent_name)
+        if result:
+            task = self.tasks.get_task(task_id)
+            append_audit_event(self.agent_name, task_id, task.get("trace_id", "unknown"), "status_updated", f"Status changed to {status}")
+        return result
 
     def scrape_url(self, url):
+        require_agent(self.agent_key)
         self.log(f"Scraping URL: {url}")
         filename = self.scraper.fetch_and_save(url)
         if filename:
@@ -157,9 +171,12 @@ class SatyaClient:
         }, agent_name=self.agent_name)
         # Refresh task data to ensure we have latest state
         self.current_task = self.tasks.get_task(best_task["id"])
+        if self.current_task:
+            append_audit_event(self.agent_name, self.current_task["id"], self.current_task.get("trace_id", "unknown"), "task_claimed", "Claimed and started task")
         return self.current_task
 
     def finish_task(self, status="Done"):
+        require_agent(self.agent_key)
         """
         Completes the current task context.
         """
@@ -185,6 +202,29 @@ class SatyaClient:
         self.log(f"Finishing task: {self.current_task['title']} -> {status}")
 
         self.tasks.update_task_status(task_id, status, agent_name=self.agent_name)
+        append_audit_event(self.agent_name, task_id, self.current_task.get("trace_id", "unknown"), "task_completed", f"Finished with status {status}")
         self.current_task = None
         self.flush_logs()
         return True
+
+    def use_satya(self, nl_instruction: str, parent_trace_id: str, capabilities: list = None):
+        """
+        Agent-level helper: when an agent receives instruction 'Use Satya from <repo> to ...',
+        call this function to create a subtask, return task id and trace.
+        """
+        require_agent(self.agent_key)
+        description = f"Instruction: {nl_instruction}\nCapabilities: {capabilities or []}"
+        task = self.create_task(
+            title=f"Subtask: {nl_instruction[:40]}...",
+            description=description,
+            parent_trace_id=parent_trace_id
+        )
+        if self.current_task:
+            append_audit_event(
+                self.agent_name,
+                self.current_task["id"],
+                self.current_task.get("trace_id", "unknown"),
+                "spawned_subtask",
+                str({"child_id": task.get("id"), "child_trace": task.get("trace_id")})
+            )
+        return task

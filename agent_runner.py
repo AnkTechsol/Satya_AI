@@ -27,16 +27,32 @@ def run(agent_name: str, poll_interval: int):
             for msg in messages:
                 satya.log(f"Received chat message: {msg}")
 
-            queued = get_tasks(status="queued", assignee=agent_name)
-            if queued:
-                task = queued[0]
+            # Use the SDK's pick_task to handle claiming and queueing
+            task = client.pick_task()
+
+            if task:
                 satya.log(f"Picked up task: {task['title']} ({task['id']})")
-                lock_task(task["id"], agent_name)
-                update_task_status(task["id"], "in_progress", agent_name)
+
                 # Execution happens here — task dispatch logic TBD per task type
-                satya.log(f"Task {task['id']} marked in_progress. Awaiting execution.")
+                try:
+                    # Interpret the task.payload. If it instructs to "Use Satya" or references the repo,
+                    # create subtask(s) via client.use_satya() so Satya executes them natively.
+                    instr = task.get("description", "")
+                    if "use satya" in instr.lower() or "satya" in instr.lower():
+                        client.log(f"Detected 'Use Satya' instruction. Delegating.")
+                        child = client.use_satya(instr, parent_trace_id=task.get("trace_id"))
+                        # Wait or finish immediately based on task type. Here we mark Done.
+                        client.finish_task("Done")
+                    else:
+                        # Placeholder for actual skill runner
+                        satya.log(f"Executing standard task {task['id']}...")
+                        time.sleep(1) # simulate work
+                        client.finish_task("Done")
+                except Exception as e:
+                    satya.log(f"Task execution failed: {e}")
+                    client.finish_task("failed")
             else:
-                satya.log("No queued tasks. Waiting...")
+                pass
         except Exception as e:
             satya.log(f"ERROR in runner loop: {e}")
 

@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from satya.core import storage, Tasks, Scraper
+from satya.auth import is_human_authorized
 
 st.set_page_config(
     page_title="Satya - AI Agent Tracker",
@@ -629,9 +630,20 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
         label_visibility="collapsed"
     )
+
+    st.markdown("---")
+
+    # Admin Auth for Mutations
+    st.markdown("#### Operator Access")
+    admin_key = st.text_input("Admin Key", type="password", help="Enter the Admin Key to unlock mutating controls.")
+    is_admin = is_human_authorized(admin_key)
+    if is_admin:
+        st.success("Admin unlocked")
+    else:
+        st.info("Read-only mode")
 
     st.markdown("---")
 
@@ -995,26 +1007,27 @@ elif page == "Task Board":
     st.markdown('<div class="hero-header">Task Board</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Manage your Agile tasks across workflow stages</div>', unsafe_allow_html=True)
 
-    with st.expander("Create New Task", expanded=False):
-        with st.form("new_task_form"):
-            col_a, col_b = st.columns(2)
-            with col_a:
-                new_title = st.text_input("Title", placeholder="Enter task title...")
-                new_assignee = st.text_input("Assignee", value="User", placeholder="Agent or team member name")
-            with col_b:
-                new_priority = st.selectbox("Priority", ["Low", "Medium", "High", "Critical"], index=1)
-                new_desc = st.text_area("Description", placeholder="Describe the task...", height=76)
+    if is_admin:
+        with st.expander("Create New Task", expanded=False):
+            with st.form("new_task_form"):
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    new_title = st.text_input("Title", placeholder="Enter task title...")
+                    new_assignee = st.text_input("Assignee", value="User", placeholder="Agent or team member name")
+                with col_b:
+                    new_priority = st.selectbox("Priority", ["Low", "Medium", "High", "Critical"], index=1)
+                    new_desc = st.text_area("Description", placeholder="Describe the task...", height=76)
 
-            submitted = st.form_submit_button("Create Task", use_container_width=True)
+                submitted = st.form_submit_button("Create Task", use_container_width=True)
 
-            if submitted and new_title:
-                tasks_manager.create_task(new_title, new_desc, new_assignee, new_priority)
-                st.success(f"Task '{new_title}' created successfully!")
-                st.rerun()
-            elif submitted:
-                st.warning("Please enter a task title.")
+                if submitted and new_title:
+                    tasks_manager.create_task(new_title, new_desc, new_assignee, new_priority)
+                    st.success(f"Task '{new_title}' created successfully!")
+                    st.rerun()
+                elif submitted:
+                    st.warning("Please enter a task title.")
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     tasks_by_status = {"queued": [], "in_progress": [], "done": []}
     for task in all_tasks:
@@ -1069,32 +1082,33 @@ elif page == "Task Board":
                 </div>
                 """, unsafe_allow_html=True)
 
-                btn_cols = st.columns(3)
+                if is_admin:
+                    btn_cols = st.columns(3)
 
-                if status == "queued":
-                    if btn_cols[1].button("Start", key=f"start_{task['id']}", use_container_width=True, help="Move task to In Progress"):
-                        tasks_manager.update_task_status(task['id'], "in_progress")
-                        st.rerun()
-                    if btn_cols[2].button("Delete", key=f"del_todo_{task['id']}", use_container_width=True, help="Permanently delete this task"):
-                        tasks_manager.delete_task(task['id'])
-                        st.rerun()
-
-                elif status == "in_progress":
-                    # Cannot move back to queued legally in the data model
-                    if btn_cols[1].button("Done", key=f"done_{task['id']}", use_container_width=True, help="Mark task as Completed"):
-                        try:
-                            tasks_manager.update_task_status(task['id'], "done")
+                    if status == "queued":
+                        if btn_cols[1].button("Start", key=f"start_{task['id']}", use_container_width=True, help="Move task to In Progress"):
+                            tasks_manager.update_task_status(task['id'], "in_progress")
                             st.rerun()
-                        except Exception as e:
-                            st.error(str(e))
-                    if btn_cols[2].button("Delete", key=f"del_prog_{task['id']}", use_container_width=True, help="Permanently delete this task"):
-                        tasks_manager.delete_task(task['id'])
-                        st.rerun()
+                        if btn_cols[2].button("Delete", key=f"del_todo_{task['id']}", use_container_width=True, help="Permanently delete this task"):
+                            tasks_manager.delete_task(task['id'])
+                            st.rerun()
 
-                elif status == "done":
-                    if btn_cols[2].button("Delete", key=f"del_done_{task['id']}", use_container_width=True, help="Permanently delete this task"):
-                        tasks_manager.delete_task(task['id'])
-                        st.rerun()
+                    elif status == "in_progress":
+                        # Cannot move back to queued legally in the data model
+                        if btn_cols[1].button("Done", key=f"done_{task['id']}", use_container_width=True, help="Mark task as Completed"):
+                            try:
+                                tasks_manager.update_task_status(task['id'], "done")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(str(e))
+                        if btn_cols[2].button("Delete", key=f"del_prog_{task['id']}", use_container_width=True, help="Permanently delete this task"):
+                            tasks_manager.delete_task(task['id'])
+                            st.rerun()
+
+                    elif status == "done":
+                        if btn_cols[2].button("Delete", key=f"del_done_{task['id']}", use_container_width=True, help="Permanently delete this task"):
+                            tasks_manager.delete_task(task['id'])
+                            st.rerun()
 
                 with st.expander("Activity Log", expanded=False):
                     comments = task.get("comments", [])
@@ -1116,24 +1130,25 @@ elif page == "Truth Source":
     st.markdown('<div class="hero-header">Truth Source</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Curate your knowledge base by scraping and saving web content</div>', unsafe_allow_html=True)
 
-    with st.expander("Add New Source", expanded=False):
-        with st.form("scrape_form"):
-            url_to_scrape = st.text_input("URL", placeholder="https://example.com/article")
-            scrape_btn = st.form_submit_button("Scrape & Save", use_container_width=True)
+    if is_admin:
+        with st.expander("Add New Source", expanded=False):
+            with st.form("scrape_form"):
+                url_to_scrape = st.text_input("URL", placeholder="https://example.com/article")
+                scrape_btn = st.form_submit_button("Scrape & Save", use_container_width=True)
 
-            if scrape_btn:
-                if url_to_scrape:
-                    with st.spinner(f"Scraping {url_to_scrape}..."):
-                        filename = scraper_manager.fetch_and_save(url_to_scrape)
-                        if filename:
-                            st.success(f"Saved as: {filename}")
-                            st.rerun()
-                        else:
-                            st.error("Failed to scrape URL. Please check the URL and try again.")
-                else:
-                    st.warning("Please enter a URL.")
+                if scrape_btn:
+                    if url_to_scrape:
+                        with st.spinner(f"Scraping {url_to_scrape}..."):
+                            filename = scraper_manager.fetch_and_save(url_to_scrape)
+                            if filename:
+                                st.success(f"Saved as: {filename}")
+                                st.rerun()
+                            else:
+                                st.error("Failed to scrape URL. Please check the URL and try again.")
+                    else:
+                        st.warning("Please enter a URL.")
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     files = scraper_manager.list_sources()
 
@@ -1161,10 +1176,11 @@ elif page == "Truth Source":
                 </div>
                 """, unsafe_allow_html=True)
 
-            with col_act:
-                if st.button("Delete", key=f"del_truth_{idx}", use_container_width=True):
-                    storage.delete_truth_file(fname)
-                    st.rerun()
+            if is_admin:
+                with col_act:
+                    if st.button("Delete", key=f"del_truth_{idx}", use_container_width=True):
+                        storage.delete_truth_file(fname)
+                        st.rerun()
 
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
@@ -1349,6 +1365,44 @@ elif page == "Main Owner":
         </div>
         """, unsafe_allow_html=True)
 
+
+# ─── AGENT CHAT PAGE ───────────────────────────────────
+elif page == "Agent Chat":
+    st.markdown('<div class="hero-header">Agent Chat</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Interact directly with live agents</div>', unsafe_allow_html=True)
+
+    if not is_admin:
+        st.error("Admin Access Required: You must enter a valid Admin Key to interact with agents.")
+    else:
+        st.info("Select an active agent and send direct instructions.")
+
+        # List online agents
+        online_agents = [agent for agent, hb in heartbeats.items() if hb.get("status") == "online"]
+        if not online_agents:
+            st.warning("No online agents available for chat.")
+        else:
+            selected_agent = st.selectbox("Select Agent", online_agents)
+
+            # Chat History (mocked based on tasks/logs for now)
+            st.markdown("##### Chat History")
+            st.markdown("*(Chat history functionality using poll_chat to be expanded)*")
+
+            chat_input = st.text_input("Send instruction to agent...", placeholder="E.g., use satya to fetch the latest data")
+            if st.button("Send", use_container_width=True):
+                if chat_input:
+                    # Append to agent's chat flat-file
+                    chat_dir = os.path.join(storage.SATYA_DIR, "chat", selected_agent)
+                    os.makedirs(chat_dir, exist_ok=True)
+                    chat_file = os.path.join(chat_dir, f"msg_{datetime.now().timestamp()}.json")
+                    msg_payload = {
+                        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+                        "sender": "Human Operator",
+                        "message": chat_input,
+                        "status": "unread"
+                    }
+                    storage.save_json(chat_file, msg_payload)
+                    st.success("Message sent to agent queue.")
+                    st.rerun()
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":
