@@ -1,8 +1,26 @@
+import socket
+import ipaddress
+from urllib.parse import urlparse, urljoin
 import requests
 from bs4 import BeautifulSoup
 import markdownify
 from . import storage
 from .git_handler import GitHandler
+
+def _is_safe_url(url):
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        ip = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip)
+        return ip_obj.is_global
+    except Exception as e:
+        print(f"Error resolving or validating URL {url}: {e}")
+        return False
 
 class Scraper:
     def __init__(self, repo_path="."):
@@ -12,7 +30,27 @@ class Scraper:
 
     def fetch_and_save(self, url, title=None):
         try:
-            response = requests.get(url, timeout=10)
+            current_url = url
+            session = requests.Session()
+            response = None
+
+            for _ in range(5):
+                if not _is_safe_url(current_url):
+                    print(f"Error scraping {url}: SSRF block - Unsafe or non-global IP resolved for {current_url}")
+                    return None
+
+                response = session.get(current_url, timeout=10, allow_redirects=False)
+                if response.is_redirect:
+                    next_url = response.headers.get('Location')
+                    if not next_url:
+                        break
+                    current_url = urljoin(current_url, next_url)
+                else:
+                    break
+            else:
+                print(f"Error scraping {url}: Too many redirects")
+                return None
+
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, 'html.parser')
