@@ -12,6 +12,20 @@ TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
 HEARTBEATS_DIR = os.path.join(SATYA_DIR, "heartbeats")
 
+_json_cache = {}
+_MAX_CACHE_SIZE = 1000
+
+def _update_cache(filepath: str, data: Any, mtime: float = None) -> None:
+    if mtime is None and os.path.exists(filepath):
+        mtime = os.path.getmtime(filepath)
+    _json_cache[filepath] = {"data": json.dumps(data), "mtime": mtime}
+    if len(_json_cache) > _MAX_CACHE_SIZE:
+        oldest_key = next(iter(_json_cache))
+        _json_cache.pop(oldest_key, None)
+
+def _remove_from_cache(filepath: str) -> None:
+    _json_cache.pop(filepath, None)
+
 def ensure_satya_dirs() -> None:
     os.makedirs(TASKS_DIR, exist_ok=True)
     os.makedirs(TRUTH_DIR, exist_ok=True)
@@ -34,6 +48,7 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+                _update_cache(filepath, data)
                 return True
             finally:
                 # Release lock
@@ -52,6 +67,16 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        current_mtime = os.path.getmtime(filepath)
+    except FileNotFoundError:
+        return {}
+
+    cached_obj = _json_cache.get(filepath)
+
+    if cached_obj is not None and cached_obj.get("mtime") == current_mtime:
+        return json.loads(cached_obj["data"])
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -61,7 +86,9 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    _update_cache(filepath, data, mtime=os.path.getmtime(filepath))
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
@@ -116,6 +143,7 @@ def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
+        _remove_from_cache(filepath)
         return True
     return False
 
