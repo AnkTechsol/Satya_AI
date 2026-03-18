@@ -1192,7 +1192,7 @@ elif page == "Truth Source":
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 with st.container(border=True):
-                    st.markdown(content)
+                    st.code(content, language="markdown")
     else:
         st.markdown("""
         <div class="empty-state">
