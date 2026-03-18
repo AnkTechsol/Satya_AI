@@ -27,6 +27,11 @@
 
 ---
 
+
+## Repository Status
+- **Last Analytics Run:** 2026-03-18T14:41:57.510514+00:00
+- **Recent CI Status:** Unknown (no .github/workflows found)
+
 ## Human-Observer Policy (Agent-First)
 
 Satya is agent-first. Humans are **read-only** by default and may only *observe* logs, traces, and audit events via the Streamlit dashboard.
@@ -38,6 +43,17 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 ---
 
+
+## SUSTAINABLE_FEATURES
+- **Export Adapter Framework (OTLP/Console)** (Added 2024-03)
+  - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture.
+  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter()])`.
+  - Validation: `PYTHONPATH=. pytest tests/test_adapters.py`
+
+- **Repo Analytics & Competitor Matrix**
+  - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
+
+For more details on changes, see our [CHANGELOG](CHANGELOG.md).
 ## How It Works
 
 Satya separates **who does the work** from **who watches the work**:

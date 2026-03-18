@@ -2,9 +2,9 @@ from .client import SatyaClient
 
 _client = None
 
-def init(agent_name="default_agent", repo_path="."):
+def init(agent_name="default_agent", repo_path=".", adapters=None):
     global _client
-    _client = SatyaClient(agent_name, repo_path)
+    _client = SatyaClient(agent_name, repo_path, adapters=adapters)
     return _client
 
 def log(message):

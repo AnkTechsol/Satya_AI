@@ -4,7 +4,7 @@ from ..core import storage, Tasks, Scraper, GitHandler
 from ..auth import require_agent, get_agent_key_from_env, append_audit_event
 
 class SatyaClient:
-    def __init__(self, agent_name="default_agent", repo_path="."):
+    def __init__(self, agent_name="default_agent", repo_path=".", adapters=None):
         self.agent_key = get_agent_key_from_env()
         require_agent(self.agent_key)
 
@@ -13,6 +13,7 @@ class SatyaClient:
         self.tasks = Tasks(repo_path)
         self.scraper = Scraper(repo_path)
         self.git = GitHandler(repo_path)
+        self.adapters = adapters or []
 
         self.current_task = None
         storage.ensure_satya_dirs()
@@ -60,6 +61,14 @@ class SatyaClient:
             except Exception as e:
                 print(f"Failed to add comment to task: {e}")
 
+        # Emit to adapters
+        task_id = self.current_task["id"] if self.current_task else None
+        for adapter in self.adapters:
+            try:
+                adapter.export_log(self.agent_name, message, task_id)
+            except Exception as e:
+                pass
+
     def flush_logs(self):
         self.git.commit_and_push([self.log_path], f"Update logs for {self.agent_name}")
 
@@ -90,6 +99,11 @@ class SatyaClient:
         task = self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id)
         if task:
             append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {title}")
+            for adapter in self.adapters:
+                try:
+                    adapter.export_trace(task["trace_id"], self.agent_name, "task_created", {"task_id": task["id"], "title": title})
+                except Exception as e:
+                    pass
         return task
 
     def update_task(self, task_id, status):
@@ -109,7 +123,13 @@ class SatyaClient:
         result = self.tasks.update_task_status(task_id, status, agent_name=self.agent_name)
         if result:
             task = self.tasks.get_task(task_id)
-            append_audit_event(self.agent_name, task_id, task.get("trace_id", "unknown"), "status_updated", f"Status changed to {status}")
+            trace_id = task.get("trace_id", "unknown")
+            append_audit_event(self.agent_name, task_id, trace_id, "status_updated", f"Status changed to {status}")
+            for adapter in self.adapters:
+                try:
+                    adapter.export_trace(trace_id, self.agent_name, "status_updated", {"task_id": task_id, "status": status})
+                except Exception as e:
+                    pass
         return result
 
     def scrape_url(self, url):
