@@ -820,7 +820,7 @@ if page == "Dashboard":
         <div class="metric-card">
             <div class="metric-icon">&#128204;</div>
             <div class="metric-value" style="color: var(--info);">{stats['queued']}</div>
-            <div class="metric-label">To Do</div>
+            <div class="metric-label">Queued</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -838,7 +838,7 @@ if page == "Dashboard":
         <div class="metric-card">
             <div class="metric-icon">&#9989;</div>
             <div class="metric-value" style="color: var(--success);">{stats['done']}</div>
-            <div class="metric-label">Completed</div>
+            <div class="metric-label">Done</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -883,7 +883,7 @@ if page == "Dashboard":
                     </div>
                     <div class="task-meta">
                         {html.escape(task.get('assignee', 'Unassigned'))} &middot;
-                        {html.escape(task.get('status', 'To Do'))} &middot;
+                        {html.escape(task.get('status', 'queued').replace('_', ' ').title())} &middot;
                         {format_time_ago(task.get('updated_at', ''))}
                     </div>
                 </div>
@@ -942,7 +942,7 @@ if page == "Dashboard":
             st.markdown("#### Task Distribution")
             import pandas as pd
             chart_data = pd.DataFrame({
-                "Status": ["To Do", "In Progress", "Done"],
+                "Status": ["Queued", "In Progress", "Done"],
                 "Count": [stats["queued"], stats["in_progress"], stats["done"]]
             })
             st.bar_chart(chart_data, x="Status", y="Count", color="#6C5CE7", height=200)
@@ -1044,7 +1044,7 @@ elif page == "Task Board":
     col1, col2, col3 = st.columns(3)
 
     headers = {
-        "queued": ("header-todo", "&#128204; To Do", col1),
+        "queued": ("header-todo", "&#128204; Queued", col1),
         "in_progress": ("header-progress", "&#9889; In Progress", col2),
         "done": ("header-done", "&#9989; Done", col3)
     }
@@ -1438,9 +1438,9 @@ client = satya.init(agent_name="my_agent")
 
 task = satya.create_task("Build login page", "Implement OAuth2 login flow")
 satya.log("Starting work on login page...")
-satya.update_task(task["id"], "In Progress")
+satya.update_task(task["id"], "in_progress")
 satya.scrape("https://docs.example.com/oauth2")
-satya.update_task(task["id"], "Done")
+satya.update_task(task["id"], "done")
 satya.log("Login page complete")
 client.flush_logs()</div>
     </div>
@@ -1452,8 +1452,8 @@ client.flush_logs()</div>
 
     funcs = [
         ("satya.init(agent_name, repo_path='.')", "Initialize the SDK client. Must be called first. Creates a log file in satya_data/agents/."),
-        ("satya.create_task(title, description)", "Create a new task in 'To Do' status. Returns task dict with id, title, status, etc."),
-        ("satya.update_task(task_id, status)", "Update a task's status. Valid statuses: 'To Do', 'In Progress', 'Done'."),
+        ("satya.create_task(title, description)", "Create a new task in 'queued' status. Returns task dict with id, title, status, etc."),
+        ("satya.update_task(task_id, status)", "Update a task's status. Valid statuses: 'queued', 'in_progress', 'done', 'failed'."),
         ("satya.log(message)", "Write a timestamped log entry to the agent's session log file."),
         ("satya.scrape(url)", "Scrape a URL, convert to Markdown, and save to the Truth Source knowledge base."),
     ]
@@ -1482,7 +1482,7 @@ client.flush_logs()</div>
         <ul style="color: var(--text-primary); font-size: 0.85rem; line-height: 1.6;">
             <li><strong>Audit Trails:</strong> Every creation, status change, comment, and update is permanently recorded per task, tied to the agent's name.</li>
             <li><strong>Descriptive Tasks:</strong> Tasks cannot be created with less than 10 characters of description.</li>
-            <li><strong>Proof of Work:</strong> An agent cannot mark a task as <code>"Done"</code> without providing at least one log entry explaining their progress.</li>
+            <li><strong>Proof of Work:</strong> An agent cannot mark a task as <code>"done"</code> without providing at least one log entry explaining their progress.</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -1528,7 +1528,7 @@ task = client.create_task(
 satya.log(f"Created task: {{task['id']}}")
 
 # 3. Start working on a task
-client.update_task(task["id"], "In Progress")
+client.update_task(task["id"], "in_progress")
 satya.log("Working on auth implementation...")
 
 # 4. Scrape reference docs into knowledge base
@@ -1536,7 +1536,7 @@ client.scrape_url("https://jwt.io/introduction")
 satya.log("Scraped JWT docs for reference")
 
 # 5. Mark task complete
-client.update_task(task["id"], "Done")
+client.update_task(task["id"], "done")
 satya.log("Auth implementation complete")
 
 # 6. Flush logs to ensure they are persisted
