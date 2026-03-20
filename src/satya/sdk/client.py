@@ -32,7 +32,7 @@ class SatyaClient:
         except Exception as e:
             print(f"Failed to initialize log file: {e}")
 
-    def heartbeat(self, status: str = "online"):
+    def send_heartbeat(self, status: str = "online"):
         """Sends a heartbeat to indicate the agent is alive."""
         now = datetime.now(timezone.utc).isoformat() + "Z"
         heartbeat_data = {
@@ -110,7 +110,7 @@ class SatyaClient:
     def update_task(self, task_id, status):
         require_agent(self.agent_key)
         # GOVERNANCE RULE 2: Tasks cannot be marked Done without at least one log entry
-        if status == "Done":
+        if status == "done":
             task_data = self.tasks.get_task(task_id)
             if task_data:
                 comments = task_data.get("comments", [])
@@ -160,14 +160,14 @@ class SatyaClient:
         # Persistent check: Any task already assigned to me and In Progress?
         # This handles agent restarts.
         for t in all_tasks:
-            if t.get("assignee") == self.agent_name and t.get("status") == "In Progress":
+            if t.get("assignee") == self.agent_name and t.get("status") == "in_progress":
                 self.log(f"Resuming existing task: {t['title']}")
                 self.current_task = t
                 return t
 
         # Guardrail: Check WIP limits (future: implement strict count)
 
-        todo_tasks = [t for t in all_tasks if t.get("status") == "To Do"]
+        todo_tasks = [t for t in all_tasks if t.get("status") == "queued"]
 
         if not todo_tasks:
             self.log("No tasks in 'To Do' column.")
@@ -187,7 +187,7 @@ class SatyaClient:
         # Assign and Start
         self.log(f"Picking highest priority task: {best_task['title']}")
         self.tasks.update_task(best_task["id"], {
-            "status": "In Progress",
+            "status": "in_progress",
             "assignee": self.agent_name
         }, agent_name=self.agent_name)
         # Refresh task data to ensure we have latest state
@@ -196,7 +196,7 @@ class SatyaClient:
             append_audit_event(self.agent_name, self.current_task["id"], self.current_task.get("trace_id", "unknown"), "task_claimed", "Claimed and started task")
         return self.current_task
 
-    def finish_task(self, status="Done"):
+    def finish_task(self, status="done"):
         require_agent(self.agent_key)
         """
         Completes the current task context.
@@ -208,7 +208,7 @@ class SatyaClient:
         task_id = self.current_task["id"]
 
         # Check governance before finishing
-        if status == "Done":
+        if status == "done":
             # the task is kept in self.current_task but it might not have the latest comments loaded
             # lets reload it from storage to be sure
             latest_task = self.tasks.get_task(task_id)
@@ -227,6 +227,34 @@ class SatyaClient:
         self.current_task = None
         self.flush_logs()
         return True
+
+    def poll_chat(self) -> list[dict]:
+        """
+        Polls for manual override messages sent from the Agent Chat control panel.
+        Returns a list of unread messages.
+        """
+        chat_dir = os.path.join(storage.SATYA_DIR, "chat", self.agent_name)
+        if not os.path.exists(chat_dir):
+            return []
+
+        unread_messages = []
+        for filename in os.listdir(chat_dir):
+            if not filename.endswith(".json"):
+                continue
+
+            filepath = os.path.join(chat_dir, filename)
+            data = storage.load_json(filepath)
+
+            if data and data.get("status") == "unread":
+                unread_messages.append(data)
+                # Mark as read
+                data["status"] = "read"
+                data["read_at"] = datetime.now(timezone.utc).isoformat() + "Z"
+                storage.save_json(filepath, data)
+
+        # Sort oldest first
+        unread_messages.sort(key=lambda m: m.get("timestamp", ""))
+        return unread_messages
 
     def use_satya(self, nl_instruction: str, parent_trace_id: str, capabilities: list = None):
         """

@@ -64,6 +64,7 @@ class AIOrchestrator:
 
     def scan_once(self):
         """Performs a single scan of heartbeats and reassigns tasks if necessary."""
+        logger.info("AI Orchestrator heartbeat scan running...")
         now = datetime.now(timezone.utc)
         heartbeats = self._get_agent_heartbeats()
 

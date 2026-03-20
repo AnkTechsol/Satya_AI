@@ -31,14 +31,23 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 * **Agent Reliability:** 100% of stuck tasks are automatically recovered and re-queued by the Project Manager.
 * **Observability:** Users can identify crashed agents within X minutes via the Dashboard UI.
 
-## 6. Future Roadmap
-* **REST API Layer:** Support for non-Python agents (Node.js, Go) to interact with Satya.
-* **WebSocket Real-Time Log Streaming:** Stream logs to the dashboard without full page reloads.
-* **Multi-Agent Collaboration Protocols:** Allow agents to pass tasks to specific specialized agents (e.g., "Reviewer Agent").
+## 6. Future Roadmap (Updated)
+* **REST API Layer:** Support for non-Python agents (Node.js, Go, Rust) to interact with Satya securely.
+* **WebSocket Real-Time Log Streaming:** Stream logs to the dashboard without full page reloads, providing instant feedback on agent actions.
+* **Multi-Agent Collaboration Protocols:** Allow agents to pass tasks to specific specialized agents (e.g., "Reviewer Agent") and manage cross-agent dependencies.
+* **Automated Issue Resolution Workflow:** Introduce automated RCA (Root Cause Analysis) mechanisms where failed tasks spawn sub-tasks for debugging agents.
+* **Plugin Marketplace:** Create an extensible architecture where community developers can publish 'Truth Source Extractors' and 'Governance Validators' for public use.
+* **Mobile Companion App:** Develop a cross-platform mobile app (React Native) for product managers to monitor agent health and approve critical tasks on the go.
 
 ## 7. Business & Ecosystem Strategy
-To position Satya AI as a winning, widely-adopted platform:
-* **Ecosystem Integrations:** Build pre-configured integrations with popular AI frameworks (LangChain, AutoGen) and standard tools (Slack, GitHub, Notion) to drive organic growth.
+To position Satya AI as a winning, widely-adopted platform and enterprise standard:
+* **Ecosystem Integrations:** Build pre-configured integrations with popular AI frameworks (LangChain, AutoGen, CrewAI) and standard tools (Slack, GitHub, Notion, Jira) to drive organic growth.
 * **Webhooks & Event Triggers:** Enable external systems to react to task changes or agent failures instantly, supporting complex automation chains.
-* **Advanced Analytics Dashboard:** Provide executive-level metrics, such as agent efficiency, average task duration, and error rates, giving actionable insights into autonomous workforce performance.
-* **Enterprise Security & SSO:** Implement role-based access control (RBAC) and Single Sign-On (SAML/OAuth) to support large-scale organizational deployments and compliance requirements.
+* **Advanced Analytics Dashboard:** Provide executive-level metrics, such as agent efficiency, average task duration, ROI estimation per agent, and error rates.
+* **Enterprise Security & SSO:** Implement role-based access control (RBAC), Single Sign-On (SAML/OAuth), and automated compliance reporting (SOC2 readiness) to support large-scale organizational deployments.
+* **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
+
+## 8. Recently Completed Work
+* **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`.
+* **Self-Healing Task Re-assignment:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires.
+* **Dashboard Agent Status:** Streamlit UI dynamically displays real-time agent 'Online/Offline' statuses using the heartbeat freshness metrics.
