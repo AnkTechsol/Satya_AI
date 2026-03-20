@@ -3,7 +3,7 @@ import time
 from datetime import datetime, timezone
 import logging
 from . import storage
-from .tasks import Tasks, STATUS_IN_PROGRESS, STATUS_QUEUED
+from .tasks import Tasks, STATUS_IN_PROGRESS, STATUS_QUEUED, STATUS_FAILED
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +71,26 @@ class AIOrchestrator:
         # Fetch all tasks once to prevent N+1 read bottleneck
         all_tasks = self.tasks.list_all()
         in_progress_tasks = [t for t in all_tasks if t.get("status") == STATUS_IN_PROGRESS]
+        failed_tasks = [t for t in all_tasks if t.get("status") == STATUS_FAILED and not t.get("rca_spawned")]
+
+        # Handle failed tasks (Automated Issue Resolution Workflow)
+        for task in failed_tasks:
+            logger.info(f"Orchestrator: Spawning RCA task for failed task {task['id']}")
+            rca_title = f"RCA: Debug Failed Task '{task['title']}'"
+            rca_desc = f"Automated Root Cause Analysis for task {task['id']} ({task['title']}). Please investigate the failure reasons and propose fixes."
+
+            # Spawn the RCA task
+            self.tasks.create_task(
+                title=rca_title,
+                description=rca_desc,
+                assignee="Unassigned",
+                priority="High",
+                agent_name="AI_Orchestrator",
+                parent_trace_id=task.get("trace_id")
+            )
+
+            # Mark the original task to prevent duplicate RCAs
+            self.tasks.update_task(task["id"], {"rca_spawned": True}, agent_name="AI_Orchestrator")
 
         # Group tasks by assignee in-memory
         tasks_by_agent = {}
