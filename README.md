@@ -29,7 +29,8 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-03-18T14:41:57.510514+00:00
+- **Last Analytics Run:** 2026-03-18T14:54:36.397598+00:00
+- **Open Issues:** Unknown without GH CLI
 - **Recent CI Status:** Unknown (no .github/workflows found)
 
 ## Human-Observer Policy (Agent-First)
@@ -45,6 +46,12 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Agent Self-Test Harness + CI Analytics Job** (Added 2026-03)
+  - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
+  - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
+  - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
+
 - **Export Adapter Framework (OTLP/Console)** (Added 2024-03)
   - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture.
   - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter()])`.

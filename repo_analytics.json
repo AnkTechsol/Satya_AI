@@ -1,7 +1,7 @@
 {
   "git": {
     "commits_last_90d": "1",
-    "last_commit_date": "Tue Mar 17 17:54:04 2026 +0530",
+    "last_commit_date": "Thu Mar 19 00:30:06 2026 +0530",
     "authors": []
   },
   "issues_prs": {
@@ -9,8 +9,8 @@
     "closed": "Unknown without GH CLI"
   },
   "ci": {
-    "has_github_actions": false,
-    "status": "Unknown (no .github/workflows found)"
+    "has_github_actions": true,
+    "status": "Requires GH CLI to check"
   },
   "tests": {
     "has_tests": true,
@@ -27,22 +27,22 @@
   ],
   "code_health": {
     "top_20_largest_files": [
-      "110432 total",
-      " 14394 src/satya/sdk/__pycache__/client.cpython-312.pyc",
-      " 10874 src/satya/core/__pycache__/tasks.cpython-312.pyc",
-      " 10598 src/satya/sdk/client.py",
+      "111045 total",
+      " 14357 src/satya/sdk/__pycache__/client.cpython-312.pyc",
+      " 10859 src/satya/core/__pycache__/tasks.cpython-312.pyc",
+      " 10590 src/satya/sdk/client.py",
       "  8892 src/satya/core/tasks.py",
-      "  8307 src/satya/core/__pycache__/storage.cpython-312.pyc",
+      "  8256 src/satya/core/__pycache__/storage.cpython-312.pyc",
       "  6779 src/satya/__pycache__/auth.cpython-312.pyc",
-      "  5751 src/satya/core/__pycache__/project_manager.cpython-312.pyc",
-      "  5159 src/satya/core/project_manager.py",
+      "  6496 src/satya/core/__pycache__/project_manager.cpython-312.pyc",
+      "  5136 src/satya/core/project_manager.py",
       "  4352 src/satya/auth.py",
       "  4227 src/satya/core/storage.py",
       "  3586 src/satya/core/__pycache__/completion.cpython-312.pyc",
       "  3174 src/satya/core/__pycache__/git_handler.cpython-312.pyc",
       "  2975 src/satya/core/completion.py",
       "  2643 src/satya/core/__pycache__/watchdog.cpython-312.pyc",
-      "  2596 src/satya/core/__pycache__/scraper.cpython-312.pyc",
+      "  2600 src/satya/core/__pycache__/scraper.cpython-312.pyc",
       "  2546 src/satya/core/watchdog.py",
       "  2058 src/satya/sdk/__pycache__/__init__.cpython-312.pyc",
       "  1695 src/satya/sdk/adapters/__pycache__/console.cpython-312.pyc",
@@ -51,20 +51,20 @@
   },
   "runtime_artifacts": [
     "satya_data/events/audit_log.jsonl",
-    "satya_data/agents/test_agent_20260318.log",
-    "satya_data/agents/sim_agent_20260318.log",
-    "satya_data/tasks/6f6d6498.json",
-    "satya_data/tasks/9d12c41b.json",
-    "satya_data/tasks/6f6d6498.json.lock",
-    "satya_data/tasks/eaea253a.json",
-    "satya_data/tasks/eaea253a.json.lock",
-    "satya_data/tasks/a7c22012.json",
-    "satya_data/tasks/9d12c41b.json.lock"
+    "satya_data/agents/test_agent_20260319.log",
+    "satya_data/agents/sim_agent_20260319.log",
+    "satya_data/tasks/e6d5a473.json",
+    "satya_data/tasks/d885a9ae.json",
+    "satya_data/tasks/fa2eaad2.json.lock",
+    "satya_data/tasks/1a3ecae3.json",
+    "satya_data/tasks/a9a4a2d0.json",
+    "satya_data/tasks/b167b975.json",
+    "satya_data/tasks/1a3ecae3.json.lock"
   ],
   "runtime_simulation": {
-    "median_latency_s": 0.0010564327239990234,
-    "p95_latency_s": 0.0012748241424560547,
-    "p99_latency_s": 0.0012748241424560547
+    "median_latency_s": 0.000978708267211914,
+    "p95_latency_s": 0.0011546611785888672,
+    "p99_latency_s": 0.0011546611785888672
   },
-  "timestamp": "2026-03-18T14:54:36.397598+00:00"
+  "timestamp": "2026-03-19T14:55:02.810091+00:00"
 }

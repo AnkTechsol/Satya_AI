@@ -43,35 +43,17 @@ def main():
     # Runtime Artifacts
     runtime_artifacts = run_cmd('find satya_data -type f | head -10')
 
-    # Simulation (Mocking the requests since the environment lacks requests library)
+    # Simulation
     import time
-    from unittest.mock import MagicMock
-    sys.modules['requests'] = MagicMock()
-    sys.modules['bs4'] = MagicMock()
-    sys.modules['git'] = MagicMock()
-    sys.modules['streamlit'] = MagicMock()
-    sys.modules['markdownify'] = MagicMock()
-
-    os.environ['SATYA_AGENT_KEY'] = 'test-run'
-    os.environ['SATYA_AGENT_KEYS'] = 'test-run'
-
-    from src.satya.sdk import init
-    from src.satya.core.storage import save_json, load_json, get_task_path
-    from unittest.mock import patch
-
-    client = init("sim_agent")
     latencies = []
 
     try:
-        with patch('src.satya.core.completion.CompletionChecker.check', return_value=True):
-            for i in range(5):
-                t0 = time.time()
-                task = client.create_task(f"Sim Task {i}", "Simulating runtime performance testing.")
-                latencies.append(time.time() - t0)
-
-                client.update_task(task['id'], "in_progress")
-                client.log(f"Doing work on {task['id']}")
-                client.update_task(task['id'], "done")
+        os.environ['SATYA_AGENT_KEY'] = 'test-run'
+        os.environ['SATYA_AGENT_KEYS'] = 'test-run'
+        sim_output = run_cmd('python run_sim.py')
+        if sim_output:
+            latencies_data = json.loads(sim_output)
+            latencies = [l[1] for l in latencies_data if l[0] == "create"]
     except Exception as e:
         print(f"Simulation failed: {e}")
 
