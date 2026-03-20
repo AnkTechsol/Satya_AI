@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Satya AI — Governance Layer for AI Agents</title>
+  <meta name="description" content="Open-source governance layer for AI agents. Define scope, enforce permissions, track progress in real-time. Zero infrastructure. MIT license." />
+  <meta property="og:title" content="Satya AI — Governance Layer for AI Agents" />
+  <meta property="og:description" content="Your AI agents work autonomously. Satya keeps them honest. Open-source. MIT. Zero infra." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://anktechsol.github.io/Satya_AI/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Satya AI — Governance Layer for AI Agents" />
+  <meta name="twitter:description" content="Open-source governance layer for AI agents. 3 lines to integrate. Zero infrastructure." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --bg3: #1a1a24;
+      --border: #2a2a3a;
+      --border2: #3a3a50;
+      --text: #e8e8f0;
+      --text2: #9898b0;
+      --text3: #6868808;
+      --accent: #7c6fcd;
+      --accent2: #9d8fe8;
+      --accent3: #c4b9ff;
+      --green: #22c55e;
+      --gold: #f59e0b;
+      --red: #ef4444;
+      --radius: 12px;
+      --radius2: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo {
+      font-size: 18px; font-weight: 700; color: var(--text);
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+    }
+    .nav-logo span { color: var(--accent2); }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-links a {
+      color: var(--text2); text-decoration: none; font-size: 14px; font-weight: 500;
+      padding: 6px 12px; border-radius: var(--radius2);
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--bg3); }
+    .btn-star {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent); color: #fff; text-decoration: none;
+      font-size: 14px; font-weight: 600; padding: 8px 16px;
+      border-radius: var(--radius2); transition: background 0.2s, transform 0.1s;
+      border: none; cursor: pointer;
+    }
+    .btn-star:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-star svg { width: 14px; height: 14px; fill: currentColor; }
+
+    /* HERO */
+    .hero {
+      max-width: 860px; margin: 0 auto;
+      padding: 96px 24px 80px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(124, 111, 205, 0.12);
+      border: 1px solid rgba(124, 111, 205, 0.3);
+      color: var(--accent3); font-size: 13px; font-weight: 500;
+      padding: 5px 14px; border-radius: 100px; margin-bottom: 32px;
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    h1 {
+      font-size: clamp(36px, 7vw, 64px);
+      font-weight: 900; line-height: 1.1;
+      letter-spacing: -2px; margin-bottom: 24px;
+    }
+    h1 em { font-style: normal; color: var(--accent3); }
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text2); max-width: 600px; margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .hero-ctas {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent); color: #fff; text-decoration: none;
+      font-size: 16px; font-weight: 700; padding: 14px 28px;
+      border-radius: var(--radius); transition: all 0.2s;
+      border: none; cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,111,205,0.35); }
+    .btn-primary svg { width: 18px; height: 18px; fill: currentColor; }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--text); text-decoration: none;
+      font-size: 16px; font-weight: 600; padding: 14px 28px;
+      border-radius: var(--radius); border: 1px solid var(--border2);
+      transition: all 0.2s; cursor: pointer;
+    }
+    .btn-secondary:hover { background: var(--bg3); border-color: var(--accent); }
+    .star-count {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--text2); font-size: 13px; margin-top: 20px;
+    }
+    .star-count svg { fill: var(--gold); width: 14px; height: 14px; }
+
+    /* SOCIAL PROOF STRIP */
+    .proof-strip {
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 16px 24px; background: var(--bg2);
+      display: flex; align-items: center; justify-content: center;
+      gap: 32px; flex-wrap: wrap;
+    }
+    .proof-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); }
+    .proof-item strong { color: var(--text); }
+    .proof-sep { color: var(--border2); font-size: 18px; }
+
+    /* SECTION */
+    section { max-width: 1100px; margin: 0 auto; padding: 80px 24px; }
+    .section-label {
+      font-size: 12px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--accent2); margin-bottom: 12px;
+    }
+    h2 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -1px; margin-bottom: 16px; }
+    h2 em { font-style: normal; color: var(--accent3); }
+    .section-sub { font-size: 18px; color: var(--text2); max-width: 540px; line-height: 1.7; }
+
+    /* HOW IT WORKS */
+    .flow-grid {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      gap: 24px; align-items: center; margin-top: 48px;
+    }
+    .flow-box {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+    }
+    .flow-box h3 {
+      font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text2); margin-bottom: 16px;
+    }
+    .flow-box ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .flow-box li { font-size: 14px; color: var(--text2); display: flex; align-items: flex-start; gap: 8px; }
+    .flow-box li::before { content: '→'; color: var(--accent2); flex-shrink: 0; margin-top: 1px; }
+    .flow-arrow {
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 4px;
+    }
+    .flow-arrow-line {
+      width: 48px; height: 2px; background: var(--border2);
+    }
+    .flow-arrow svg { width: 16px; height: 16px; fill: var(--text2); }
+
+    /* PROBLEM/SOLUTION */
+    .ps-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 24px; margin-top: 48px;
+    }
+    .ps-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 32px;
+    }
+    .ps-card.bad { border-color: rgba(239,68,68,0.25); }
+    .ps-card.good { border-color: rgba(34,197,94,0.25); }
+    .ps-tag {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 4px; margin-bottom: 20px;
+    }
+    .bad .ps-tag { background: rgba(239,68,68,0.12); color: var(--red); }
+    .good .ps-tag { background: rgba(34,197,94,0.12); color: var(--green); }
+    .ps-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .ps-card p { font-size: 15px; color: var(--text2); line-height: 1.7; }
+    .ps-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .ps-card li { font-size: 14px; color: var(--text2); display: flex; gap: 10px; align-items: flex-start; }
+    .bad li::before { content: '✗'; color: var(--red); flex-shrink: 0; font-weight: 700; }
+    .good li::before { content: '✓'; color: var(--green); flex-shrink: 0; font-weight: 700; }
+
+    /* CODE BLOCK */
+    .code-section {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin-top: 48px;
+    }
+    .code-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+    }
+    .code-tab {
+      font-size: 13px; font-weight: 500; color: var(--text2);
+      padding: 12px 16px; border-bottom: 2px solid transparent;
+      cursor: pointer; transition: color 0.2s;
+    }
+    .code-tab.active { color: var(--accent3); border-bottom-color: var(--accent); }
+    .code-body { padding: 24px; overflow-x: auto; }
+    pre {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 13px; line-height: 1.8; color: #c4c4d4;
+    }
+    .kw { color: #c79aff; } /* keyword */
+    .fn { color: #82d9ff; } /* function */
+    .st { color: #a8e89a; } /* string */
+    .cm { color: #5c6a7a; } /* comment */
+    .nu { color: #ffcc78; } /* number */
+
+    /* FEATURES GRID */
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+    .feat-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .feat-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(124,111,205,0.12); border: 1px solid rgba(124,111,205,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px;
+    }
+    .feat-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feat-card p { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+    /* CTA SECTION */
+    .cta-section {
+      background: linear-gradient(135deg, rgba(124,111,205,0.1) 0%, rgba(157,143,232,0.05) 100%);
+      border: 1px solid rgba(124,111,205,0.25);
+      border-radius: 20px; padding: 72px 32px; text-align: center;
+      margin: 0 24px 80px;
+    }
+    .cta-section h2 { font-size: clamp(28px, 5vw, 48px); margin-bottom: 16px; }
+    .cta-section p { font-size: 18px; color: var(--text2); max-width: 480px; margin: 0 auto 40px; }
+    .cta-meta { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; margin-top: 24px; font-size: 13px; color: var(--text2); }
+    .cta-meta span { display: flex; align-items: center; gap: 6px; }
+    .cta-meta svg { width: 14px; height: 14px; }
+    .cta-meta .green { fill: var(--green); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border); background: var(--bg2);
+      padding: 32px 24px; text-align: center;
+    }
+    footer p { font-size: 14px; color: var(--text2); }
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .flow-grid { grid-template-columns: 1fr; }
+      .flow-arrow { transform: rotate(90deg); }
+      .ps-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .proof-sep { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#"><span>Satya</span> AI</a>
+  <div class="nav-links">
+    <a href="#how-it-works">How it works</a>
+    <a href="#features">Features</a>
+    <a href="https://github.com/AnkTechsol/Satya_AI" target="_blank" rel="noopener">Docs</a>
+  </div>
+  <a class="btn-star" href="https://github.com/AnkTechsol/Satya_AI" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+    Star on GitHub
+  </a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    Open Source · MIT License · Zero Infrastructure
+  </div>
+  <h1>The <em>Governance Layer</em><br>for AI Agents</h1>
+  <p class="hero-sub">
+    Your AI agents work autonomously — but do you actually know what they're
+    doing? Satya gives agents a task board, permission scope, and an audit trail
+    humans can watch in real time.
+  </p>
+  <div class="hero-ctas">
+    <a class="btn-primary" href="https://github.com/AnkTechsol/Satya_AI" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+      Star on GitHub
+    </a>
+    <a class="btn-secondary" href="https://github.com/AnkTechsol/Satya_AI#quick-start" target="_blank" rel="noopener">
+      Quick Start →
+    </a>
+  </div>
+  <div class="star-count">
+    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+    Help us reach 200 stars — every star funds open-source AI tooling
+  </div>
+</div>
+
+<!-- SOCIAL PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-item"><strong>MIT</strong> License</div>
+  <span class="proof-sep">·</span>
+  <div class="proof-item"><strong>Python</strong> 3.11+</div>
+  <span class="proof-sep">·</span>
+  <div class="proof-item"><strong>3 lines</strong> to integrate</div>
+  <span class="proof-sep">·</span>
+  <div class="proof-item"><strong>Zero</strong> database / cloud required</div>
+  <span class="proof-sep">·</span>
+  <div class="proof-item"><strong>Claude Code</strong> compatible</div>
+  <span class="proof-sep">·</span>
+  <div class="proof-item">Built by <strong>AnkTechSol</strong></div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="section-label">How It Works</div>
+  <h2>Agent operates. <em>Human observes.</em></h2>
+  <p class="section-sub">
+    Satya enforces a clean separation: the AI agent owns all operations.
+    The human gets a live browser dashboard — no terminal needed.
+  </p>
+  <div class="flow-grid">
+    <div class="flow-box">
+      <h3>AI Agent (Operator)</h3>
+      <ul>
+        <li>Deploys Satya and starts the dashboard</li>
+        <li>Creates tasks with allowed &amp; forbidden actions</li>
+        <li>Logs progress via the Python SDK</li>
+        <li>Checks permissions before every action</li>
+        <li>Can't self-certify completion — checker decides</li>
+        <li>Scrapes knowledge base from URLs</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">
+      <div class="flow-arrow-line"></div>
+      <svg viewBox="0 0 24 24"><path d="M13 17l5-5-5-5v3H6v4h7v3z"/></svg>
+      <div class="flow-arrow-line"></div>
+    </div>
+    <div class="flow-box">
+      <h3>Human (Observer)</h3>
+      <ul>
+        <li>Opens the dashboard URL in a browser</li>
+        <li>Sees the real-time task board (To Do / In Progress / Done)</li>
+        <li>Reads timestamped agent session logs</li>
+        <li>Reviews scraped knowledge base</li>
+        <li>Monitors completion metrics &amp; charts</li>
+        <li>Optionally creates tasks via the UI</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM / SOLUTION -->
+<section>
+  <div class="section-label">The Problem</div>
+  <h2>Every monitoring tool asks <em>the wrong question.</em></h2>
+  <p class="section-sub">
+    LangSmith, Langfuse, AgentOps — they all tell you <em>what your agent did.</em>
+    Nobody was asking what your agent is <strong>allowed</strong> to do.
+  </p>
+  <div class="ps-grid">
+    <div class="ps-card bad">
+      <span class="ps-tag">Without Satya</span>
+      <h3>Flying blind</h3>
+      <p>Your agent has no task scope. It deletes files it wasn't supposed to touch, marks itself done, and charges you $40 in API costs.</p>
+      <ul>
+        <li>No permission boundaries per task</li>
+        <li>Agent self-certifies completion</li>
+        <li>No real-time visibility for humans</li>
+        <li>No audit trail by default</li>
+        <li>Post-hoc logging only — damage already done</li>
+      </ul>
+    </div>
+    <div class="ps-card good">
+      <span class="ps-tag">With Satya</span>
+      <h3>Full accountability</h3>
+      <p>You define the scope. Satya enforces it. Every action is logged before it happens. Humans monitor in real time with zero setup.</p>
+      <ul>
+        <li>Per-task <code>allowed_actions</code> &amp; <code>forbidden_actions</code></li>
+        <li>Completion checker — not self-certified</li>
+        <li>Real-time dashboard for human oversight</li>
+        <li>Git-based audit trail (optional)</li>
+        <li>Watchdog detects stale tasks automatically</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CODE -->
+<section>
+  <div class="section-label">Quick Start</div>
+  <h2>3 lines to <em>full agent governance.</em></h2>
+  <p class="section-sub">
+    Drop into any Python agent in seconds. No database, no cloud, no config file needed.
+  </p>
+  <div class="code-section">
+    <div class="code-tabs">
+      <div class="code-tab active">Python SDK</div>
+      <div class="code-tab" style="color:#5c6a7a">Docker (1 command)</div>
+    </div>
+    <div class="code-body">
+<pre><span class="cm"># 1. Install</span>
+pip install satya-ai
+
+<span class="cm"># 2. Use in your agent — 3 lines</span>
+<span class="kw">import</span> satya.sdk <span class="kw">as</span> satya
+
+client = satya.<span class="fn">init</span>(<span class="st">"my_agent"</span>)                              <span class="cm"># start session</span>
+task   = client.<span class="fn">create_task</span>(<span class="st">"Analyze pricing"</span>, <span class="st">"Compare competitors"</span>)  <span class="cm"># create task</span>
+satya.<span class="fn">log</span>(<span class="st">"Starting analysis..."</span>)                             <span class="cm"># log progress</span>
+
+<span class="cm"># Agent does the work...</span>
+client.<span class="fn">update_task</span>(task[<span class="st">"id"</span>], <span class="st">"Done"</span>)                     <span class="cm"># mark done (checker validates)</span>
+client.<span class="fn">flush_logs</span>()                                         <span class="cm"># persist via git (optional)</span>
+
+<span class="cm"># Human opens http://localhost:5000 — sees everything above in real time.</span>
+<span class="cm"># No terminal. No config. Just a browser.</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-label">Features</div>
+  <h2>Everything you need. <em>Nothing you don't.</em></h2>
+  <p class="section-sub">
+    Zero infrastructure. Flat JSON files. Git-compatible. Works with Claude Code,
+    Jules, Codex — any agent with Python access.
+  </p>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">📋</div>
+      <h3>Real-Time Task Board</h3>
+      <p>Kanban-style columns (To Do / In Progress / Done) with priorities. Agents update it. Humans watch it. No refresh needed.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🛡️</div>
+      <h3>Action Validator</h3>
+      <p>Per-task <code>allowed_actions</code> and <code>forbidden_actions</code>. The <code>can_do()</code> function blocks everything not explicitly allowed. Default-deny.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">✅</div>
+      <h3>Completion Checker</h3>
+      <p>Agents can't self-certify. Verify by file existence, test pass, subtask completion, or manual human approval.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔍</div>
+      <h3>Knowledge Base (Truth Source)</h3>
+      <p>Scrape any URL to clean Markdown, stored in a shared knowledge base. Agents and humans both reference the same ground truth.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📜</div>
+      <h3>Agent Session Logs</h3>
+      <p>Timestamped entries from every connected agent, visible in real time on the dashboard. Full audit trail, zero setup.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">👁️</div>
+      <h3>Watchdog</h3>
+      <p>Automatically detects stale tasks — tasks that haven't moved in too long. Surfaces them on the dashboard with a warning badge.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔄</div>
+      <h3>Agent Runner (Polling Loop)</h3>
+      <p>Drop-in polling runner for Claude Code and compatible agents. Checks for new tasks, executes, reports — fully autonomous.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🗂️</div>
+      <h3>Zero Config Storage</h3>
+      <p>Everything lives in flat JSON + Markdown files in <code>satya_data/</code>. No database, no cloud service, no migration scripts.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🌙</div>
+      <h3>Dark / Light Theme</h3>
+      <p>One-click toggle in the sidebar. Full CSS variable swapping. Works great on the projector in your next demo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<div class="cta-section">
+  <h2>Give Satya a ⭐ — it's free</h2>
+  <p>
+    Each star signals to the AI community that open-source agent governance
+    matters. Help us hit <strong>200 stars</strong> this week.
+  </p>
+  <a class="btn-primary" style="font-size:18px; padding:16px 36px;" href="https://github.com/AnkTechsol/Satya_AI" target="_blank" rel="noopener">
+    <svg style="width:20px;height:20px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" fill="currentColor"/></svg>
+    Star on GitHub — github.com/AnkTechsol/Satya_AI
+  </a>
+  <div class="cta-meta">
+    <span>
+      <svg viewBox="0 0 24 24" class="green"><path d="M20 6L9 17l-5-5"/></svg>
+      MIT License
+    </span>
+    <span>
+      <svg viewBox="0 0 24 24" class="green"><path d="M20 6L9 17l-5-5"/></svg>
+      Python 3.11+
+    </span>
+    <span>
+      <svg viewBox="0 0 24 24" class="green"><path d="M20 6L9 17l-5-5"/></svg>
+      Zero infrastructure
+    </span>
+    <span>
+      <svg viewBox="0 0 24 24" class="green"><path d="M20 6L9 17l-5-5"/></svg>
+      Claude Code compatible
+    </span>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    Built by <a href="https://anktechsol.com" target="_blank" rel="noopener">AnkTechSol</a> ·
+    <a href="https://github.com/AnkTechsol/Satya_AI" target="_blank" rel="noopener">GitHub</a> ·
+    <a href="https://github.com/AnkTechsol/Satya_AI/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    · Satya (Sanskrit: "truth")
+  </p>
+</footer>
+
+</body>
+</html>
