@@ -1,0 +1,48 @@
+name: Analytics and Test Harness
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *' # Run daily at midnight
+
+jobs:
+  test_and_analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest requests beautifulsoup4 gitpython markdownify pandas streamlit
+
+      - name: Run Tests
+        run: |
+          PYTHONPATH=. pytest tests/
+
+      - name: Run Runtime Simulation and Analytics
+        run: |
+          python generate_analytics.py
+
+      - name: Commit Updated Analytics
+        if: github.event_name != 'pull_request'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add REPO_ANALYTICS.md repo_analytics.json
+          git commit -m "chore: Auto-update repo analytics via CI harness" || echo "No changes to commit"
+          git push origin main || echo "Failed to push, perhaps branch protection is on"

@@ -4,7 +4,7 @@ from ..core import storage, Tasks, Scraper, GitHandler
 from ..auth import require_agent, get_agent_key_from_env, append_audit_event
 
 class SatyaClient:
-    def __init__(self, agent_name="default_agent", repo_path="."):
+    def __init__(self, agent_name="default_agent", repo_path=".", adapters=None):
         self.agent_key = get_agent_key_from_env()
         require_agent(self.agent_key)
 
@@ -30,9 +30,29 @@ class SatyaClient:
         except Exception as e:
             print(f"Failed to initialize log file: {e}")
 
+        # Initialize adapters list
+        self.adapters = adapters if adapters is not None else []
+        self._init_adapters()
+
+    def _init_adapters(self):
+        """Initializes telemetry adapters based on environment variables."""
+        if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
+            from .adapters import OTLPAdapter
+            try:
+                self.adapters.append(OTLPAdapter())
+                print(f"[{self.agent_name}] Initialized OTLP telemetry adapter.")
+            except Exception as e:
+                print(f"Failed to initialize OTLP adapter: {e}")
+
+        # Add Console adapter if explicitly requested or if no other adapter is configured
+        if os.getenv("SATYA_DEBUG_CONSOLE") == "1" or not self.adapters:
+            from .adapters import ConsoleAdapter
+            self.adapters.append(ConsoleAdapter())
+            print(f"[{self.agent_name}] Initialized Console telemetry adapter.")
+
     def heartbeat(self, status: str = "online"):
         """Sends a heartbeat to indicate the agent is alive."""
-        now = datetime.now(timezone.utc).isoformat() + "Z"
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "") + "Z"
         heartbeat_data = {
             "last_seen": now,
             "status": status,
@@ -42,7 +62,7 @@ class SatyaClient:
         storage.save_heartbeat(self.agent_name, heartbeat_data)
 
     def log(self, message):
-        timestamp = datetime.now(timezone.utc).isoformat() + "Z"
+        timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "") + "Z"
         entry = f"[{timestamp}] {message}\n"
 
         # Log to file (always)
@@ -59,6 +79,14 @@ class SatyaClient:
                 self.tasks.add_comment(self.current_task["id"], message, commit=False, agent_name=self.agent_name)
             except Exception as e:
                 print(f"Failed to add comment to task: {e}")
+
+        # Emit to adapters
+        task_id = self.current_task["id"] if self.current_task else None
+        for adapter in self.adapters:
+            try:
+                adapter.export_log(self.agent_name, message, task_id)
+            except Exception as e:
+                pass
 
     def flush_logs(self):
         self.git.commit_and_push([self.log_path], f"Update logs for {self.agent_name}")
@@ -90,12 +118,17 @@ class SatyaClient:
         task = self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id)
         if task:
             append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {title}")
+            for adapter in self.adapters:
+                try:
+                    adapter.export_trace(task["trace_id"], self.agent_name, "task_created", {"task_id": task["id"], "title": title})
+                except Exception as e:
+                    pass
         return task
 
     def update_task(self, task_id, status):
         require_agent(self.agent_key)
         # GOVERNANCE RULE 2: Tasks cannot be marked Done without at least one log entry
-        if status == "Done":
+        if status == "done":
             task_data = self.tasks.get_task(task_id)
             if task_data:
                 comments = task_data.get("comments", [])
@@ -109,7 +142,13 @@ class SatyaClient:
         result = self.tasks.update_task_status(task_id, status, agent_name=self.agent_name)
         if result:
             task = self.tasks.get_task(task_id)
-            append_audit_event(self.agent_name, task_id, task.get("trace_id", "unknown"), "status_updated", f"Status changed to {status}")
+            trace_id = task.get("trace_id", "unknown")
+            append_audit_event(self.agent_name, task_id, trace_id, "status_updated", f"Status changed to {status}")
+            for adapter in self.adapters:
+                try:
+                    adapter.export_trace(trace_id, self.agent_name, "status_updated", {"task_id": task_id, "status": status})
+                except Exception as e:
+                    pass
         return result
 
     def scrape_url(self, url):
@@ -150,7 +189,7 @@ class SatyaClient:
             self.current_task = resume_task
             return resume_task
 
-        todo_tasks = [t for t in all_tasks if t.get("status") in ["To Do", "queued"]]
+        todo_tasks = [t for t in all_tasks if t.get("status") == "queued"]
 
         if not todo_tasks:
             self.log("No tasks in 'To Do' column.")
@@ -179,7 +218,7 @@ class SatyaClient:
             append_audit_event(self.agent_name, self.current_task["id"], self.current_task.get("trace_id", "unknown"), "task_claimed", "Claimed and started task")
         return self.current_task
 
-    def finish_task(self, status="Done"):
+    def finish_task(self, status="done"):
         require_agent(self.agent_key)
         """
         Completes the current task context.
@@ -191,7 +230,7 @@ class SatyaClient:
         task_id = self.current_task["id"]
 
         # Check governance before finishing
-        if status == "Done":
+        if status == "done":
             # the task is kept in self.current_task but it might not have the latest comments loaded
             # lets reload it from storage to be sure
             latest_task = self.tasks.get_task(task_id)
@@ -210,6 +249,34 @@ class SatyaClient:
         self.current_task = None
         self.flush_logs()
         return True
+
+    def poll_chat(self) -> list[dict]:
+        """
+        Polls for manual override messages sent from the Agent Chat control panel.
+        Returns a list of unread messages.
+        """
+        chat_dir = os.path.join(storage.SATYA_DIR, "chat", self.agent_name)
+        if not os.path.exists(chat_dir):
+            return []
+
+        unread_messages = []
+        for filename in os.listdir(chat_dir):
+            if not filename.endswith(".json"):
+                continue
+
+            filepath = os.path.join(chat_dir, filename)
+            data = storage.load_json(filepath)
+
+            if data and data.get("status") == "unread":
+                unread_messages.append(data)
+                # Mark as read
+                data["status"] = "read"
+                data["read_at"] = datetime.now(timezone.utc).isoformat() + "Z"
+                storage.save_json(filepath, data)
+
+        # Sort oldest first
+        unread_messages.sort(key=lambda m: m.get("timestamp", ""))
+        return unread_messages
 
     def use_satya(self, nl_instruction: str, parent_trace_id: str, capabilities: list = None):
         """

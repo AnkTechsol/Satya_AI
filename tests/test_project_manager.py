@@ -86,5 +86,43 @@ class TestProjectManager(unittest.TestCase):
         self.assertEqual(final_task["status"], STATUS_IN_PROGRESS)
         self.assertEqual(final_task["assignee"], "agent_2")
 
+    def test_grace_period_locked_at(self):
+        # Create a task
+        task = self.tasks.create_task("Test task 3", "Testing grace period", assignee="Unassigned")
+        self.assertIsNotNone(task)
+        task_id = task["id"]
+
+        # Assign it to agent_3 and set to in_progress
+        self.tasks.update_task_status(task_id, STATUS_IN_PROGRESS, agent_name="agent_3")
+        self.tasks.update_task(task_id, {"assignee": "agent_3"}, agent_name="agent_3")
+
+        # Override locked_at to be within grace period (e.g. just now)
+        recent_time = datetime.now(timezone.utc) - timedelta(seconds=2)
+        task_data = self.tasks.get_task(task_id)
+        task_data["locked_at"] = recent_time.isoformat().replace("+00:00", "") + "Z"
+        storage.save_json(storage.get_task_path(task_id), task_data)
+
+        # Agent 3 has NO heartbeat file at all yet.
+
+        # Run orchestrator once
+        self.orchestrator.run(run_once=True)
+
+        # Verify task was NOT reassigned because it's within grace period
+        final_task = self.tasks.get_task(task_id)
+        self.assertEqual(final_task["status"], STATUS_IN_PROGRESS)
+        self.assertEqual(final_task["assignee"], "agent_3")
+
+        # Now simulate grace period expiring
+        old_time = datetime.now(timezone.utc) - timedelta(seconds=20)
+        task_data["locked_at"] = old_time.isoformat().replace("+00:00", "") + "Z"
+        storage.save_json(storage.get_task_path(task_id), task_data)
+
+        self.orchestrator.run(run_once=True)
+
+        final_task_reassigned = self.tasks.get_task(task_id)
+        self.assertEqual(final_task_reassigned["status"], STATUS_QUEUED)
+        self.assertEqual(final_task_reassigned["assignee"], "Unassigned")
+
+
 if __name__ == "__main__":
     unittest.main()

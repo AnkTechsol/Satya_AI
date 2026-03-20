@@ -1,8 +1,26 @@
 import requests
 from bs4 import BeautifulSoup
 import markdownify
+import socket
+import ipaddress
+from urllib.parse import urlparse, urljoin
 from . import storage
 from .git_handler import GitHandler
+
+def _is_safe_url(url: str) -> bool:
+    """Validates if a URL is safe to fetch, preventing SSRF."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        return False
+    try:
+        # Resolve hostname to IP
+        ip_str = socket.gethostbyname(parsed.hostname)
+        ip_obj = ipaddress.ip_address(ip_str)
+        # Check if the IP is globally routable
+        # This prevents accessing loopback, private networks, and link-local (e.g., AWS metadata)
+        return ip_obj.is_global
+    except Exception:
+        return False
 
 class Scraper:
     def __init__(self, repo_path="."):
@@ -12,7 +30,28 @@ class Scraper:
 
     def fetch_and_save(self, url, title=None):
         try:
-            response = requests.get(url, timeout=10)
+            current_url = url
+            redirect_limit = 5
+            response = None
+
+            for _ in range(redirect_limit):
+                if not _is_safe_url(current_url):
+                    print(f"Error scraping {current_url}: URL resolved to unsafe IP or invalid scheme.")
+                    return None
+
+                response = requests.get(current_url, timeout=10, allow_redirects=False)
+
+                if 300 <= response.status_code < 400 and 'location' in response.headers:
+                    next_url = response.headers['location']
+                    # Resolve relative redirects using urljoin
+                    current_url = urljoin(current_url, next_url)
+                else:
+                    break
+
+            if response is None or (300 <= response.status_code < 400):
+                print(f"Error scraping {url}: Too many redirects.")
+                return None
+
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, 'html.parser')

@@ -3,7 +3,7 @@ import time
 from datetime import datetime, timezone
 import logging
 from . import storage
-from .tasks import Tasks, STATUS_IN_PROGRESS, STATUS_QUEUED
+from .tasks import Tasks, STATUS_IN_PROGRESS, STATUS_QUEUED, STATUS_FAILED
 
 logger = logging.getLogger(__name__)
 
@@ -43,94 +43,98 @@ class AIOrchestrator:
 
         return heartbeats
 
-    def _reassign_tasks_for_agent(self, agent_name: str):
-        """Finds tasks locked by the dead agent and resets them to queued."""
-        all_tasks = self.tasks.get_tasks(status=STATUS_IN_PROGRESS, assignee=agent_name)
+    def _reassign_task(self, task: dict, agent_name: str):
+        """Resets a single task locked by a dead agent to queued."""
+        logger.info(f"Orchestrator: Reassigning task {task['id']} from dead agent {agent_name}")
 
-        for task in all_tasks:
-            logger.info(f"Orchestrator: Reassigning task {task['id']} from dead agent {agent_name}")
+        updates = {
+            "status": STATUS_QUEUED,
+            "assignee": "Unassigned",
+            "locked_by": None,
+            "locked_at": None
+        }
+        self.tasks.update_task(task["id"], updates, agent_name="AI_Orchestrator")
 
-            # Use update_task to directly modify fields without status transition restrictions,
-            # since update_task_status doesn't allow in_progress -> queued.
-            # However, we must ensure consistency and follow the same update rules.
-
-            # Since update_task_status only allows specific transitions, and in_progress -> queued is not one of them,
-            # we need to manually update it using update_task, but we should also update the audit trail.
-
-            updates = {
-                "status": STATUS_QUEUED,
-                "assignee": "Unassigned",
-                "locked_by": None,
-                "locked_at": None
-            }
-            self.tasks.update_task(task["id"], updates, agent_name="AI_Orchestrator")
-
-            # Add a specific comment about the failure
-            self.tasks.add_comment(
-                task["id"],
-                f"Task reassigned to queue because agent '{agent_name}' stopped sending heartbeats.",
-                commit=False,
-                agent_name="AI_Orchestrator"
-            )
+        self.tasks.add_comment(
+            task["id"],
+            f"Task reassigned to queue because agent '{agent_name}' stopped sending heartbeats.",
+            commit=False,
+            agent_name="AI_Orchestrator"
+        )
 
     def scan_once(self):
         """Performs a single scan of heartbeats and reassigns tasks if necessary."""
+        logger.info("AI Orchestrator heartbeat scan running...")
         now = datetime.now(timezone.utc)
         heartbeats = self._get_agent_heartbeats()
 
-        # Also need to check all active tasks to see if their assignee has a heartbeat.
-        # If an agent never sent a heartbeat, but has tasks, we shouldn't kill them immediately,
-        # but the standard is they must send heartbeats.
+        # Fetch all tasks once to prevent N+1 read bottleneck
+        all_tasks = self.tasks.list_all()
+        in_progress_tasks = [t for t in all_tasks if t.get("status") == STATUS_IN_PROGRESS]
+        failed_tasks = [t for t in all_tasks if t.get("status") == STATUS_FAILED and not t.get("rca_spawned")]
 
-        in_progress_tasks = self.tasks.get_tasks(status=STATUS_IN_PROGRESS)
-        active_agents = set()
-        for t in in_progress_tasks:
-            assignee = t.get("assignee")
+        # Handle failed tasks (Automated Issue Resolution Workflow)
+        for task in failed_tasks:
+            logger.info(f"Orchestrator: Spawning RCA task for failed task {task['id']}")
+            rca_title = f"RCA: Debug Failed Task '{task['title']}'"
+            rca_desc = f"Automated Root Cause Analysis for task {task['id']} ({task['title']}). Please investigate the failure reasons and propose fixes."
+
+            # Spawn the RCA task
+            self.tasks.create_task(
+                title=rca_title,
+                description=rca_desc,
+                assignee="Unassigned",
+                priority="High",
+                agent_name="AI_Orchestrator",
+                parent_trace_id=task.get("trace_id")
+            )
+
+            # Mark the original task to prevent duplicate RCAs
+            self.tasks.update_task(task["id"], {"rca_spawned": True}, agent_name="AI_Orchestrator")
+
+        # Group tasks by assignee in-memory
+        tasks_by_agent = {}
+        for task in in_progress_tasks:
+            assignee = task.get("assignee")
             if assignee and assignee != "Unassigned":
-                active_agents.add(assignee)
+                tasks_by_agent.setdefault(assignee, []).append(task)
 
-        for agent_name in active_agents:
+        for agent_name, tasks in tasks_by_agent.items():
             last_heartbeat = heartbeats.get(agent_name)
+            is_dead = False
 
-            # Find the most recent task locked_at time for this agent
-            agent_tasks = [t for t in in_progress_tasks if t.get("assignee") == agent_name]
-            recent_lock_time = None
-            for t in agent_tasks:
-                locked_at_str = t.get("locked_at")
-                if locked_at_str:
-                    try:
-                        clean_iso = locked_at_str
-                        if clean_iso.endswith('Z'):
-                            clean_iso = clean_iso[:-1]
-                            if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
-                                clean_iso += '+00:00'
-                        dt = datetime.fromisoformat(clean_iso)
-                        if dt.tzinfo is None:
-                            dt = dt.replace(tzinfo=timezone.utc)
-                        if not recent_lock_time or dt > recent_lock_time:
-                            recent_lock_time = dt
-                    except ValueError:
-                        pass
-
-            grace_period_active = False
-            if recent_lock_time:
-                lock_elapsed = (now - recent_lock_time).total_seconds()
-                if lock_elapsed <= self.timeout_seconds:
-                    grace_period_active = True
-
-            if grace_period_active:
-                logger.debug(f"Agent {agent_name} is in grace period (locked a task recently).")
-                continue
-
-            # If no heartbeat at all, or it's too old
             if not last_heartbeat:
-                logger.warning(f"Agent {agent_name} has no heartbeat file and no recent task lock. Reassigning tasks.")
-                self._reassign_tasks_for_agent(agent_name)
+                # Agent has never sent a heartbeat. We will still check grace period below.
+                is_dead = True
             else:
                 elapsed = (now - last_heartbeat).total_seconds()
                 if elapsed > self.timeout_seconds:
-                    logger.warning(f"Agent {agent_name} heartbeat timeout ({elapsed}s > {self.timeout_seconds}s). Reassigning tasks.")
-                    self._reassign_tasks_for_agent(agent_name)
+                    is_dead = True
+
+            if is_dead:
+                for task in tasks:
+                    locked_at_str = task.get("locked_at")
+                    grace_period_expired = True
+
+                    if locked_at_str:
+                        try:
+                            if locked_at_str.endswith("Z"):
+                                locked_at_str = locked_at_str[:-1] + "+00:00"
+                            locked_at = datetime.fromisoformat(locked_at_str)
+                            if locked_at.tzinfo is None:
+                                locked_at = locked_at.replace(tzinfo=timezone.utc)
+
+                            lock_elapsed = (now - locked_at).total_seconds()
+                            if lock_elapsed <= self.timeout_seconds:
+                                grace_period_expired = False
+                        except ValueError:
+                            pass
+
+                    if grace_period_expired:
+                        logger.warning(f"Agent {agent_name} is dead. Reassigning task {task['id']}.")
+                        self._reassign_task(task, agent_name)
+                    else:
+                        logger.info(f"Agent {agent_name} has no recent heartbeat but task {task['id']} is within grace period.")
 
     def run(self, poll_interval=10, run_once=False):
         """Main loop for the orchestrator."""
