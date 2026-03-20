@@ -69,9 +69,12 @@ def main():
                 task = client.create_task(f"Sim Task {i}", "Simulating runtime performance testing.")
                 latencies.append(time.time() - t0)
 
-                client.update_task(task['id'], "in_progress")
+                client.pick_task()
+                # Wait a bit to ensure log happens after task creation
+                time.sleep(0.01)
                 client.log(f"Doing work on {task['id']}")
-                client.update_task(task['id'], "done")
+                time.sleep(0.01)
+                client.finish_task(status="done")
     except Exception as e:
         print(f"Simulation failed: {e}")
 
