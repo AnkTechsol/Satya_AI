@@ -38,6 +38,8 @@ def run():
                 client.log(f"Doing work on {task['id']}")
                 latencies.append(("log", time.time() - t0))
 
+                client.tasks.add_comment(task['id'], f"Progressing on {task['id']}", agent_name="sim_agent")
+
                 t0 = time.time()
                 client.update_task(task['id'], "done")
                 latencies.append(("complete", time.time() - t0))
