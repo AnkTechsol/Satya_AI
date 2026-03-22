@@ -173,16 +173,33 @@ class SatyaClient:
             self.log("No tasks in 'To Do' column.")
             return None
 
+        # Dependency check
+        ready_tasks = []
+        for t in todo_tasks:
+            depends_on = t.get("depends_on", [])
+            blocked = False
+            for dep_id in depends_on:
+                dep_task = next((task for task in all_tasks if task["id"] == dep_id), None)
+                if not dep_task or dep_task.get("status") != "done":
+                    blocked = True
+                    break
+            if not blocked:
+                ready_tasks.append(t)
+
+        if not ready_tasks:
+            self.log("All 'To Do' tasks are currently blocked by dependencies.")
+            return None
+
         # Prioritization Logic
         priority_map = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
 
         # Sort by Priority (asc) then Created At (asc - oldest first)
-        todo_tasks.sort(key=lambda t: (
+        ready_tasks.sort(key=lambda t: (
             priority_map.get(t.get("priority", "Medium"), 2),
             t.get("created_at", "")
         ))
 
-        best_task = todo_tasks[0]
+        best_task = ready_tasks[0]
 
         # Assign and Start
         self.log(f"Picking highest priority task: {best_task['title']}")

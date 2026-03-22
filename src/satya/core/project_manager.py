@@ -153,6 +153,35 @@ class AIOrchestrator:
         # Process SLA Escalation for Queued Tasks
         self._escalate_stale_tasks(queued_tasks, now)
 
+        # Handle time limits for in-progress tasks
+        remaining_in_progress = []
+        for task in in_progress_tasks:
+            time_limit = task.get('time_limit_minutes', 30)
+            locked_at_str = task.get("locked_at")
+
+            if locked_at_str and time_limit is not None:
+                try:
+                    if locked_at_str.endswith("Z"):
+                        locked_at_str = locked_at_str[:-1] + "+00:00"
+                    locked_at = datetime.fromisoformat(locked_at_str)
+                    if locked_at.tzinfo is None:
+                        locked_at = locked_at.replace(tzinfo=timezone.utc)
+
+                    if (now - locked_at).total_seconds() > time_limit * 60:
+                        logger.warning(f"Orchestrator: Task {task['id']} exceeded time limit. Failing automatically.")
+                        self.tasks.update_task_status(task["id"], STATUS_FAILED, "AI_Orchestrator")
+                        self.tasks.add_comment(task["id"], "Task failed automatically due to time limit exceeded.", agent_name="AI_Orchestrator")
+
+                        # Refresh failed_tasks reference so RCA can pick it up in this scan or next
+                        failed_tasks.append(self.tasks.get_task(task["id"]))
+                        continue
+                except ValueError:
+                    pass
+
+            remaining_in_progress.append(task)
+
+        in_progress_tasks = remaining_in_progress
+
         # Handle failed tasks (Automated Issue Resolution Workflow)
         for task in failed_tasks:
             logger.info(f"Orchestrator: Spawning RCA task for failed task {task['id']}")
