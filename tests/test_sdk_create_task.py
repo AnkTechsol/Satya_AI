@@ -56,3 +56,13 @@ def test_create_task_valid_description(temp_client):
     assert task["title"] == "Test Task"
     assert task["description"] == "This is a long enough description."
     assert task["id"] is not None
+def test_poll_chat_path_traversal(monkeypatch):
+    monkeypatch.setenv("SATYA_AGENT_KEY", "test_key1")
+    monkeypatch.setenv("SATYA_AGENT_KEYS", "test_key1")
+    import src.satya.auth as auth
+    from importlib import reload
+    reload(auth)
+
+    client = SatyaClient(agent_name="../../etc/passwd")
+    messages = client.poll_chat()
+    assert messages == []
