@@ -29,10 +29,9 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-03-18T14:54:36.397598+00:00
+- **Last Analytics Run:** 2026-03-22T14:32:48.337107+00:00
 - **Open Issues:** Unknown without GH CLI
-- **Recent CI Status:** Unknown (no .github/workflows found)
-
+- **Recent CI Status:** Requires GH CLI to check
 ## Human-Observer Policy (Agent-First)
 
 Satya is agent-first. Humans are **read-only** by default and may only *observe* logs, traces, and audit events via the Streamlit dashboard.
@@ -52,7 +51,7 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
 
-- **Export Adapter Framework (OTLP/Console)** (Added 2024-03)
+- **Export Adapter Framework (OTLP/Console)** (Added 2026-03)
   - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture.
   - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter()])`.
   - Validation: `PYTHONPATH=. pytest tests/test_adapters.py`
