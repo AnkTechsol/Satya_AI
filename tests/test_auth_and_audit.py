@@ -35,6 +35,8 @@ def test_auth_checks():
 def test_audit_event_append_and_verify():
     events_dir = os.path.join(storage.SATYA_DIR, "events")
     events_file = os.path.join(events_dir, "audit_log.jsonl")
+    if os.path.exists(events_file):
+        os.remove(events_file)
 
     # Append events
     sig1 = auth.append_audit_event("agent_1", "task_A", "trace_1", "task_created", "demo create")
@@ -60,6 +62,11 @@ def test_sdk_create_task_requires_auth(monkeypatch):
 def test_sdk_use_satya_audit_chain(monkeypatch):
     monkeypatch.setenv("SATYA_AGENT_KEY", "test_key1")
     client = SatyaClient(agent_name="tester")
+
+    events_dir = os.path.join(storage.SATYA_DIR, "events")
+    events_file = os.path.join(events_dir, "audit_log.jsonl")
+    if os.path.exists(events_file):
+        os.remove(events_file)
 
     # Simulate picking a task
     parent_task = client.create_task("Parent Task", "Long enough description for parent.")

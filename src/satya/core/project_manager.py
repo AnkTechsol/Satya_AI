@@ -62,6 +62,82 @@ class AIOrchestrator:
             agent_name="AI_Orchestrator"
         )
 
+    def _escalate_stale_tasks(self, queued_tasks: list[dict], now: datetime):
+        """Bumps priority of tasks that have been queued for too long."""
+        priority_ladder = ["Low", "Medium", "High", "Critical"]
+        # e.g. 5 minutes for demonstration
+        stale_threshold_seconds = 300
+
+        for task in queued_tasks:
+            current_priority = task.get("priority", "Medium")
+            if current_priority == "Critical":
+                continue # Already at max priority
+
+            created_at_str = task.get("created_at")
+            if not created_at_str:
+                continue
+
+            try:
+                if created_at_str.endswith("Z"):
+                    created_at_str = created_at_str[:-1] + "+00:00"
+                created_at = datetime.fromisoformat(created_at_str)
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc)
+
+                elapsed = (now - created_at).total_seconds()
+
+                # Check when it was last updated or escalated
+                # If there are comments by AI_Orchestrator about escalation, use that timestamp
+                last_escalation_time = created_at
+                audit_trail = task.get("audit_trail", [])
+                for event in reversed(audit_trail):
+                    if event.get("action") == "priority_escalated":
+                        ts_str = event.get("timestamp")
+                        if ts_str:
+                            if ts_str.endswith("Z"):
+                                ts_str = ts_str[:-1] + "+00:00"
+                            last_escalation_time = datetime.fromisoformat(ts_str)
+                            if last_escalation_time.tzinfo is None:
+                                last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
+                        break
+
+                time_since_last_action = (now - last_escalation_time).total_seconds()
+
+                if time_since_last_action > stale_threshold_seconds:
+                    try:
+                        idx = priority_ladder.index(current_priority)
+                        new_priority = priority_ladder[idx + 1]
+
+                        logger.info(f"Orchestrator: Escalating SLA for task {task['id']} ({current_priority} -> {new_priority})")
+
+                        self.tasks.update_task(
+                            task["id"],
+                            {"priority": new_priority},
+                            agent_name="AI_Orchestrator"
+                        )
+
+                        self.tasks.add_comment(
+                            task["id"],
+                            f"SLA Escalation: Task priority bumped from {current_priority} to {new_priority} due to queue time.",
+                            commit=False,
+                            agent_name="AI_Orchestrator"
+                        )
+
+                        # Add audit event
+                        from satya.auth import append_audit_event
+                        append_audit_event(
+                            "AI_Orchestrator",
+                            task["id"],
+                            task.get("trace_id", "unknown"),
+                            "priority_escalated",
+                            f"Escalated priority to {new_priority}"
+                        )
+                    except ValueError:
+                        pass # Should not happen if priority is in ladder
+
+            except ValueError:
+                pass
+
     def scan_once(self):
         """Performs a single scan of heartbeats and reassigns tasks if necessary."""
         logger.info("AI Orchestrator heartbeat scan running...")
@@ -72,6 +148,10 @@ class AIOrchestrator:
         all_tasks = self.tasks.list_all()
         in_progress_tasks = [t for t in all_tasks if t.get("status") == STATUS_IN_PROGRESS]
         failed_tasks = [t for t in all_tasks if t.get("status") == STATUS_FAILED and not t.get("rca_spawned")]
+        queued_tasks = [t for t in all_tasks if t.get("status") == STATUS_QUEUED]
+
+        # Process SLA Escalation for Queued Tasks
+        self._escalate_stale_tasks(queued_tasks, now)
 
         # Handle failed tasks (Automated Issue Resolution Workflow)
         for task in failed_tasks:
