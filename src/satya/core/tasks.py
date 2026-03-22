@@ -15,7 +15,7 @@ class Tasks:
         self.git_handler = GitHandler(repo_path)
         storage.ensure_satya_dirs()
 
-    def create_task(self, title, description, assignee=None, priority="Medium", agent_name="System", time_limit_minutes=30, parent_trace_id=None):
+    def create_task(self, title, description, assignee=None, priority="Medium", agent_name="System", time_limit_minutes=30, parent_trace_id=None, depends_on=None):
         task_id = str(uuid.uuid4())[:8]
         trace_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat() + "Z"
@@ -36,6 +36,7 @@ class Tasks:
                 "type": "manual"
             },
             "time_limit_minutes": time_limit_minutes,
+            "depends_on": depends_on or [],
             "locked_by": None,
             "locked_at": None,
             "created_at": now,
@@ -85,7 +86,8 @@ class Tasks:
             except (CompletionCriteriaNotMet, TaskNotFound) as e:
                 raise CompletionCriteriaNotMet(f"CompletionCriteriaNotMet: {str(e)}")
 
-        now = datetime.now(timezone.utc).isoformat() + "Z"
+        now_dt = datetime.now(timezone.utc)
+        now = now_dt.isoformat() + "Z"
         task["status"] = new_status
         task["updated_at"] = now
 
@@ -94,6 +96,17 @@ class Tasks:
             task["locked_at"] = now
         elif new_status in [STATUS_DONE, STATUS_FAILED]:
             task["completed_at"] = now
+            if task.get("locked_at"):
+                try:
+                    locked_at_str = task["locked_at"]
+                    if locked_at_str.endswith("Z"):
+                        locked_at_str = locked_at_str[:-1] + "+00:00"
+                    locked_at_dt = datetime.fromisoformat(locked_at_str)
+                    if locked_at_dt.tzinfo is None:
+                        locked_at_dt = locked_at_dt.replace(tzinfo=timezone.utc)
+                    task["duration_seconds"] = int((now_dt - locked_at_dt).total_seconds())
+                except ValueError:
+                    pass
 
         if "audit_trail" not in task:
             task["audit_trail"] = []
