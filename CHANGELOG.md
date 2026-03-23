@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-03-23 15:40
+- **chore**: Snapshot repository analytics (repo_analytics.json, REPO_ANALYTICS.md). Risk: Low
+- **feat**: Add Export Adapter Framework (ConsoleAdapter, OTLPAdapter) to `src/satya/sdk/adapters.py`. Risk: Low
+- **docs**: Create Competitor Matrix and update README.md repository status. Risk: Low
+
+
+
 ## [Unreleased]
 
 ### Added
