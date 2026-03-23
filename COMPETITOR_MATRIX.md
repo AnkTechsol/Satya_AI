@@ -1,20 +1,19 @@
 # Competitor Matrix
 
-**Satya vs The Ecosystem**
+| Feature | Satya | LangSmith | Langfuse |
+| --- | --- | --- | --- |
+| Observability Depth | High (Flat-file architecture, event-level traces) | High (Token-level, prompt snapshots) | High (Detailed execution traces, token usage) |
+| Agent Runtime Support | Yes (Agent-first, automatic task lifecycle) | Limited (Primarily observability) | Limited (Primarily observability) |
+| Self-Host Friendliness | Very High (Zero DB, purely flat JSON/MD files) | Medium (Docker required, DB overhead) | Medium (Postgres/Redis needed) |
+| Enterprise Features | WIP (Export adapters coming soon) | High (SSO, RBAC, Data Retention) | High (SSO, Audit Logs, Data Export) |
+| Export Adapters | Extensible (Console, OTLP adapters) | Limited | Limited |
+| Pricing Model Signal | Open Source (100% Free) | Managed (SaaS) with enterprise tiers | Managed (SaaS) and Open Source |
 
-| Feature | Satya (OSS) | LangSmith / Langfuse | AgentOps |
-|---------|-------------|-----------------------|-----------|
-| **Observability Depth** | Tasks, logs, flat files | Token-level, prompt snapshots | Event-level, performance traces |
-| **Agent Runtime Support** | Core (SDK, Agent Chat, overrides) | Observability only | Observability & Testing |
-| **Self-Host Friendliness** | **Extremely High (Zero DB, flat files)** | Medium (Docker, Postgres/Clickhouse) | Low (SaaS primarily) |
-| **Enterprise Features** | RBAC, Audit Trails (HMAC) | SSO, RBAC, Data Retention | SSO, RBAC |
-| **Export Adapters** | **Coming soon (OTLP, etc.)** | High (native + exports) | High |
-| **Pricing Model** | 100% OSS | Managed + OSS core | Managed SaaS |
+## Where Satya Wins
+- **Zero Infrastructure overhead**: Flat-file architecture means no database management, making it trivial to deploy.
+- **Agent-First Design**: Native multi-agent task tracking integrated directly with execution context.
+- **Self-Hosting**: True out-of-the-box self-hosting without complex Docker or Kubernetes setups.
 
-### Where Satya Wins
-- **Simplicity and Zero-DB Architecture**: Satya is uniquely defensible because it requires zero infrastructure. A single `pip install` and flat files make it the easiest way to add governance to agentic workflows.
-- **Agent-First Paradigm**: The "Humans = Observers, Agents = Actors" strict RBAC combined with the Agent Chat overrides is built specifically for autonomous workforces, unlike tools built for LLM API monitoring.
-
-### Where Satya Must Catch Up
-- **Deep Traceability**: Satya lacks token-level and prompt snapshot tracing.
-- **Ecosystem Integration**: Needs export adapters (like OTLP) so enterprises can pipe Satya's agent-level orchestration data into their existing observability stacks (Datadog, LangSmith).
+## Where Satya Must Catch Up
+- **Enterprise Features**: Needs robust SSO, RBAC, and deeper audit stores.
+- **Observability Granularity**: While good at task/event levels, token-level and prompt snapshot observability are currently missing compared to LangSmith.

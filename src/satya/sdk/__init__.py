@@ -56,3 +56,10 @@ def can_do(action: str, task_id: str) -> bool:
     if _client:
         return _client.can_do(action, task_id)
     return False
+
+from .adapters import ConsoleAdapter, OTLPAdapter
+__all__ = [
+    "SatyaClient", "init", "log", "create_task", "update_task", "scrape",
+    "pick_task", "finish_task", "poll_chat", "send_heartbeat", "can_do",
+    "ConsoleAdapter", "OTLPAdapter"
+]
