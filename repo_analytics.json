@@ -1,7 +1,7 @@
 {
   "git": {
     "commits_last_90d": "1",
-    "last_commit_date": "Mon Mar 23 02:43:52 2026 +0000",
+    "last_commit_date": "Tue Mar 24 02:35:06 2026 +0000",
     "authors": []
   },
   "issues_prs": {
@@ -27,44 +27,40 @@
   ],
   "code_health": {
     "top_20_largest_files": [
-      "137736 total",
-      " 17767 src/satya/sdk/__pycache__/client.cpython-311.pyc",
-      " 12324 src/satya/core/__pycache__/project_manager.cpython-311.pyc",
-      " 11987 src/satya/core/__pycache__/tasks.cpython-311.pyc",
+      "127540 total",
+      " 16083 src/satya/sdk/__pycache__/client.cpython-312.pyc",
       " 11642 src/satya/sdk/client.py",
-      " 10274 src/satya/core/__pycache__/storage.cpython-311.pyc",
+      " 10874 src/satya/core/__pycache__/tasks.cpython-312.pyc",
+      " 10630 src/satya/core/__pycache__/project_manager.cpython-312.pyc",
       "  9919 src/satya/core/project_manager.py",
+      "  8919 src/satya/core/__pycache__/storage.cpython-312.pyc",
       "  8892 src/satya/core/tasks.py",
-      "  7807 src/satya/__pycache__/auth.cpython-311.pyc",
-      "  4621 src/satya/core/__pycache__/scraper.cpython-311.pyc",
+      "  6779 src/satya/__pycache__/auth.cpython-312.pyc",
       "  4566 src/satya/core/storage.py",
       "  4352 src/satya/auth.py",
-      "  4138 src/satya/core/__pycache__/completion.cpython-311.pyc",
-      "  3589 src/satya/core/__pycache__/git_handler.cpython-311.pyc",
-      "  3087 src/satya/core/__pycache__/watchdog.cpython-311.pyc",
-      "  3064 src/satya/sdk/__pycache__/__init__.cpython-311.pyc",
+      "  4062 src/satya/core/__pycache__/scraper.cpython-312.pyc",
+      "  3586 src/satya/core/__pycache__/completion.cpython-312.pyc",
+      "  3174 src/satya/core/__pycache__/git_handler.cpython-312.pyc",
       "  2975 src/satya/core/completion.py",
       "  2948 src/satya/core/scraper.py",
+      "  2643 src/satya/core/__pycache__/watchdog.cpython-312.pyc",
+      "  2583 src/satya/sdk/__pycache__/__init__.cpython-312.pyc",
       "  2546 src/satya/core/watchdog.py",
-      "  1904 src/satya/sdk/adapters/__pycache__/console.cpython-311.pyc"
+      "  1695 src/satya/sdk/adapters/__pycache__/console.cpython-312.pyc"
     ]
   },
   "runtime_artifacts": [
     "satya_data/events/audit_log.jsonl",
     "satya_data/agents/tester_20260324.log",
-    "satya_data/tasks/ff9a3930.json.lock",
-    "satya_data/tasks/a1016c0a.json.lock",
-    "satya_data/tasks/f4f6318e.json.lock",
-    "satya_data/tasks/ff9a3930.json",
-    "satya_data/tasks/0166d8b1.json.lock",
-    "satya_data/tasks/f4f6318e.json",
-    "satya_data/tasks/a1016c0a.json",
-    "satya_data/tasks/0166d8b1.json"
+    "satya_data/tasks/0ab1cd48.json.lock",
+    "satya_data/tasks/a2b56d14.json.lock",
+    "satya_data/tasks/0ab1cd48.json",
+    "satya_data/tasks/a2b56d14.json"
   ],
   "runtime_simulation": {
-    "median_latency_s": 0.0005028247833251953,
-    "p95_latency_s": 0.0006277561187744141,
-    "p99_latency_s": 0.0006277561187744141
+    "median_latency_s": 0.0010499954223632812,
+    "p95_latency_s": 0.0014834403991699219,
+    "p99_latency_s": 0.0014834403991699219
   },
-  "timestamp": "2026-03-24T02:35:06.175615+00:00"
+  "timestamp": "2026-03-24T14:57:30.029974+00:00"
 }
