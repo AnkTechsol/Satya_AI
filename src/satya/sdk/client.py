@@ -233,7 +233,9 @@ class SatyaClient:
         Polls for manual override messages sent from the Agent Chat control panel.
         Returns a list of unread messages.
         """
-        chat_dir = os.path.join(storage.SATYA_DIR, "chat", self.agent_name)
+        # Security Fix: Sanitize agent_name to prevent path traversal
+        safe_agent_name = os.path.basename(self.agent_name)
+        chat_dir = os.path.join(storage.SATYA_DIR, "chat", safe_agent_name)
         if not os.path.exists(chat_dir):
             return []
 
