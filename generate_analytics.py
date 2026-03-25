@@ -131,5 +131,40 @@ def main():
     with open('REPO_ANALYTICS.md', 'w') as f:
         f.write(md)
 
+    # Auto-README updater
+    try:
+        with open('README.md', 'r') as f:
+            readme_content = f.read()
+
+        import re
+
+        # We need to replace these 3 lines under ## Repository Status
+        # - **Last Analytics Run:** ...
+        # - **Open Issues:** ...
+        # - **Recent CI Status:** ...
+
+        readme_content = re.sub(
+            r'-\s*\*\*Last Analytics Run:\*\*.*',
+            f'- **Last Analytics Run:** {analytics["timestamp"]}',
+            readme_content
+        )
+
+        readme_content = re.sub(
+            r'-\s*\*\*Open Issues:\*\*.*',
+            f'- **Open Issues:** {analytics["issues_prs"]["open"]}',
+            readme_content
+        )
+
+        readme_content = re.sub(
+            r'-\s*\*\*Recent CI Status:\*\*.*',
+            f'- **Recent CI Status:** {analytics["ci"]["status"]}',
+            readme_content
+        )
+
+        with open('README.md', 'w') as f:
+            f.write(readme_content)
+    except Exception as e:
+        print(f"Failed to update README.md: {e}")
+
 if __name__ == '__main__':
     main()
