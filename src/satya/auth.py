@@ -14,7 +14,7 @@ from .core import storage
 
 _AGENT_KEYS = set(k.strip() for k in os.environ.get("SATYA_AGENT_KEYS", "DEMO_KEY").split(",") if k.strip())
 _HUMAN_VIEW = os.environ.get("HUMAN_VIEW_TOKEN", "")
-_AUDIT_SECRET = os.environ.get("AUDIT_SECRET", "default_audit_secret_change_me")
+_AUDIT_SECRET = os.environ.get("AUDIT_SECRET")
 
 
 def is_agent_authorized(key: str) -> bool:
@@ -36,6 +36,8 @@ def require_agent(key: str):
 
 def sign_event(event_data: str, prev_hmac: str = "") -> str:
     """Sign an event payload using HMAC-SHA256, optionally chaining a previous HMAC."""
+    if not _AUDIT_SECRET:
+        raise ValueError("AUDIT_SECRET environment variable is mandatory for signing audit events.")
     msg = f"{prev_hmac}:{event_data}".encode('utf-8')
     return hmac.new(_AUDIT_SECRET.encode('utf-8'), msg, hashlib.sha256).hexdigest()
 
