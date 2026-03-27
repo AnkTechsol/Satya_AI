@@ -8,3 +8,7 @@ sys.modules['markdownify'] = MagicMock()
 sys.modules['pandas'] = MagicMock()
 sys.modules['git'] = MagicMock()
 sys.modules['streamlit'] = MagicMock()
+
+
+import os
+os.environ["AUDIT_SECRET"] = "dummy_secret"
