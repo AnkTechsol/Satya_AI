@@ -29,9 +29,9 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-03-18T14:54:36.397598+00:00
+- **Last Analytics Run:** 2026-03-27T14:54:57.370566+00:00
 - **Open Issues:** Unknown without GH CLI
-- **Recent CI Status:** Unknown (no .github/workflows found)
+- **Recent CI Status:** Requires GH CLI to check
 
 ## Human-Observer Policy (Agent-First)
 
@@ -47,6 +47,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 ## SUSTAINABLE_FEATURES
 
+- **Auto-README Updater Action** (Added 2026-03)
+  - Implements a GitHub Action to auto-run the analytics script on push to main, updating REPO_ANALYTICS.md, repo_analytics.json, and the README summary automatically. Reduces doc rot and keeps stakeholders informed.
+  - Runbook: Ensure GitHub Action is enabled. Commits to main trigger the action.
+  - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on push to main and commits updates.
+
 - **Agent Self-Test Harness + CI Analytics Job** (Added 2026-03)
   - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
@@ -61,6 +66,7 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
 
 For more details on changes, see our [CHANGELOG](CHANGELOG.md).
+
 ## How It Works
 
 Satya separates **who does the work** from **who watches the work**:

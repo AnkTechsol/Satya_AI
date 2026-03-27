@@ -96,6 +96,23 @@ def main():
     with open('repo_analytics.json', 'w') as f:
         json.dump(analytics, f, indent=2)
 
+    # Update README
+    import re
+    try:
+        with open('README.md', 'r') as f:
+            readme_content = f.read()
+
+        readme_content = re.sub(
+            r"## Repository Status\n- \*\*Last Analytics Run:\*\* .*\n- \*\*Open Issues:\*\* .*\n- \*\*Recent CI Status:\*\* .*\n",
+            f"## Repository Status\n- **Last Analytics Run:** {analytics['timestamp']}\n- **Open Issues:** {analytics['issues_prs']['open']}\n- **Recent CI Status:** {analytics['ci']['status']}\n",
+            readme_content
+        )
+
+        with open('README.md', 'w') as f:
+            f.write(readme_content)
+    except Exception as e:
+        print(f"Failed to update README.md: {e}")
+
     md = f"""# Repo Analytics
 
 **Last Run**: {analytics['timestamp']}
