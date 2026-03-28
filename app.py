@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1465,6 +1465,119 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD PAGE ─────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">Enterprise ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Quantify the business value of your autonomous workforce vs manual execution</div>', unsafe_allow_html=True)
+
+    # Calculate ROI metrics
+    total_autonomous_duration_seconds = 0
+    total_completed_tasks = 0
+    agent_duration_map = {}
+
+    for t in all_tasks:
+        if t.get("status") == "done":
+            total_completed_tasks += 1
+            # Mock or use real duration (seconds)
+            duration = t.get("duration_seconds")
+            if duration is None:
+                # If duration isn't explicitly tracked, fallback to a mocked value (e.g. 15 mins)
+                duration = 900
+            total_autonomous_duration_seconds += duration
+
+            assignee = t.get("assignee", "Unassigned")
+            if assignee not in agent_duration_map:
+                agent_duration_map[assignee] = 0
+            agent_duration_map[assignee] += duration
+
+    # ROI Assumptions
+    MANUAL_HOURLY_RATE = 50.0 # $50/hr for a human engineer
+    AUTONOMOUS_HOURLY_RATE = 1.50 # $1.50/hr equivalent token/compute cost
+    # Assumption: A human takes 4x longer than an agent to do the same task (inclusive of context switching, etc.)
+    HUMAN_MULTIPLIER = 4.0
+
+    autonomous_hours = total_autonomous_duration_seconds / 3600.0
+    human_equivalent_hours = autonomous_hours * HUMAN_MULTIPLIER
+
+    autonomous_cost = autonomous_hours * AUTONOMOUS_HOURLY_RATE
+    human_equivalent_cost = human_equivalent_hours * MANUAL_HOURLY_RATE
+
+    cost_savings = human_equivalent_cost - autonomous_cost
+    time_saved = human_equivalent_hours - autonomous_hours
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128176;</div>
+            <div class="metric-value" style="color: var(--success);">${cost_savings:,.2f}</div>
+            <div class="metric-label">Estimated Cost Saved</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#9201;</div>
+            <div class="metric-value" style="color: var(--info);">{time_saved:,.1f}h</div>
+            <div class="metric-label">Human Hours Saved</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128187;</div>
+            <div class="metric-value" style="color: var(--primary-light);">${autonomous_cost:,.2f}</div>
+            <div class="metric-label">Total Compute/Token Cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128200;</div>
+            <div class="metric-value" style="color: var(--warning);">{total_completed_tasks}</div>
+            <div class="metric-label">Tasks Automated</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    col_chart1, col_chart2 = st.columns(2)
+
+    import pandas as pd
+
+    with col_chart1:
+        st.markdown("#### Cost Comparison")
+        cost_df = pd.DataFrame({
+            "Execution Type": ["Manual (Human)", "Autonomous (AI Agent)"],
+            "Cost ($)": [human_equivalent_cost, autonomous_cost]
+        })
+        st.bar_chart(cost_df, x="Execution Type", y="Cost ($)", color="#E17055", height=300)
+
+    with col_chart2:
+        st.markdown("#### Agent Compute Velocity")
+        if agent_duration_map:
+            agent_df = pd.DataFrame([
+                {"Agent": agent, "Compute Hours": duration / 3600.0}
+                for agent, duration in agent_duration_map.items()
+            ])
+            st.bar_chart(agent_df, x="Agent", y="Compute Hours", color="#6C5CE7", height=300)
+        else:
+            st.info("No agent tasks completed yet to calculate velocity.")
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    st.markdown("#### ROI Calculation Methodology")
+    st.info(f"""
+    **How we calculate this:**
+    - **Human Hourly Rate:** Assumed at ${MANUAL_HOURLY_RATE}/hr.
+    - **AI Compute Rate:** Blended token/infrastructure cost estimated at ${AUTONOMOUS_HOURLY_RATE}/hr of active execution.
+    - **Efficiency Multiplier:** We assume humans take {HUMAN_MULTIPLIER}x longer than an AI agent to complete the same unit of tracked work due to context switching and manual typing overhead.
+    """)
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":
