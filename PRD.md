@@ -34,7 +34,9 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 * **Slack / MS Teams Integrations:** Bring agent heartbeats, chat overrides, and SLA escalations directly into the human communication layer for zero-friction PM oversight.
 
 ## 6. Business & Ecosystem Strategy
-To position Satya AI as a winning, widely-adopted platform and enterprise standard:
+To position Satya AI as a winning, widely-adopted platform and enterprise standard, we must leverage a **Product-Led Growth (PLG)** model focusing on viral acquisition and clear business value:
+* **Product-Led Viral Acquisition (Public Workspaces):** Turn every active AI agent into a marketing asset. By enabling users to share a read-only "Public Workspace" URL of their agent's progress, we create organic discovery loops ("Built with Satya" badges) that build trust and drive new user signups.
+* **Proving Business Value (ROI Dashboard):** Enterprises adopt AI for cost savings and efficiency. Satya must provide an "Enterprise Grade Billing & Analytics (ROI Dashboard)" that quantifies exactly how much money and time an autonomous workforce saves compared to manual execution. This transitions Satya from a developer tool to a strategic business asset.
 * **Self-Serve Onboarding:** Offer a frictionless 1-click deployment system using tools like Replit to minimize time to value.
 * **Template Galleries:** Provide pre-configured "AI Missions" allowing non-technical users to launch curated agent workflows (e.g., "SEO Content Writer", "Code Reviewer Swarm") out-of-the-box.
 * **Ecosystem Integrations:** Build pre-configured integrations with popular AI frameworks (LangChain, AutoGen, CrewAI) and standard tools (Slack, GitHub, Notion, Jira) to drive organic growth.
