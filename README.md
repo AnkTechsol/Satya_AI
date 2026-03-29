@@ -1,3 +1,9 @@
+<!-- ANALYTICS_START -->
+**Last Analytics Run**: 2026-03-29T15:09:44.150392+00:00
+**Open Issues**: Unknown without GH CLI
+**Recent CI Status**: Requires GH CLI to check
+<!-- ANALYTICS_END -->
+
 <p align="center">
   <img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" alt="Satya Logo" width="80"/>
 </p>
@@ -45,22 +51,6 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 ---
 
 
-## SUSTAINABLE_FEATURES
-
-- **Agent Self-Test Harness + CI Analytics Job** (Added 2026-03)
-  - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
-  - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
-  - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
-
-- **Export Adapter Framework (OTLP/Console)** (Added 2024-03)
-  - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture.
-  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter()])`.
-  - Validation: `PYTHONPATH=. pytest tests/test_adapters.py`
-
-- **Repo Analytics & Competitor Matrix**
-  - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
-
-For more details on changes, see our [CHANGELOG](CHANGELOG.md).
 ## How It Works
 
 Satya separates **who does the work** from **who watches the work**:
@@ -82,6 +72,19 @@ Satya separates **who does the work** from **who watches the work**:
 **The AI agent is the deployer and operator.** It installs dependencies, starts the dashboard, creates tasks, logs its activity, and scrapes reference material — all programmatically.
 
 **The human is the observer.** They open a browser, navigate to the dashboard URL, and monitor the agent's progress in real time. No terminal. No code. Just a web page.
+
+---
+
+## SUSTAINABLE_FEATURES
+
+We constantly improve the framework's health using scalable methodologies.
+- **[2026-03-29] Agent Self-Test Harness & Auto-Analytics**: We've added an agent self-test harness and integrated it into our CI. The harness continuously verifies trace telemetry and records latencies locally via `tests/agent_harness.py`. To run: `python tests/agent_harness.py`.
+- **[2026-03-29] Export Adapter Framework**: Lightweight adapter interface for piping traces and logs into external enterprise observability tools like LangSmith/OTLP.
+
+**Quick links:**
+- [Repo Analytics (Auto-Updated)](REPO_ANALYTICS.md)
+- [Competitor Matrix](COMPETITOR_MATRIX.md)
+- [Changelog](CHANGELOG.md)
 
 ---
 
