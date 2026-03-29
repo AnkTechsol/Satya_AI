@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1465,6 +1465,136 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD PAGE ─────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">Enterprise ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Quantify the business value of autonomous execution vs manual labor</div>', unsafe_allow_html=True)
+
+    # Calculate ROI metrics
+    avg_manual_cost_per_task = 50.0  # Estimated cost of a human doing the task ($50)
+    avg_tokens_per_task = 15000      # Estimated average tokens used by an agent per task
+    cost_per_1k_tokens = 0.01        # Estimated cost per 1k tokens
+
+    completed_tasks = [t for t in all_tasks if t.get("status") == "done"]
+    total_completed = len(completed_tasks)
+
+    # Velocity: tasks completed per day (simplified calculation over the last 30 days or based on creation times)
+    now = datetime.now(timezone.utc)
+    first_task_date = now
+    if completed_tasks:
+        for t in completed_tasks:
+            created_str = t.get("created_at")
+            if created_str:
+                try:
+                    if created_str.endswith("Z"):
+                        created_str = created_str[:-1] + "+00:00"
+                    dt = datetime.fromisoformat(created_str)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    if dt < first_task_date:
+                        first_task_date = dt
+                except Exception:
+                    pass
+
+    days_active = max(1, (now - first_task_date).days)
+    velocity = total_completed / days_active
+
+    total_tokens_estimated = total_completed * avg_tokens_per_task
+    ai_cost_estimated = (total_tokens_estimated / 1000) * cost_per_1k_tokens
+    manual_cost_estimated = total_completed * avg_manual_cost_per_task
+    total_savings = manual_cost_estimated - ai_cost_estimated
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128176;</div>
+            <div class="metric-value" style="color: var(--success);">${total_savings:,.2f}</div>
+            <div class="metric-label">Estimated ROI Savings</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#9889;</div>
+            <div class="metric-value" style="color: var(--primary-light);">{velocity:.1f}</div>
+            <div class="metric-label">Tasks / Day (Velocity)</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128260;</div>
+            <div class="metric-value" style="color: var(--warning);">{total_tokens_estimated:,}</div>
+            <div class="metric-label">Estimated Tokens</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128184;</div>
+            <div class="metric-value" style="color: var(--danger);">${ai_cost_estimated:,.2f}</div>
+            <div class="metric-label">Estimated API Cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    st.markdown("#### Performance Breakdown")
+    col_l, col_r = st.columns(2)
+    with col_l:
+        st.markdown("##### Task Resolution Time")
+        # Calculate average duration for completed tasks
+        durations = []
+        for t in completed_tasks:
+            # Check duration_seconds memory rule
+            # Tasks in Satya track execution time by recording `duration_seconds` when transitioning to `done` or `failed`
+            dur = t.get("duration_seconds")
+            if dur is not None:
+                durations.append(dur)
+            else:
+                # Fallback calculation if duration_seconds is not yet implemented
+                locked_str = t.get("locked_at")
+                completed_str = t.get("completed_at")
+                if locked_str and completed_str:
+                    try:
+                        if locked_str.endswith("Z"): locked_str = locked_str[:-1] + "+00:00"
+                        if completed_str.endswith("Z"): completed_str = completed_str[:-1] + "+00:00"
+                        ldt = datetime.fromisoformat(locked_str)
+                        cdt = datetime.fromisoformat(completed_str)
+                        if ldt.tzinfo is None: ldt = ldt.replace(tzinfo=timezone.utc)
+                        if cdt.tzinfo is None: cdt = cdt.replace(tzinfo=timezone.utc)
+                        durations.append((cdt - ldt).total_seconds())
+                    except Exception:
+                        pass
+
+        if durations:
+            avg_dur_sec = sum(durations) / len(durations)
+            avg_dur_min = avg_dur_sec / 60.0
+            st.info(f"Average time to resolve a task autonomously: **{avg_dur_min:.1f} minutes**.")
+            st.caption("Human average is typically hours to days depending on context switching.")
+        else:
+            st.info("No tasks completed yet to calculate average resolution time.")
+
+    with col_r:
+        st.markdown("##### Token Usage by Agent")
+        if agent_metrics:
+            import pandas as pd
+            agent_tokens = []
+            for agent, data in agent_metrics.items():
+                agent_tokens.append({
+                    "Agent": agent,
+                    "Tokens": data["completed"] * avg_tokens_per_task
+                })
+            df_tokens = pd.DataFrame(agent_tokens)
+            st.bar_chart(df_tokens, x="Agent", y="Tokens", height=200)
+        else:
+            st.info("No agent metrics available.")
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":

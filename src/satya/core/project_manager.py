@@ -150,6 +150,40 @@ class AIOrchestrator:
         failed_tasks = [t for t in all_tasks if t.get("status") == STATUS_FAILED and not t.get("rca_spawned")]
         queued_tasks = [t for t in all_tasks if t.get("status") == STATUS_QUEUED]
 
+        # Enforce time-boxes for in-progress tasks
+        for task in list(in_progress_tasks):
+            time_limit = task.get("time_limit_minutes")
+            locked_at_str = task.get("locked_at")
+            if time_limit and locked_at_str:
+                try:
+                    if locked_at_str.endswith("Z"):
+                        locked_at_str = locked_at_str[:-1] + "+00:00"
+                    locked_at = datetime.fromisoformat(locked_at_str)
+                    if locked_at.tzinfo is None:
+                        locked_at = locked_at.replace(tzinfo=timezone.utc)
+
+                    elapsed_minutes = (now - locked_at).total_seconds() / 60.0
+                    if elapsed_minutes > time_limit:
+                        logger.warning(f"Orchestrator: Task {task['id']} exceeded time limit ({elapsed_minutes:.1f}m > {time_limit}m). Failing task.")
+
+                        updates = {
+                            "status": STATUS_FAILED,
+                            "assignee": "Unassigned",
+                            "locked_by": None,
+                            "locked_at": None
+                        }
+                        self.tasks.update_task(task["id"], updates, agent_name="AI_Orchestrator")
+                        self.tasks.add_comment(
+                            task["id"],
+                            f"Task failed by Orchestrator: exceeded time limit of {time_limit} minutes (ran for {elapsed_minutes:.1f}m).",
+                            commit=False,
+                            agent_name="AI_Orchestrator"
+                        )
+                        # We should also remove it from the local list so we don't process it as dead agent
+                        in_progress_tasks.remove(task)
+                except ValueError:
+                    pass
+
         # Process SLA Escalation for Queued Tasks
         self._escalate_stale_tasks(queued_tasks, now)
 
@@ -174,7 +208,7 @@ class AIOrchestrator:
 
         # Group tasks by assignee in-memory
         tasks_by_agent = {}
-        for task in in_progress_tasks:
+        for task in list(in_progress_tasks):
             assignee = task.get("assignee")
             if assignee and assignee != "Unassigned":
                 tasks_by_agent.setdefault(assignee, []).append(task)
