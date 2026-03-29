@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Enterprise ROI Dashboard in Streamlit for quantifying business value, cost savings, token usage, and velocity.
+- Time-box enforcement in AI Orchestrator (`project_manager.py`) to automatically fail tasks exceeding their `time_limit_minutes`.
+
 
 ### Added
 - Implemented **Agent Self-Test Harness + CI Analytics Job** to continuously test agent workflows, mock the simulation environment for CI, and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md` automatically on push.
