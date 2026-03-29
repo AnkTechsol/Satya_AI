@@ -18,7 +18,18 @@ def main():
 
     # CI
     has_github_actions = os.path.isdir('.github/workflows')
-    ci_status = "Unknown (no .github/workflows found)" if not has_github_actions else "Requires GH CLI to check"
+    # Try to extract the last run status from GH CLI if available
+    gh_status = run_cmd('gh run list --limit 1 --json conclusion -q ".[0].conclusion"')
+    if gh_status:
+        ci_status = "pass" if gh_status == "success" else "fail"
+    else:
+        ci_status = "Unknown (no .github/workflows found)" if not has_github_actions else "Requires GH CLI to check"
+
+    # PRs and Issues
+    open_issues_count = run_cmd('gh issue list --state open --json number -q ". | length"')
+    closed_issues_count = run_cmd('gh issue list --state closed --json number -q ". | length"')
+    open_issues = open_issues_count if open_issues_count else "Unknown without GH CLI"
+    closed_issues = closed_issues_count if closed_issues_count else "Unknown without GH CLI"
 
     # Tests
     test_output = run_cmd('PYTHONPATH=. pytest tests/ --maxfail=1 --tb=short')
@@ -36,10 +47,6 @@ def main():
     # Files
     top_files = run_cmd('find src -type f -exec wc -c {} + | sort -nr | head -20')
 
-    # PRs and Issues
-    open_issues = "Unknown without GH CLI"
-    closed_issues = "Unknown without GH CLI"
-
     # Runtime Artifacts
     runtime_artifacts = run_cmd('find satya_data -type f | head -10')
 
@@ -50,9 +57,10 @@ def main():
     try:
         os.environ['SATYA_AGENT_KEY'] = 'test-run'
         os.environ['SATYA_AGENT_KEYS'] = 'test-run'
-        sim_output = run_cmd('python run_sim.py')
-        if sim_output:
-            latencies_data = json.loads(sim_output)
+        # Run test harness instead of run_sim.py
+        harness_output = run_cmd('python tests/agent_harness.py')
+        if harness_output:
+            latencies_data = json.loads(harness_output)
             latencies = [l[1] for l in latencies_data if l[0] == "create"]
     except Exception as e:
         print(f"Simulation failed: {e}")
@@ -95,6 +103,30 @@ def main():
 
     with open('repo_analytics.json', 'w') as f:
         json.dump(analytics, f, indent=2)
+
+    # Update README
+    try:
+        with open('README.md', 'r') as f:
+            readme = f.read()
+
+        # Regex to replace the dynamic section if it exists, otherwise insert it
+        import re
+        dynamic_header = f"""<!-- ANALYTICS_START -->
+**Last Analytics Run**: {analytics['timestamp']}
+**Open Issues**: {open_issues}
+**Recent CI Status**: {ci_status}
+<!-- ANALYTICS_END -->"""
+
+        if '<!-- ANALYTICS_START -->' in readme:
+            readme = re.sub(r'<!-- ANALYTICS_START -->.*<!-- ANALYTICS_END -->', dynamic_header, readme, flags=re.DOTALL)
+        else:
+            # Insert at the top
+            readme = dynamic_header + "\n\n" + readme
+
+        with open('README.md', 'w') as f:
+            f.write(readme)
+    except Exception as e:
+        print(f"Failed to update README.md: {e}")
 
     md = f"""# Repo Analytics
 
