@@ -95,6 +95,24 @@ class Tasks:
         elif new_status in [STATUS_DONE, STATUS_FAILED]:
             task["completed_at"] = now
 
+            # Calculate duration if locked_at exists
+            if task.get("locked_at"):
+                try:
+                    locked_at_str = task["locked_at"]
+                    if locked_at_str.endswith("Z"):
+                        locked_at_str = locked_at_str[:-1] + "+00:00"
+                    locked_at = datetime.fromisoformat(locked_at_str)
+
+                    completed_at_str = now
+                    if completed_at_str.endswith("Z"):
+                        completed_at_str = completed_at_str[:-1] + "+00:00"
+                    completed_at = datetime.fromisoformat(completed_at_str)
+
+                    duration = (completed_at - locked_at).total_seconds()
+                    task["duration_seconds"] = duration
+                except ValueError:
+                    pass
+
         if "audit_trail" not in task:
             task["audit_trail"] = []
 

@@ -172,6 +172,24 @@ class AIOrchestrator:
             # Mark the original task to prevent duplicate RCAs
             self.tasks.update_task(task["id"], {"rca_spawned": True}, agent_name="AI_Orchestrator")
 
+        # Process Time-Box Enforcement for In Progress Tasks
+        from .watchdog import WatchdogChecker
+        checker = WatchdogChecker(self.repo_path)
+        stale_tasks = checker.scan(in_progress_tasks)
+        for task in stale_tasks:
+            logger.warning(f"Orchestrator: Task {task['id']} exceeded time limit of {task.get('time_limit_minutes')} minutes.")
+            self.tasks.update_task_status(task["id"], STATUS_FAILED, agent_name="AI_Orchestrator")
+            self.tasks.add_comment(
+                task["id"],
+                f"Time-Box Enforcement: Task automatically failed because it exceeded its time limit of {task.get('time_limit_minutes')} minutes.",
+                commit=False,
+                agent_name="AI_Orchestrator"
+            )
+
+        # Refresh in_progress_tasks after potential failures
+        all_tasks = self.tasks.list_all()
+        in_progress_tasks = [t for t in all_tasks if t.get("status") == STATUS_IN_PROGRESS]
+
         # Group tasks by assignee in-memory
         tasks_by_agent = {}
         for task in in_progress_tasks:
