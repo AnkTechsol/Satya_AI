@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -778,7 +778,9 @@ def log_analytics(event_name, payload=None):
 
 
 # ─── DASHBOARD PAGE ─────────────────────────────────────
-if page == "Dashboard":
+if page is None:
+    pass
+elif page == "Dashboard":
     log_analytics("page_view", {"page": "Dashboard"})
     st.markdown('<div class="hero-header">Dashboard</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Overview of your AI agent operations and task progress</div>', unsafe_allow_html=True)
@@ -1465,6 +1467,112 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD PAGE ─────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">Enterprise ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Quantify the business value of your autonomous workforce</div>', unsafe_allow_html=True)
+
+    # Simple mock token counter per agent
+    # In a real app this would read from actual token logs
+    mock_cost_per_task = 0.15 # $0.15 compute cost per autonomous task
+    manual_hourly_rate = 50.0 # $50/hour for manual human labor
+    avg_manual_task_hours = 0.5 # 30 mins per task manually
+
+    completed_tasks = [t for t in all_tasks if t.get("status") == "done"]
+    total_completed = len(completed_tasks)
+
+    # Calculate Velocity and Times
+    total_autonomous_duration_seconds = 0
+    total_autonomous_tasks_with_duration = 0
+
+    for t in completed_tasks:
+        if "duration_seconds" in t:
+            total_autonomous_duration_seconds += t["duration_seconds"]
+            total_autonomous_tasks_with_duration += 1
+
+    avg_autonomous_duration_seconds = 0
+    if total_autonomous_tasks_with_duration > 0:
+        avg_autonomous_duration_seconds = total_autonomous_duration_seconds / total_autonomous_tasks_with_duration
+
+    avg_autonomous_minutes = avg_autonomous_duration_seconds / 60
+
+    # Business Value Calculations
+    estimated_manual_cost = total_completed * avg_manual_task_hours * manual_hourly_rate
+    estimated_ai_cost = total_completed * mock_cost_per_task
+    total_savings = estimated_manual_cost - estimated_ai_cost
+
+    hours_saved = total_completed * avg_manual_task_hours
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128176;</div>
+            <div class="metric-value" style="color: var(--success); font-size: 2rem;">${total_savings:,.2f}</div>
+            <div class="metric-label">Estimated Savings</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#9201;</div>
+            <div class="metric-value" style="color: var(--primary-light); font-size: 2rem;">{hours_saved:,.1f}h</div>
+            <div class="metric-label">Human Hours Saved</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128640;</div>
+            <div class="metric-value" style="color: var(--info); font-size: 2rem;">{avg_autonomous_minutes:.1f}m</div>
+            <div class="metric-label">Avg AI Task Time</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#129302;</div>
+            <div class="metric-value" style="color: var(--warning); font-size: 2rem;">{total_completed}</div>
+            <div class="metric-label">Tasks Automated</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    st.markdown("#### Workforce Velocity vs Manual Baseline")
+
+    import pandas as pd
+
+    # Generate some mock historical data to make the chart look nice, anchoring it on actuals
+    # In reality, this would group tasks by completion date
+    chart_data = pd.DataFrame({
+        "Method": ["Autonomous Agents", "Human Equivalent"],
+        "Cost ($)": [estimated_ai_cost, estimated_manual_cost],
+    })
+
+    st.bar_chart(chart_data, x="Method", y="Cost ($)", height=300)
+
+    if total_autonomous_tasks_with_duration > 0:
+        st.markdown("#### Agent Performance (Duration)")
+
+        agent_durations = {}
+        for t in completed_tasks:
+            if "duration_seconds" in t:
+                agent = t.get("assignee", "Unknown")
+                if agent not in agent_durations:
+                    agent_durations[agent] = []
+                agent_durations[agent].append(t["duration_seconds"])
+
+        agent_avg_data = []
+        for agent, durations in agent_durations.items():
+            avg_sec = sum(durations) / len(durations)
+            agent_avg_data.append({"Agent": agent, "Avg Duration (min)": avg_sec / 60})
+
+        if agent_avg_data:
+            df_agent_dur = pd.DataFrame(agent_avg_data)
+            st.bar_chart(df_agent_dur, x="Agent", y="Avg Duration (min)", height=250)
+
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":
