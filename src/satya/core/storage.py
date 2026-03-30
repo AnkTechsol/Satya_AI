@@ -2,6 +2,8 @@ import os
 import json
 import fcntl
 import logging
+import threading
+import copy
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -107,19 +109,69 @@ def list_tasks() -> List[Dict[str, Any]]:
             tasks.append(load_json(os.path.join(TASKS_DIR, f)))
     return tasks
 
+_heartbeats_cache = {}
+_heartbeats_mtimes = {}
+_heartbeats_lock = threading.Lock()
+
 def save_heartbeat(agent_name: str, heartbeat_data: Dict[str, Any]) -> bool:
     safe_agent_name = os.path.basename(agent_name)
     filepath = os.path.join(HEARTBEATS_DIR, f"{safe_agent_name}.json")
-    return save_json(filepath, heartbeat_data)
+
+    # Deepcopy outside the lock for performance
+    cached_data = copy.deepcopy(heartbeat_data)
+
+    success = save_json(filepath, heartbeat_data)
+    if success:
+        try:
+            mtime = os.path.getmtime(filepath)
+        except OSError:
+            mtime = 0
+
+        with _heartbeats_lock:
+            _heartbeats_cache[safe_agent_name] = cached_data
+            _heartbeats_mtimes[safe_agent_name] = mtime
+
+    return success
 
 def get_heartbeats() -> Dict[str, Dict[str, Any]]:
     if not os.path.exists(HEARTBEATS_DIR):
         return {}
+
     heartbeats = {}
+
     for f in os.listdir(HEARTBEATS_DIR):
-        if f.endswith('.json'):
-            agent_name = f[:-5] # remove .json
-            heartbeats[agent_name] = load_json(os.path.join(HEARTBEATS_DIR, f))
+        if not f.endswith('.json'):
+            continue
+
+        agent_name = f[:-5] # remove .json
+        filepath = os.path.join(HEARTBEATS_DIR, f)
+
+        try:
+            mtime = os.path.getmtime(filepath)
+        except OSError:
+            continue
+
+        # Check cache inside lock
+        with _heartbeats_lock:
+            cached_mtime = _heartbeats_mtimes.get(agent_name)
+            cached_data = _heartbeats_cache.get(agent_name)
+
+        if cached_mtime == mtime and cached_data is not None:
+            # Deepcopy outside lock to return
+            heartbeats[agent_name] = copy.deepcopy(cached_data)
+        else:
+            # Cache miss or stale data, load from file
+            data = load_json(filepath)
+
+            # Deepcopy outside lock before storing
+            cache_copy = copy.deepcopy(data)
+
+            with _heartbeats_lock:
+                _heartbeats_cache[agent_name] = cache_copy
+                _heartbeats_mtimes[agent_name] = mtime
+
+            heartbeats[agent_name] = data
+
     return heartbeats
 
 def delete_task_file(task_id: str) -> bool:
