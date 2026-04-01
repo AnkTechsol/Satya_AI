@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1465,6 +1465,129 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD PAGE ────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">Enterprise ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Quantify the business value of autonomous execution vs manual labor</div>', unsafe_allow_html=True)
+
+    # Calculate ROI metrics based on all_tasks
+    total_tokens = 0
+    total_agent_cost = 0.0
+    total_manual_hours = 0.0
+    total_manual_cost = 0.0
+
+    agent_roi_data = []
+
+    # Mock parameters
+    COST_PER_TOKEN = 0.000005
+    HOURS_PER_TASK = 2.0
+    MANUAL_HOURLY_RATE = 50.0
+
+    # Process all tasks to aggregate metrics
+    agent_metrics_roi = {}
+    for task in all_tasks:
+        assignee = task.get("assignee", "Unassigned")
+        if assignee not in agent_metrics_roi:
+            agent_metrics_roi[assignee] = {"tasks": 0, "tokens": 0, "agent_cost": 0.0, "manual_cost": 0.0}
+
+        # Mock token count based on task content length to make it dynamic
+        task_str_len = len(str(task))
+        mock_tokens = task_str_len * 10
+        agent_cost = mock_tokens * COST_PER_TOKEN
+        manual_cost = HOURS_PER_TASK * MANUAL_HOURLY_RATE
+
+        agent_metrics_roi[assignee]["tasks"] += 1
+        agent_metrics_roi[assignee]["tokens"] += mock_tokens
+        agent_metrics_roi[assignee]["agent_cost"] += agent_cost
+        agent_metrics_roi[assignee]["manual_cost"] += manual_cost
+
+        total_tokens += mock_tokens
+        total_agent_cost += agent_cost
+        total_manual_hours += HOURS_PER_TASK
+        total_manual_cost += manual_cost
+
+    for agent, data in agent_metrics_roi.items():
+        savings = data["manual_cost"] - data["agent_cost"]
+        agent_roi_data.append({
+            "Agent": agent,
+            "Savings ($)": savings,
+            "Tasks": data["tasks"],
+            "Agent Cost ($)": data["agent_cost"],
+            "Manual Cost ($)": data["manual_cost"]
+        })
+
+    total_savings = total_manual_cost - total_agent_cost
+    avg_tokens_per_task = int(total_tokens / len(all_tasks)) if all_tasks else 0
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128181;</div>
+            <div class="metric-value" style="color: var(--success);">${total_savings:,.2f}</div>
+            <div class="metric-label">Total ROI Savings</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#9201;&#65039;</div>
+            <div class="metric-value" style="color: var(--warning);">{total_manual_hours:,.1f}h</div>
+            <div class="metric-label">Manual Hours Saved</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#129297;</div>
+            <div class="metric-value" style="color: var(--primary-light);">{total_tokens:,}</div>
+            <div class="metric-label">Total Tokens Used</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128200;</div>
+            <div class="metric-value" style="color: var(--info);">{avg_tokens_per_task:,}</div>
+            <div class="metric-label">Avg Tokens / Task</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    col_chart, col_table = st.columns([3, 2])
+
+    with col_chart:
+        st.markdown("#### Cost Savings per Agent")
+        if agent_roi_data:
+            import pandas as pd
+            df_roi = pd.DataFrame(agent_roi_data)
+            st.bar_chart(df_roi, x="Agent", y="Savings ($)", height=300, color="#00B894")
+        else:
+            st.info("No task data available to calculate ROI.")
+
+    with col_table:
+        st.markdown("#### Execution Cost Comparison")
+        st.markdown(f"""
+        <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); margin-bottom: 0.8rem;">
+                <span style="color: var(--text-secondary);">Estimated Manual Cost</span>
+                <span style="font-weight: 700; color: var(--danger);">${total_manual_cost:,.2f}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); margin-bottom: 0.8rem;">
+                <span style="color: var(--text-secondary);">Agent Compute Cost</span>
+                <span style="font-weight: 700; color: var(--success);">${total_agent_cost:,.2f}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="font-weight: 700; color: var(--text-primary);">Net Business Value</span>
+                <span style="font-weight: 800; color: var(--primary-light);">${total_savings:,.2f}</span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1rem; text-align: center;">
+                *Calculations based on $50/hr manual rate vs $5/1M tokens.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":
