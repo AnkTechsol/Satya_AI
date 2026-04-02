@@ -6,6 +6,7 @@ import time
 import fcntl
 from typing import Optional, Dict, Any
 from .core import storage
+from .core import audit_db
 
 # Simple header/env based auth for agents. ENV:
 # SATYA_AGENT_KEYS -> comma separated keys (e.g. key1,key2)
@@ -50,23 +51,16 @@ def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
         payload_str = json.dumps(payload, sort_keys=True)
 
         expected_signature = sign_event(payload_str, prev_hmac)
-        if signature != expected_signature:
+        if not hmac.compare_digest(signature, expected_signature):
             return False
         prev_hmac = signature
     return True
 
 def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, details: str, prev_hmac: str = "") -> str:
     """
-    Append an atomic, signed audit event to the global events log.
-    Fall back to salted atomic file append + rename semantics.
+    Append an atomic, signed audit event to the global events log,
+    using the durable SQLite audit store.
     """
-    storage.ensure_satya_dirs()
-    events_dir = os.path.join(storage.SATYA_DIR, "events")
-    os.makedirs(events_dir, exist_ok=True)
-
-    events_file = os.path.join(events_dir, "audit_log.jsonl")
-    tmp_file = events_file + f".{time.time()}.tmp"
-
     payload = {
         "timestamp": time.time(),
         "agent_id": agent_id,
@@ -75,6 +69,25 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
         "action": action,
         "details": details
     }
+
+    if not prev_hmac:
+        prev_hmac = audit_db.get_last_signature()
+
+        # Read the last HMAC from flat file if DB is empty to maintain the chain
+        if not prev_hmac:
+            storage.ensure_satya_dirs()
+            events_dir = os.path.join(storage.SATYA_DIR, "events")
+            events_file = os.path.join(events_dir, "audit_log.jsonl")
+            if os.path.exists(events_file):
+                try:
+                    with open(events_file, 'r') as f:
+                        lines = f.readlines()
+                        if lines:
+                            last_event = json.loads(lines[-1])
+                            prev_hmac = last_event.get("signature", "")
+                except Exception as e:
+                    print(f"Failed to read previous HMAC from JSONL file: {e}")
+
     payload_str = json.dumps(payload, sort_keys=True)
     signature = sign_event(payload_str, prev_hmac)
 
@@ -83,40 +96,6 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
         "signature": signature
     }
 
-    # Read the last HMAC if prev_hmac is not provided to maintain the chain
-    if not prev_hmac and os.path.exists(events_file):
-        try:
-            with open(events_file, 'r') as f:
-                lines = f.readlines()
-                if lines:
-                    last_event = json.loads(lines[-1])
-                    prev_hmac = last_event.get("signature", "")
-                    signature = sign_event(payload_str, prev_hmac)
-                    event["signature"] = signature
-        except Exception as e:
-            print(f"Failed to read previous HMAC: {e}")
-
-    event_str = json.dumps(event) + "\n"
-
-    # Atomic append using fcntl
-    try:
-        with open(events_file, 'a') as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            f.write(event_str)
-            fcntl.flock(f, fcntl.LOCK_UN)
-    except OSError:
-        # Fallback if fcntl fails (e.g. Windows or weird FS)
-        try:
-            with open(tmp_file, 'w') as f_tmp:
-                if os.path.exists(events_file):
-                    with open(events_file, 'r') as f_in:
-                        f_tmp.write(f_in.read())
-                f_tmp.write(event_str)
-            os.replace(tmp_file, events_file)
-        except Exception as e:
-            print(f"Failed to write audit event atomically: {e}")
-            if os.path.exists(tmp_file):
-                os.remove(tmp_file)
-            raise
+    audit_db.append_event(event, signature)
 
     return signature
