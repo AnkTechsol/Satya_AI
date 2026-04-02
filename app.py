@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,8 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
+        index=default_index,
         label_visibility="collapsed"
     )
 
@@ -1465,6 +1466,124 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD PAGE ────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">Enterprise ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Quantify the business value of autonomous execution vs manual labor</div>', unsafe_allow_html=True)
+
+    # Constants for ROI Calculation
+    MANUAL_HOURLY_RATE = 50.0  # $50/hr
+    MANUAL_TIME_MULTIPLIER = 10.0 # Assume manual takes 10x longer than agent execution
+    COST_PER_AGENT_TASK = 0.50 # Assume $0.50 per task in token/compute cost
+
+    done_tasks = [t for t in all_tasks if t.get("status") == "done"]
+
+    total_tasks_completed = len(done_tasks)
+
+    # Calculate time metrics
+    total_agent_hours = 0.0
+    for task in done_tasks:
+        try:
+            created = parse_iso(task.get("created_at"))
+            completed = parse_iso(task.get("completed_at") or task.get("updated_at"))
+            if created and completed:
+                diff_hours = (completed - created).total_seconds() / 3600.0
+                if diff_hours > 0:
+                    total_agent_hours += diff_hours
+        except Exception:
+            pass
+
+    # If agents were too fast (e.g. tests), ensure some minimum for display purposes
+    if total_tasks_completed > 0 and total_agent_hours < 0.1:
+        total_agent_hours = total_tasks_completed * 0.1
+
+    estimated_manual_hours = total_agent_hours * MANUAL_TIME_MULTIPLIER
+    hours_saved = estimated_manual_hours - total_agent_hours
+
+    manual_cost = estimated_manual_hours * MANUAL_HOURLY_RATE
+    agent_cost = total_tasks_completed * COST_PER_AGENT_TASK
+    total_cost_savings = manual_cost - agent_cost
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128176;</div>
+            <div class="metric-value" style="color: var(--success);">${total_cost_savings:,.2f}</div>
+            <div class="metric-label">Total Cost Savings</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#9201;&#65039;</div>
+            <div class="metric-value" style="color: var(--info);">{hours_saved:,.1f}h</div>
+            <div class="metric-label">Hours Saved</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#129302;</div>
+            <div class="metric-value" style="color: var(--danger);">${agent_cost:,.2f}</div>
+            <div class="metric-label">AI Token Cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128104;&#8205;&#128187;</div>
+            <div class="metric-value" style="color: var(--text-secondary);">${manual_cost:,.2f}</div>
+            <div class="metric-label">Est. Manual Cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("#### Agent Velocity (Tasks Completed)")
+        if agent_metrics:
+            import pandas as pd
+            vel_data = []
+            for agent, data in agent_metrics.items():
+                if data["completed"] > 0:
+                    vel_data.append({"Agent": agent, "Tasks Completed": data["completed"]})
+            if vel_data:
+                df_vel = pd.DataFrame(vel_data)
+                st.bar_chart(df_vel, x="Agent", y="Tasks Completed", height=300)
+            else:
+                st.info("No completed tasks yet.")
+        else:
+            st.info("No agent data available.")
+
+    with col2:
+        st.markdown("#### Estimated Cost Savings by Agent")
+        if agent_metrics:
+            import pandas as pd
+            sav_data = []
+            for agent, data in agent_metrics.items():
+                completed = data["completed"]
+                if completed > 0:
+                    # Rough estimate per agent based on average stats
+                    if total_tasks_completed > 0:
+                        agent_share = completed / total_tasks_completed
+                        agent_savings = total_cost_savings * agent_share
+                        sav_data.append({"Agent": agent, "Savings ($)": agent_savings})
+            if sav_data:
+                df_sav = pd.DataFrame(sav_data)
+                st.bar_chart(df_sav, x="Agent", y="Savings ($)", color="#00B894", height=300)
+            else:
+                st.info("No completed tasks yet to calculate savings.")
+        else:
+            st.info("No agent data available.")
+
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":
