@@ -142,6 +142,16 @@ class AIOrchestrator:
         """Performs a single scan of heartbeats and reassigns tasks if necessary."""
         logger.info("AI Orchestrator heartbeat scan running...")
         now = datetime.now(timezone.utc)
+
+        # Save a heartbeat for the Orchestrator itself so the UI knows it's alive
+        orchestrator_hb = {
+            "timestamp": now.isoformat().replace("+00:00", "") + "Z",
+            "last_seen": now.isoformat().replace("+00:00", "") + "Z",
+            "status": "online",
+            "agent_name": "AI_Orchestrator"
+        }
+        storage.save_heartbeat("AI_Orchestrator", orchestrator_hb)
+
         heartbeats = self._get_agent_heartbeats()
 
         # Fetch all tasks once to prevent N+1 read bottleneck
