@@ -191,8 +191,8 @@ class Tasks:
     def list_all(self):
         return storage.list_tasks()
 
-    def get_tasks(self, status=None, assignee=None):
-        all_tasks = self.list_all()
+    def get_tasks(self, status=None, assignee=None, tasks_list=None):
+        all_tasks = tasks_list if tasks_list is not None else self.list_all()
         filtered_tasks = []
         for task in all_tasks:
             if status and task.get("status") != status:
@@ -241,8 +241,8 @@ class Tasks:
             return True
         return False
 
-    def get_stats(self) -> dict[str, int]:
-        tasks = self.list_all()
+    def get_stats(self, tasks_list=None) -> dict[str, int]:
+        tasks = tasks_list if tasks_list is not None else self.list_all()
         counts = {
             STATUS_QUEUED: 0,
             STATUS_IN_PROGRESS: 0,
