@@ -1383,10 +1383,72 @@ elif page == "Agent Chat":
         else:
             selected_agent = st.selectbox("Select Agent", online_agents)
 
-            # Chat History (mocked based on tasks/logs for now)
+            # Chat History
             st.markdown("##### Chat History")
-            st.markdown("*(Chat history functionality using poll_chat to be expanded)*")
 
+            chat_dir = os.path.join(storage.SATYA_DIR, "chat", selected_agent)
+            chat_messages = []
+
+            if os.path.exists(chat_dir):
+                for filename in os.listdir(chat_dir):
+                    if filename.endswith(".json"):
+                        filepath = os.path.join(chat_dir, filename)
+                        try:
+                            msg_data = storage.load_json(filepath)
+                            if msg_data:
+                                chat_messages.append(msg_data)
+                        except Exception as e:
+                            pass
+
+            if chat_messages:
+                # Sort newest last (chronological)
+                chat_messages.sort(key=lambda m: m.get("timestamp", ""))
+
+                with st.container(border=True, height=400):
+                    for msg in chat_messages:
+                        sender = html.escape(str(msg.get("sender") or "Unknown"))
+                        text = html.escape(str(msg.get("message") or ""))
+                        status = html.escape(str(msg.get("status") or "unread"))
+                        ts_str = msg.get("timestamp", "")
+
+                        try:
+                            # Parse timestamp
+                            if ts_str.endswith('Z'):
+                                ts_str = ts_str[:-1]
+                                if not ('+' in ts_str or '-' in ts_str.split('T')[-1]):
+                                    ts_str += '+00:00'
+                            dt = datetime.fromisoformat(ts_str)
+                            if dt.tzinfo is None:
+                                dt = dt.replace(tzinfo=timezone.utc)
+                            display_time = dt.strftime("%H:%M:%S")
+                        except Exception:
+                            display_time = html.escape(ts_str)
+
+                        align = "right" if sender == "Human Operator" else "left"
+                        bg_color = "var(--primary-dark)" if sender == "Human Operator" else "var(--bg-card-hover)"
+                        text_color = "#FFFFFF" if sender == "Human Operator" else "var(--text-primary)"
+                        status_icon = "✓✓" if status == "read" else "✓"
+
+                        st.markdown(f"""
+                        <div style="text-align: {align}; margin-bottom: 0.8rem;">
+                            <div style="display: inline-block; background-color: {bg_color}; color: {text_color}; padding: 0.6rem 1rem; border-radius: 12px; max-width: 80%; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                <div style="font-size: 0.75rem; opacity: 0.8; margin-bottom: 0.2rem; display: flex; justify-content: space-between; gap: 1rem;">
+                                    <span><b>{sender}</b></span>
+                                    <span>{display_time}</span>
+                                </div>
+                                <div style="font-size: 0.9rem; line-height: 1.4;">
+                                    {text}
+                                </div>
+                                <div style="text-align: right; font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem;">
+                                    {status_icon} {status}
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("No chat history with this agent.")
+
+            st.markdown("---")
             chat_input = st.text_input("Send instruction to agent...", placeholder="E.g., use satya to fetch the latest data")
             if st.button("Send", use_container_width=True):
                 if chat_input:
