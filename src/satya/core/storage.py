@@ -2,9 +2,14 @@ import os
 import json
 import fcntl
 import logging
+import threading
+import copy
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+_json_cache = {}
+_json_cache_lock = threading.Lock()
 
 ROOT_DIR = "."
 SATYA_DIR = "satya_data"
@@ -44,6 +49,10 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                with _json_cache_lock:
+                    _json_cache.pop(filepath, None)
+
                 return True
             finally:
                 # Release lock
@@ -59,8 +68,23 @@ def save_json(filepath: str, data: Any) -> bool:
         return False
 
 def load_json(filepath: str) -> Dict[str, Any]:
+    """
+    Loads JSON from a file, utilizing an in-memory mtime-based cache to reduce disk I/O.
+    """
     if not os.path.exists(filepath):
         return {}
+
+    try:
+        # Optimization: Use file modification time (mtime) to detect changes.
+        mtime = os.path.getmtime(filepath)
+    except OSError:
+        return {}
+
+    with _json_cache_lock:
+        cache_entry = _json_cache.get(filepath)
+
+    if cache_entry and cache_entry['mtime'] == mtime:
+        return copy.deepcopy(cache_entry['data'])
 
     lock_filepath = filepath + ".lock"
 
@@ -71,12 +95,30 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
         logger.error(f"Error loading JSON from {filepath}: {e}")
         return {}
+
+    # Deepcopy outside the lock to prevent consumers from mutating the cached data
+    cache_data = copy.deepcopy(data)
+
+    with _json_cache_lock:
+        # Store in cache with the current mtime
+        _json_cache[filepath] = {
+            'mtime': mtime,
+            'data': cache_data
+        }
+        # Maintain cache size limit using FIFO eviction
+        while len(_json_cache) > 1000:
+            try:
+                del _json_cache[next(iter(_json_cache))]
+            except StopIteration:
+                break
+
+    return data
 
 def save_markdown(filename: str, content: str) -> Optional[str]:
     safe_filename = os.path.basename(filename)
@@ -126,6 +168,8 @@ def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
+        with _json_cache_lock:
+            _json_cache.pop(filepath, None)
         return True
     return False
 
