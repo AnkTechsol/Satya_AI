@@ -6,6 +6,7 @@ import time
 import fcntl
 from typing import Optional, Dict, Any
 from .core import storage
+from .core.audit_db import AuditDB
 
 # Simple header/env based auth for agents. ENV:
 # SATYA_AGENT_KEYS -> comma separated keys (e.g. key1,key2)
@@ -41,8 +42,26 @@ def sign_event(event_data: str, prev_hmac: str = "") -> str:
     msg = f"{prev_hmac}:{event_data}".encode('utf-8')
     return hmac.new(_AUDIT_SECRET.encode('utf-8'), msg, hashlib.sha256).hexdigest()
 
-def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
-    """Verify a chain of signed events."""
+def verify_event_chain(events: list[Dict[str, Any]] = None) -> bool:
+    """Verify a chain of signed events. Defaults to loading from both flat file and AuditDB for migration."""
+    if events is None:
+        events = []
+        # Load legacy flat file events first
+        storage.ensure_satya_dirs()
+        events_file = os.path.join(storage.SATYA_DIR, "events", "audit_log.jsonl")
+        if os.path.exists(events_file):
+            try:
+                with open(events_file, 'r') as f:
+                    for line in f:
+                        if line.strip():
+                            events.append(json.loads(line))
+            except Exception as e:
+                print(f"Failed to read flat file events: {e}")
+
+        # Then append DB events
+        db = AuditDB()
+        events.extend(db.get_all_events())
+
     prev_hmac = ""
     for event in events:
         signature = event.get("signature")
@@ -50,7 +69,9 @@ def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
         payload_str = json.dumps(payload, sort_keys=True)
 
         expected_signature = sign_event(payload_str, prev_hmac)
-        if signature != expected_signature:
+
+        # Use constant-time comparison for signatures
+        if not hmac.compare_digest(signature, expected_signature):
             return False
         prev_hmac = signature
     return True
@@ -58,14 +79,9 @@ def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
 def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, details: str, prev_hmac: str = "") -> str:
     """
     Append an atomic, signed audit event to the global events log.
-    Fall back to salted atomic file append + rename semantics.
+    Uses SQLite database for durable append-only storage, falling back to flat file if needed.
     """
-    storage.ensure_satya_dirs()
-    events_dir = os.path.join(storage.SATYA_DIR, "events")
-    os.makedirs(events_dir, exist_ok=True)
-
-    events_file = os.path.join(events_dir, "audit_log.jsonl")
-    tmp_file = events_file + f".{time.time()}.tmp"
+    db = AuditDB()
 
     payload = {
         "timestamp": time.time(),
@@ -75,6 +91,25 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
         "action": action,
         "details": details
     }
+
+    # Read the last HMAC if prev_hmac is not provided to maintain the chain
+    if not prev_hmac:
+        prev_hmac = db.get_last_signature()
+
+        # Check flat file if DB has nothing (migration support)
+        if not prev_hmac:
+            storage.ensure_satya_dirs()
+            events_file = os.path.join(storage.SATYA_DIR, "events", "audit_log.jsonl")
+            if os.path.exists(events_file):
+                try:
+                    with open(events_file, 'r') as f:
+                        lines = f.readlines()
+                        if lines:
+                            last_event = json.loads(lines[-1])
+                            prev_hmac = last_event.get("signature", "")
+                except Exception as e:
+                    print(f"Failed to read previous HMAC from flat file: {e}")
+
     payload_str = json.dumps(payload, sort_keys=True)
     signature = sign_event(payload_str, prev_hmac)
 
@@ -83,40 +118,35 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
         "signature": signature
     }
 
-    # Read the last HMAC if prev_hmac is not provided to maintain the chain
-    if not prev_hmac and os.path.exists(events_file):
-        try:
-            with open(events_file, 'r') as f:
-                lines = f.readlines()
-                if lines:
-                    last_event = json.loads(lines[-1])
-                    prev_hmac = last_event.get("signature", "")
-                    signature = sign_event(payload_str, prev_hmac)
-                    event["signature"] = signature
-        except Exception as e:
-            print(f"Failed to read previous HMAC: {e}")
+    # Attempt to write to DB
+    if not db.append_event(event, signature):
+        # Fallback to flat file
+        storage.ensure_satya_dirs()
+        events_dir = os.path.join(storage.SATYA_DIR, "events")
+        os.makedirs(events_dir, exist_ok=True)
+        events_file = os.path.join(events_dir, "audit_log.jsonl")
+        tmp_file = events_file + f".{time.time()}.tmp"
 
-    event_str = json.dumps(event) + "\n"
+        event_str = json.dumps(event) + "\n"
 
-    # Atomic append using fcntl
-    try:
-        with open(events_file, 'a') as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            f.write(event_str)
-            fcntl.flock(f, fcntl.LOCK_UN)
-    except OSError:
-        # Fallback if fcntl fails (e.g. Windows or weird FS)
+        # Atomic append using fcntl
         try:
-            with open(tmp_file, 'w') as f_tmp:
-                if os.path.exists(events_file):
-                    with open(events_file, 'r') as f_in:
-                        f_tmp.write(f_in.read())
-                f_tmp.write(event_str)
-            os.replace(tmp_file, events_file)
-        except Exception as e:
-            print(f"Failed to write audit event atomically: {e}")
-            if os.path.exists(tmp_file):
-                os.remove(tmp_file)
-            raise
+            with open(events_file, 'a') as f:
+                fcntl.flock(f, fcntl.LOCK_EX)
+                f.write(event_str)
+                fcntl.flock(f, fcntl.LOCK_UN)
+        except OSError:
+            try:
+                with open(tmp_file, 'w') as f_tmp:
+                    if os.path.exists(events_file):
+                        with open(events_file, 'r') as f_in:
+                            f_tmp.write(f_in.read())
+                    f_tmp.write(event_str)
+                os.replace(tmp_file, events_file)
+            except Exception as e:
+                print(f"Failed to write audit event atomically: {e}")
+                if os.path.exists(tmp_file):
+                    os.remove(tmp_file)
+                raise
 
     return signature

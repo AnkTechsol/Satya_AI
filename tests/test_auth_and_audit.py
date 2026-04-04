@@ -33,21 +33,22 @@ def test_auth_checks():
     assert auth.is_human_authorized("wrong") is False
 
 def test_audit_event_append_and_verify():
-    events_dir = os.path.join(storage.SATYA_DIR, "events")
-    events_file = os.path.join(events_dir, "audit_log.jsonl")
-    if os.path.exists(events_file):
-        os.remove(events_file)
+    # Clear DB
+    db_file = os.path.join(storage.SATYA_DIR, "events", "audit.db")
+    if os.path.exists(db_file):
+        os.remove(db_file)
 
     # Append events
     sig1 = auth.append_audit_event("agent_1", "task_A", "trace_1", "task_created", "demo create")
     sig2 = auth.append_audit_event("agent_1", "task_A", "trace_1", "status_updated", "in progress", prev_hmac=sig1)
 
-    assert os.path.exists(events_file)
-    with open(events_file, 'r') as f:
-        lines = f.readlines()
+    assert os.path.exists(db_file)
 
-    assert len(lines) == 2
-    events = [json.loads(line) for line in lines]
+    # Retrieve from DB to test events
+    db = auth.AuditDB()
+    events = db.get_all_events()
+
+    assert len(events) == 2
 
     assert events[0]["signature"] == sig1
     assert events[1]["signature"] == sig2
@@ -63,10 +64,9 @@ def test_sdk_use_satya_audit_chain(monkeypatch):
     monkeypatch.setenv("SATYA_AGENT_KEY", "test_key1")
     client = SatyaClient(agent_name="tester")
 
-    events_dir = os.path.join(storage.SATYA_DIR, "events")
-    events_file = os.path.join(events_dir, "audit_log.jsonl")
-    if os.path.exists(events_file):
-        os.remove(events_file)
+    db_file = os.path.join(storage.SATYA_DIR, "events", "audit.db")
+    if os.path.exists(db_file):
+        os.remove(db_file)
 
     # Simulate picking a task
     parent_task = client.create_task("Parent Task", "Long enough description for parent.")
@@ -79,12 +79,8 @@ def test_sdk_use_satya_audit_chain(monkeypatch):
     assert child_task["parent_trace_id"] == parent_task["trace_id"]
 
     # Verify events
-    events_dir = os.path.join(storage.SATYA_DIR, "events")
-    events_file = os.path.join(events_dir, "audit_log.jsonl")
-    with open(events_file, 'r') as f:
-        lines = f.readlines()
-
-    events = [json.loads(line) for line in lines]
+    db = auth.AuditDB()
+    events = db.get_all_events()
 
     # Look for spawned_subtask
     spawn_events = [e for e in events if e["payload"]["action"] == "spawned_subtask"]
