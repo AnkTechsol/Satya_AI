@@ -6,6 +6,7 @@ import time
 import fcntl
 from typing import Optional, Dict, Any
 from .core import storage
+from .core.audit_db import AuditDB
 
 # Simple header/env based auth for agents. ENV:
 # SATYA_AGENT_KEYS -> comma separated keys (e.g. key1,key2)
@@ -44,6 +45,7 @@ def sign_event(event_data: str, prev_hmac: str = "") -> str:
 def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
     """Verify a chain of signed events."""
     prev_hmac = ""
+    # In SQLite fallback, events are passed directly. Ensure HMACs chain correctly.
     for event in events:
         signature = event.get("signature")
         payload = event.get("payload", {})
@@ -100,10 +102,13 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
 
     # Atomic append using fcntl
     try:
-        with open(events_file, 'a') as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            f.write(event_str)
-            fcntl.flock(f, fcntl.LOCK_UN)
+        if fcntl:
+            with open(events_file, 'a') as f:
+                fcntl.flock(f, fcntl.LOCK_EX)
+                f.write(event_str)
+                fcntl.flock(f, fcntl.LOCK_UN)
+        else:
+            raise OSError("No fcntl")
     except OSError:
         # Fallback if fcntl fails (e.g. Windows or weird FS)
         try:
@@ -118,5 +123,12 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
             if os.path.exists(tmp_file):
                 os.remove(tmp_file)
             raise
+
+    # Dual-write to durable SQLite audit store
+    try:
+        db = AuditDB()
+        db.append_event(event)
+    except Exception as e:
+        print(f"Failed to dual-write to durable audit DB: {e}")
 
     return signature

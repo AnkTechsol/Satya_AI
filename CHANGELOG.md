@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- **2026-04-05**: Added a Durable Append-Only Audit Store (SQLite-backed) providing a dual-write mechanism for cryptographic event chains, fulfilling enterprise compliance needs. Also generated a `COMPETITOR_MATRIX.md` to highlight Satya's differentiators versus LangSmith and Langfuse. (**Risk Level**: Low. Fails safely and maintains legacy JSONL as a fallback.)
 - Implemented **Agent Self-Test Harness + CI Analytics Job** to continuously test agent workflows, mock the simulation environment for CI, and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md` automatically on push.
 - Created `repo_analytics.json` and updated `REPO_ANALYTICS.md` with recent execution telemetry via the snapshot branch.
 - Initial **Repo Analytics** script (`repo_analytics.json`, `REPO_ANALYTICS.md`) to measure repo health.
