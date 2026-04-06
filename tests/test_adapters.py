@@ -28,3 +28,27 @@ def test_console_adapter_methods(capsys):
     adapter.export_log("agent-1", "hello world", "task-1")
     captured = capsys.readouterr()
     assert "[ConsoleAdapter] Log | Agent: agent-1 | Task: task-1 | Message: hello world" in captured.out
+
+@patch('src.satya.sdk.adapters.otlp.requests.post')
+def test_otlp_adapter_methods(mock_post):
+    adapter = OTLPAdapter()
+    adapter.export_trace("trace-1", "agent-1", "task_created", {"data": "test"})
+    mock_post.assert_called_once()
+
+    mock_post.reset_mock()
+    adapter.export_log("agent-1", "hello world", "task-1")
+    mock_post.assert_called_once()
+
+@patch('src.satya.sdk.adapters.langfuse.requests.post')
+def test_langfuse_adapter_methods(mock_post):
+    try:
+        from src.satya.sdk.adapters.langfuse import LangfuseAdapter
+    except ImportError:
+        return
+    adapter = LangfuseAdapter(public_key="pk", secret_key="sk")
+    adapter.export_trace("trace-1", "agent-1", "task_created", {"data": "test"})
+    mock_post.assert_called_once()
+
+    mock_post.reset_mock()
+    adapter.export_log("agent-1", "hello world", "task-1")
+    mock_post.assert_called_once()
