@@ -4,9 +4,14 @@ import subprocess
 import time
 import urllib.request
 
-cmd = ["/home/jules/.local/bin/streamlit", "run", "app.py", "--server.port", "5000", "--server.headless", "true"]
+cmd = [sys.executable, "-m", "streamlit", "run", "app.py", "--server.port", "5000", "--server.headless", "true"]
 proc = subprocess.Popen(cmd)
 print(f"Started Streamlit on port 5000 (PID: {proc.pid})")
+
+# Start AI Orchestrator Daemon
+orchestrator_cmd = [sys.executable, "orchestrator_runner.py"]
+orchestrator_proc = subprocess.Popen(orchestrator_cmd)
+print(f"Started AI Orchestrator daemon (PID: {orchestrator_proc.pid})")
 
 # Wait for it to be ready
 for i in range(15):

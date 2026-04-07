@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1605,6 +1605,96 @@ satya.log("Auth implementation complete")
 client.flush_logs()</div>
     </div>
     """, unsafe_allow_html=True)
+
+
+# ─── ROI DASHBOARD PAGE ──────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Enterprise analytics: Track agent task velocity and calculate cost savings</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="api-section">
+        <h4 style="color: var(--primary-light);">Business Impact Summary</h4>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7;">
+            The ROI Dashboard converts AI agent operational telemetry into executive-level financial metrics.
+            By comparing the estimated time and cost of manual human execution against the near-zero cost of
+            autonomous agent operations, this view quantifies the tangible return on investment driven by the Satya platform.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    # Cost Assumptions
+    MANUAL_HOURLY_RATE = 50.0  # $50/hour blended rate
+    MANUAL_HOURS_PER_TASK = 2.0  # Assume 2 hours manual work per task
+    AI_COST_PER_TASK = 0.05  # Assume $0.05 LLM cost per task completion
+
+    total_tasks_completed = stats.get("done", 0)
+
+    manual_cost = total_tasks_completed * MANUAL_HOURLY_RATE * MANUAL_HOURS_PER_TASK
+    ai_cost = total_tasks_completed * AI_COST_PER_TASK
+    total_savings = manual_cost - ai_cost
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#9989;</div>
+            <div class="metric-value" style="color: var(--primary-light);">{total_tasks_completed}</div>
+            <div class="metric-label">Tasks Completed</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128184;</div>
+            <div class="metric-value" style="color: var(--danger);">${manual_cost:,.2f}</div>
+            <div class="metric-label">Est. Manual Cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#129302;</div>
+            <div class="metric-value" style="color: var(--info);">${ai_cost:,.2f}</div>
+            <div class="metric-label">Est. AI Cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128640;</div>
+            <div class="metric-value" style="color: var(--success);">${total_savings:,.2f}</div>
+            <div class="metric-label">Total Savings (ROI)</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    st.markdown("#### Agent Velocity Breakdown")
+    if agent_metrics:
+        import pandas as pd
+        agent_roi_data = []
+        for agent, data in agent_metrics.items():
+            completed = data.get("completed", 0)
+            agent_savings = (completed * MANUAL_HOURLY_RATE * MANUAL_HOURS_PER_TASK) - (completed * AI_COST_PER_TASK)
+            agent_roi_data.append({
+                "Agent Name": agent,
+                "Tasks Completed": completed,
+                "Savings Generated ($)": agent_savings
+            })
+
+        df_roi = pd.DataFrame(agent_roi_data)
+        st.dataframe(df_roi, use_container_width=True, hide_index=True)
+
+        st.bar_chart(df_roi, x="Agent Name", y="Savings Generated ($)", height=300, color="#00B894")
+    else:
+        st.info("No agent metrics available yet. Agents need to complete tasks to calculate ROI.")
 
 
 st.markdown("""
