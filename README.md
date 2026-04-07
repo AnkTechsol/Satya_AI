@@ -52,6 +52,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
 
+- **Durable Append-Only Audit Store (SQLite fallback)** (Added 2026-04)
+  - Implements a durable and append-only SQLite store for signed audit logs with flat-file (`.jsonl`) fallback. This improves enterprise auditability, immutability, and easier integration with external DB tracking without sacrificing the zero-DB core principle.
+  - Runbook: Automatically migrates flat-file `.jsonl` audit logs into the SQLite DB `satya_data/events/audit_log.db` on first agent run. It gracefully dual-writes to the DB and `.jsonl` fallback to avoid data loss and maintains signature chain continuity based on the `.jsonl` source of truth.
+  - Validation: Verify `satya_data/events/audit_log.db` is populated after agent runs and verify tests run successfully using `pytest tests/test_auth_and_audit.py`.
+
 - **Export Adapter Framework (OTLP/Console)** (Added 2024-03)
   - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture.
   - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter()])`.

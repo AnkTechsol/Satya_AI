@@ -124,7 +124,7 @@ class AIOrchestrator:
                         )
 
                         # Add audit event
-                        from satya.auth import append_audit_event
+                        from ..auth import append_audit_event
                         append_audit_event(
                             "AI_Orchestrator",
                             task["id"],
