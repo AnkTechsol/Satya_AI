@@ -176,13 +176,11 @@ class SatyaClient:
         # Prioritization Logic
         priority_map = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
 
-        # Sort by Priority (asc) then Created At (asc - oldest first)
-        todo_tasks.sort(key=lambda t: (
+        # Find best task by Priority (asc) then Created At (asc - oldest first)
+        best_task = min(todo_tasks, key=lambda t: (
             priority_map.get(t.get("priority", "Medium"), 2),
             t.get("created_at", "")
         ))
-
-        best_task = todo_tasks[0]
 
         # Assign and Start
         self.log(f"Picking highest priority task: {best_task['title']}")
