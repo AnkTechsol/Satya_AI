@@ -4,6 +4,7 @@ import hashlib
 import json
 import time
 import fcntl
+import sqlite3
 from typing import Optional, Dict, Any
 from .core import storage
 
@@ -58,12 +59,13 @@ def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
 def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, details: str, prev_hmac: str = "") -> str:
     """
     Append an atomic, signed audit event to the global events log.
-    Fall back to salted atomic file append + rename semantics.
+    First attempts to store to sqlite db. Fall back to salted atomic file append + rename semantics.
     """
     storage.ensure_satya_dirs()
     events_dir = os.path.join(storage.SATYA_DIR, "events")
     os.makedirs(events_dir, exist_ok=True)
 
+    db_file = os.path.join(events_dir, "audit_log.db")
     events_file = os.path.join(events_dir, "audit_log.jsonl")
     tmp_file = events_file + f".{time.time()}.tmp"
 
@@ -83,18 +85,58 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
         "signature": signature
     }
 
-    # Read the last HMAC if prev_hmac is not provided to maintain the chain
-    if not prev_hmac and os.path.exists(events_file):
+    sqlite_success = False
+
+    # Check the jsonl file first to determine the actual last hmac in the chain.
+    file_prev_hmac = ""
+    if os.path.exists(events_file):
         try:
             with open(events_file, 'r') as f:
                 lines = f.readlines()
                 if lines:
                     last_event = json.loads(lines[-1])
-                    prev_hmac = last_event.get("signature", "")
-                    signature = sign_event(payload_str, prev_hmac)
-                    event["signature"] = signature
+                    file_prev_hmac = last_event.get("signature", "")
         except Exception as e:
-            print(f"Failed to read previous HMAC: {e}")
+            print(f"Failed to read previous HMAC from flat file: {e}")
+
+    # If the caller didn't provide prev_hmac, use the one from the file chain to avoid splitting the brain.
+    if not prev_hmac:
+        prev_hmac = file_prev_hmac
+        signature = sign_event(payload_str, prev_hmac)
+        event["signature"] = signature
+
+    # Try SQLite insertion
+    try:
+        with sqlite3.connect(db_file, timeout=5) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS audit_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    signature TEXT NOT NULL,
+                    payload TEXT NOT NULL
+                )
+            ''')
+
+            # Migration logic: if DB is empty but we have lines in jsonl, migrate them first
+            cursor.execute('SELECT COUNT(*) FROM audit_log')
+            count = cursor.fetchone()[0]
+            if count == 0 and os.path.exists(events_file):
+                try:
+                    with open(events_file, 'r') as f:
+                        for line in f:
+                            old_event = json.loads(line)
+                            old_sig = old_event.get("signature")
+                            old_payload_str = json.dumps(old_event.get("payload", {}), sort_keys=True)
+                            cursor.execute('INSERT INTO audit_log (signature, payload) VALUES (?, ?)', (old_sig, old_payload_str))
+                except Exception as e:
+                    print(f"Migration from jsonl to sqlite failed: {e}")
+
+            # Now insert the new event
+            cursor.execute('INSERT INTO audit_log (signature, payload) VALUES (?, ?)', (signature, payload_str))
+            conn.commit()
+            sqlite_success = True
+    except Exception as e:
+        print(f"SQLite audit log failed: {e}. Falling back to flat file.")
 
     event_str = json.dumps(event) + "\n"
 

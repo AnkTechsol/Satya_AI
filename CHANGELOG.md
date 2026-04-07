@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- **2026-04-07** - Added Durable Append-Only Audit Store (SQLite fallback) for signed audit logs. Risk Level: Low (provides graceful fallback to previous flat-file behavior).
 
 ### Added
 - Implemented **Agent Self-Test Harness + CI Analytics Job** to continuously test agent workflows, mock the simulation environment for CI, and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md` automatically on push.

@@ -50,6 +50,7 @@ def main():
     try:
         os.environ['SATYA_AGENT_KEY'] = 'test-run'
         os.environ['SATYA_AGENT_KEYS'] = 'test-run'
+        os.environ['AUDIT_SECRET'] = 'dummy_secret'
         sim_output = run_cmd('python run_sim.py')
         if sim_output:
             latencies_data = json.loads(sim_output)
