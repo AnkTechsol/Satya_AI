@@ -19,11 +19,12 @@ _AUDIT_SECRET = os.environ.get("AUDIT_SECRET")
 
 def is_agent_authorized(key: str) -> bool:
     """Check if the provided key is in the allowed agent keys."""
-    return key in _AGENT_KEYS
+    # Use hmac.compare_digest to prevent timing attacks
+    return any(hmac.compare_digest(key, k) for k in _AGENT_KEYS)
 
 def is_human_authorized(token: str) -> bool:
     """Check if the provided token matches the human view/admin token."""
-    return bool(_HUMAN_VIEW and token == _HUMAN_VIEW)
+    return bool(_HUMAN_VIEW and hmac.compare_digest(token, _HUMAN_VIEW))
 
 def get_agent_key_from_env() -> str:
     """Helper to get the configured agent key from the environment."""
@@ -45,14 +46,14 @@ def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
     """Verify a chain of signed events."""
     prev_hmac = ""
     for event in events:
-        signature = event.get("signature")
+        signature = event.get("signature", "")
         payload = event.get("payload", {})
         payload_str = json.dumps(payload, sort_keys=True)
 
         expected_signature = sign_event(payload_str, prev_hmac)
-        if signature != expected_signature:
+        if not hmac.compare_digest(str(signature or ""), expected_signature):
             return False
-        prev_hmac = signature
+        prev_hmac = str(signature or "")
     return True
 
 def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, details: str, prev_hmac: str = "") -> str:
