@@ -551,22 +551,40 @@ def parse_iso(iso_str):
         return None
     try:
         # Handle cases like '2023-10-27T10:00:00+00:00Z'
-        if iso_str.endswith('Z'):
-            clean_iso = iso_str.replace('Z', '+00:00')
-        else:
-            clean_iso = iso_str
+        clean_iso = str(iso_str)
+        if clean_iso.endswith('Z'):
+            clean_iso = clean_iso.replace('Z', '+00:00')
 
         dt = datetime.fromisoformat(clean_iso)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         return dt
-    except:
+    except Exception:
         return html.escape(str(iso_str or "N/A"))
+
+def format_date(iso_str):
+    """Format an ISO 8601 string to a readable date format, safely escaping on failure."""
+    if not iso_str:
+        return ""
+    try:
+        clean_iso = str(iso_str)
+        if clean_iso.endswith('Z'):
+            clean_iso = clean_iso[:-1]
+            if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
+                clean_iso += '+00:00'
+        dt = datetime.fromisoformat(clean_iso)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.strftime("%b %d, %H:%M")
+    except Exception:
+        # Sentinel: Fallback to safely escaped strings on parse errors to prevent XSS
+        # from unescaped output and prevent application crashes (DoS) from unhandled exceptions.
+        return html.escape(str(iso_str))
 
 def format_time_ago(iso_str):
     try:
         # Handle 'Z' suffix and possible double offset in Python 3.11+
-        clean_iso = iso_str
+        clean_iso = str(iso_str) if iso_str else ""
         if clean_iso.endswith('Z'):
             clean_iso = clean_iso[:-1]
             if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
@@ -1115,9 +1133,17 @@ elif page == "Task Board":
                     if comments:
                         for c in reversed(comments):
                             try:
-                                ts_obj = datetime.fromisoformat(c.get("timestamp", ""))
+                                timestamp_str = c.get("timestamp", "")
+                                clean_iso = str(timestamp_str) if timestamp_str else ""
+                                if clean_iso.endswith('Z'):
+                                    clean_iso = clean_iso[:-1]
+                                    if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
+                                        clean_iso += '+00:00'
+                                ts_obj = datetime.fromisoformat(clean_iso)
                                 ts_str = ts_obj.strftime("%H:%M:%S")
-                            except ValueError:
+                            except Exception:
+                                # Sentinel: Fallback to safely escaped strings on parse errors to prevent XSS
+                                # from unescaped output and prevent application crashes (DoS) from unhandled exceptions.
                                 ts_str = html.escape(str(c.get("timestamp", "")))
                             txt = html.escape(c.get("text", ""))
                             st.markdown(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>", unsafe_allow_html=True)
