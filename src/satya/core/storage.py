@@ -2,9 +2,16 @@ import os
 import json
 import fcntl
 import logging
+import threading
+import copy
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# In-memory heartbeat cache to reduce I/O overhead
+_heartbeat_cache = {}
+_heartbeat_mtimes = {}
+_heartbeat_lock = threading.Lock()
 
 ROOT_DIR = "."
 SATYA_DIR = "satya_data"
@@ -110,17 +117,79 @@ def list_tasks() -> List[Dict[str, Any]]:
 def save_heartbeat(agent_name: str, heartbeat_data: Dict[str, Any]) -> bool:
     safe_agent_name = os.path.basename(agent_name)
     filepath = os.path.join(HEARTBEATS_DIR, f"{safe_agent_name}.json")
-    return save_json(filepath, heartbeat_data)
+
+    success = save_json(filepath, heartbeat_data)
+
+    if success:
+        # ⚡ Bolt Optimization:
+        # To avoid blocking other threads during deepcopy, we copy outside the lock.
+        # We also use the atomic mtime directly from the written file to avoid a
+        # Time-of-Check to Time-of-Use (TOCTOU) race condition.
+        try:
+            new_mtime = os.path.getmtime(filepath)
+            data_copy = copy.deepcopy(heartbeat_data)
+            with _heartbeat_lock:
+                _heartbeat_mtimes[safe_agent_name] = new_mtime
+                _heartbeat_cache[safe_agent_name] = data_copy
+        except OSError:
+            # Invalidate if getmtime fails for any reason
+            with _heartbeat_lock:
+                _heartbeat_cache.pop(safe_agent_name, None)
+                _heartbeat_mtimes.pop(safe_agent_name, None)
+
+    return success
 
 def get_heartbeats() -> Dict[str, Dict[str, Any]]:
+    """
+    ⚡ Bolt Optimization:
+    Implements a thread-safe, mtime-based in-memory cache for heartbeats.
+    Significantly reduces N+1 file reads when polled rapidly by orchestrators or UI.
+    """
     if not os.path.exists(HEARTBEATS_DIR):
         return {}
-    heartbeats = {}
+
+    current_files = set()
+
     for f in os.listdir(HEARTBEATS_DIR):
-        if f.endswith('.json'):
-            agent_name = f[:-5] # remove .json
-            heartbeats[agent_name] = load_json(os.path.join(HEARTBEATS_DIR, f))
-    return heartbeats
+        if not f.endswith('.json'):
+            continue
+
+        agent_name = f[:-5]
+        filepath = os.path.join(HEARTBEATS_DIR, f)
+        current_files.add(agent_name)
+
+        try:
+            current_mtime = os.path.getmtime(filepath)
+        except OSError:
+            continue
+
+        with _heartbeat_lock:
+            cached_mtime = _heartbeat_mtimes.get(agent_name)
+            needs_update = cached_mtime is None or current_mtime > cached_mtime
+
+        if needs_update:
+            data = load_json(filepath)
+            # ⚡ Bolt Optimization:
+            # Execute the expensive deepcopy outside the lock block to minimize contention.
+            data_copy = copy.deepcopy(data)
+            with _heartbeat_lock:
+                # Store a deepcopy to prevent caller mutations affecting the cache
+                _heartbeat_cache[agent_name] = data_copy
+                _heartbeat_mtimes[agent_name] = current_mtime
+
+    with _heartbeat_lock:
+        # Cleanup deleted heartbeats
+        stale_agents = set(_heartbeat_cache.keys()) - current_files
+        for agent in stale_agents:
+            _heartbeat_cache.pop(agent, None)
+            _heartbeat_mtimes.pop(agent, None)
+
+        # ⚡ Bolt Optimization:
+        # We hold the lock to get a reference, but we execute the expensive
+        # deepcopy operation *outside* the lock block to reduce contention.
+        cache_ref = _heartbeat_cache.copy()
+
+    return copy.deepcopy(cache_ref)
 
 def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
