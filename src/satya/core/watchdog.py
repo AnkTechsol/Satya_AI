@@ -19,10 +19,7 @@ class WatchdogChecker:
         stale_tasks = []
 
         # Use provided list to filter in-memory, otherwise fallback to I/O read
-        if tasks_list is not None:
-            all_tasks = [t for t in tasks_list if t.get("status") == STATUS_IN_PROGRESS]
-        else:
-            all_tasks = self.tasks.get_tasks(status=STATUS_IN_PROGRESS)
+        all_tasks = self.tasks.get_tasks(status=STATUS_IN_PROGRESS, tasks_list=tasks_list)
 
         now = datetime.now()
 
