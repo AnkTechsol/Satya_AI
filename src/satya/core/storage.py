@@ -1,12 +1,20 @@
+
 import os
 import json
 import fcntl
 import logging
+import threading
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# ⚡ Bolt Optimization: In-memory cache for JSON files
+_json_cache: Dict[str, Dict[str, Any]] = {}
+_cache_lock = threading.Lock()
+MAX_CACHE_SIZE = 1000
+
 ROOT_DIR = "."
+
 SATYA_DIR = "satya_data"
 TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
@@ -44,6 +52,21 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                # ⚡ Bolt Optimization: Update cache immediately to prevent TOCTOU in tests
+                try:
+                    mtime = os.path.getmtime(filepath)
+                    with _cache_lock:
+                        if len(_json_cache) >= MAX_CACHE_SIZE and filepath not in _json_cache:
+                            oldest_key = next(iter(_json_cache))
+                            _json_cache.pop(oldest_key, None)
+                        _json_cache[filepath] = {
+                            "mtime": mtime,
+                            "data": json.dumps(data)
+                        }
+                except FileNotFoundError:
+                    pass
+
                 return True
             finally:
                 # Release lock
@@ -59,8 +82,17 @@ def save_json(filepath: str, data: Any) -> bool:
         return False
 
 def load_json(filepath: str) -> Dict[str, Any]:
-    if not os.path.exists(filepath):
+    # ⚡ Bolt Optimization: Check mtime to use in-memory cache and prevent N+1 disk reads
+    try:
+        mtime = os.path.getmtime(filepath)
+    except FileNotFoundError:
         return {}
+
+    with _cache_lock:
+        cached = _json_cache.get(filepath)
+        if cached and cached.get("mtime") == mtime:
+            # Parse from cached string to prevent shared mutable state bugs
+            return json.loads(cached["data"])
 
     lock_filepath = filepath + ".lock"
 
@@ -71,7 +103,21 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    data_str = f.read()
+                    data = json.loads(data_str)
+
+                    with _cache_lock:
+                        # FIFO Eviction
+                        if len(_json_cache) >= MAX_CACHE_SIZE and filepath not in _json_cache:
+                            # Pop the oldest item
+                            oldest_key = next(iter(_json_cache))
+                            _json_cache.pop(oldest_key, None)
+
+                        _json_cache[filepath] = {
+                            "mtime": mtime,
+                            "data": data_str
+                        }
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
