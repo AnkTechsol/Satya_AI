@@ -844,6 +844,57 @@ if page == "Dashboard":
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
+    # ─── ORCHESTRATOR METRICS ─────────────────────────────────
+    orchestrator_stats = {
+        "rca_spawned": 0,
+        "sla_escalated": 0,
+        "reassigned": 0
+    }
+
+    for t in all_tasks:
+        if t.get("rca_spawned"):
+            orchestrator_stats["rca_spawned"] += 1
+
+        audit_trail = t.get("audit_trail", [])
+        for event in audit_trail:
+            if event.get("agent") == "AI_Orchestrator":
+                action = event.get("action", "")
+                if "priority_escalated" in action:
+                    orchestrator_stats["sla_escalated"] += 1
+                elif action == "Comment Added" and "reassigned" in event.get("details", "").lower():
+                    orchestrator_stats["reassigned"] += 1
+
+    st.markdown("#### Orchestrator Command Center")
+    st.markdown('<div class="page-subtitle" style="margin-bottom: 0.5rem;">Automated governance and self-healing actions by the AI Orchestrator</div>', unsafe_allow_html=True)
+
+    col_o1, col_o2, col_o3 = st.columns(3)
+    with col_o1:
+        st.markdown(f"""
+        <div class="metric-card" style="padding: 1rem;">
+            <div class="metric-icon" style="font-size: 1.2rem; margin-bottom: 0;">&#128300;</div>
+            <div class="metric-value" style="font-size: 1.8rem; color: var(--danger);">{orchestrator_stats['rca_spawned']}</div>
+            <div class="metric-label" style="font-size: 0.7rem;">Automated RCAs</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_o2:
+        st.markdown(f"""
+        <div class="metric-card" style="padding: 1rem;">
+            <div class="metric-icon" style="font-size: 1.2rem; margin-bottom: 0;">&#128640;</div>
+            <div class="metric-value" style="font-size: 1.8rem; color: var(--warning);">{orchestrator_stats['sla_escalated']}</div>
+            <div class="metric-label" style="font-size: 0.7rem;">SLA Escalations</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_o3:
+        st.markdown(f"""
+        <div class="metric-card" style="padding: 1rem;">
+            <div class="metric-icon" style="font-size: 1.2rem; margin-bottom: 0;">&#128257;</div>
+            <div class="metric-value" style="font-size: 1.8rem; color: var(--success);">{orchestrator_stats['reassigned']}</div>
+            <div class="metric-label" style="font-size: 0.7rem;">Tasks Recovered</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
     # Variant Selection for A/B Testing Demo
     headline_variant = "A" if datetime.now().second % 2 == 0 else "B"
     cta_variant = "1" if datetime.now().second % 4 < 2 else "2"

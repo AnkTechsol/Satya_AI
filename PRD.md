@@ -49,3 +49,8 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Self-Healing Task Re-assignment:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires.
 * **Dashboard Agent Status:** Streamlit UI dynamically displays real-time agent 'Online/Offline' statuses using the heartbeat freshness metrics.
 * **Agent Chat Control Panel:** Humans can interact directly with their agents in real-time. Manual overrides and instructions sent via the Dashboard are polled directly by SDK agents via `poll_chat()`.
+
+## 8. Strategic Opportunities (The AI Orchestrator)
+As Satya evolves from a passive observability tool to an active governance platform, the **AI Orchestrator** is our key differentiator against generic logging tools. It acts as an automated "Scrum Master" for autonomous swarms.
+* **Guaranteed Output SLAs:** Enterprise buyers don't just want to see agents; they want guarantees that work gets done. The Orchestrator's SLA Escalation and Self-Healing capabilities provide that guarantee.
+* **The Orchestrator Command Center:** By surfacing the Orchestrator's background actions (Dead Agent Recovery, Automated RCAs, SLA Bumps) directly into the Streamlit UI, we transform invisible infrastructure into a highly visible, premium product feature that justifies enterprise pricing.
