@@ -47,6 +47,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 ## SUSTAINABLE_FEATURES
 
+- **Enterprise ROI Dashboard** (Added 2026-03)
+  - Calculates and visualizes the financial savings (ROI) of autonomous execution versus manual labor, directly addressing enterprise adoption concerns.
+  - Runbook: Accessible via the Streamlit UI under the 'ROI Dashboard' tab.
+  - Validation: Verify tasks marked as "Done" increment the total savings accurately. Check [CHANGELOG.md](CHANGELOG.md) for related updates.
+
 - **Agent Self-Test Harness + CI Analytics Job** (Added 2026-03)
   - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.

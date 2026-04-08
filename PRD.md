@@ -29,9 +29,10 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 * **Plugin Marketplace:** Create an extensible architecture where community developers can publish 'Truth Source Extractors' and 'Governance Validators' for public use.
 * **Public Workspaces:** Enable sharing read-only views of AI agent execution dashboards directly to the public via customizable sharing links to foster trust and demonstrate AI competence.
 * **Mobile Companion App:** Develop a cross-platform mobile app (React Native) for product managers to monitor agent health and approve critical tasks on the go.
-* **Enterprise Grade Billing & Analytics (ROI Dashboard):** Track per-agent token usage, task velocity, and calculate ROI of autonomous vs manual execution. Provide beautiful client-facing reports for AI agencies.
 * **B2B Multi-Tenant Workspaces:** Support different client profiles, isolated tasks, and branded dashboards within the same Satya installation.
 * **Slack / MS Teams Integrations:** Bring agent heartbeats, chat overrides, and SLA escalations directly into the human communication layer for zero-friction PM oversight.
+* **Viral Product Loops:** Build referral incentives within public dashboards to drive organic user acquisition across agencies.
+* **Verified Agent Badges:** Create a global registry where agents can earn 'verified' badges for completing benchmark task suites reliably, driving enterprise trust.
 
 ## 6. Business & Ecosystem Strategy
 To position Satya AI as a winning, widely-adopted platform and enterprise standard:
@@ -44,6 +45,7 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
 
 ## 7. Recently Completed Work
+* **Enterprise Grade Billing & Analytics (ROI Dashboard):** Implemented an ROI Dashboard to track task velocity and calculate financial savings of autonomous AI execution versus manual hours.
 * **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued.
 * **Automated Issue Resolution Workflow (RCA):** Integrated Root Cause Analysis mechanism into the orchestrator where failed tasks automatically spawn targeted debugging sub-tasks for agents to triage errors autonomously.
 * **Self-Healing Task Re-assignment:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires.

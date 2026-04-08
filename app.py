@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1465,6 +1465,32 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD PAGE ─────────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Enterprise Grade Billing & Analytics for your AI workforce</div>', unsafe_allow_html=True)
+
+    st.markdown("#### Estimated Cost Savings (vs. Manual Execution)")
+    tasks_done = stats.get('done', 0)
+    manual_hours_saved = tasks_done * 2.5
+    manual_cost_saved = manual_hours_saved * 50
+    st.markdown(f"**Total Tasks Completed by Agents:** {tasks_done}")
+    st.markdown(f"**Estimated Manual Hours Saved (2.5 hrs/task):** {manual_hours_saved:.1f} hrs")
+    st.markdown(f"**Estimated Cost Savings ($50/hr):** ${manual_cost_saved:,.2f}")
+
+    if agent_metrics:
+        st.markdown("#### Agent Performance & ROI")
+        roi_data = []
+        for agent, data in agent_metrics.items():
+            completed = data["completed"]
+            agent_savings = completed * 2.5 * 50
+            roi_data.append({"Agent": agent, "Tasks Completed": completed, "Est. ROI ($)": agent_savings})
+        import pandas as pd
+        df_roi = pd.DataFrame(roi_data)
+        st.dataframe(df_roi, width='stretch')
+    else:
+        st.info("No agent metrics available to calculate ROI.")
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":

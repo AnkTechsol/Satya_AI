@@ -1,0 +1,66 @@
+{
+    "id": "c0c1e32d",
+    "trace_id": "fa4cdee2-2268-4eb2-bd0a-60aae2a6099f",
+    "parent_trace_id": null,
+    "title": "Parent Task",
+    "description": "Long enough description for parent.",
+    "status": "queued",
+    "priority": "Medium",
+    "assignee": "Unassigned",
+    "allowed_actions": [],
+    "forbidden_actions": [],
+    "output_path": "",
+    "completion_criteria": {
+        "type": "manual"
+    },
+    "time_limit_minutes": 30,
+    "locked_by": null,
+    "locked_at": null,
+    "created_at": "2026-04-08T14:47:38.288189+00:00Z",
+    "updated_at": "2026-04-08T14:47:38.400514+00:00Z",
+    "completed_at": null,
+    "comments": [
+        {
+            "timestamp": "2026-04-08T14:47:38.289717+00:00Z",
+            "agent": "tester",
+            "text": "Creating task: Subtask: Use satya to run a subtask..."
+        },
+        {
+            "timestamp": "2026-04-08T14:47:38.400514+00:00Z",
+            "agent": "AI_Orchestrator",
+            "text": "Task reassigned to queue because agent 'tester' stopped sending heartbeats."
+        }
+    ],
+    "audit_trail": [
+        {
+            "timestamp": "2026-04-08T14:47:38.288189+00:00Z",
+            "agent": "tester",
+            "action": "Task Created",
+            "details": "Created with status 'queued' and priority 'Medium'"
+        },
+        {
+            "timestamp": "2026-04-08T14:47:38.289107+00:00Z",
+            "agent": "tester",
+            "action": "Status Changed",
+            "details": "Status changed from 'queued' to 'in_progress'"
+        },
+        {
+            "timestamp": "2026-04-08T14:47:38.289717+00:00Z",
+            "agent": "tester",
+            "action": "Comment Added",
+            "details": "Comment: 'Creating task: Subtask: Use satya to run a subtask...'"
+        },
+        {
+            "timestamp": "2026-04-08T14:47:38.359257+00:00Z",
+            "agent": "AI_Orchestrator",
+            "action": "Task Updated",
+            "details": "status: 'in_progress' -> 'queued', assignee: 'tester' -> 'Unassigned', locked_by: 'tester' -> 'None', locked_at: '2026-04-08T14:47:38.289107+00:00Z' -> 'None'"
+        },
+        {
+            "timestamp": "2026-04-08T14:47:38.400514+00:00Z",
+            "agent": "AI_Orchestrator",
+            "action": "Comment Added",
+            "details": "Comment: 'Task reassigned to queue because agent 'tester' st...'"
+        }
+    ]
+}

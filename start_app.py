@@ -4,7 +4,7 @@ import subprocess
 import time
 import urllib.request
 
-cmd = ["/home/jules/.local/bin/streamlit", "run", "app.py", "--server.port", "5000", "--server.headless", "true"]
+cmd = [sys.executable, "-m", "streamlit", "run", "app.py", "--server.port", "5000", "--server.headless", "true"]
 proc = subprocess.Popen(cmd)
 print(f"Started Streamlit on port 5000 (PID: {proc.pid})")
 
@@ -41,3 +41,8 @@ for i in range(3):
     }
     with open(f"satya_data/chat/TestAgent/msg_{i}.json", "w") as f:
         json.dump(msg, f)
+
+# Start Orchestrator
+orch_cmd = [sys.executable, "orchestrator_runner.py", "--timeout", "60", "--poll-interval", "10"]
+orch_proc = subprocess.Popen(orch_cmd)
+print(f"Started Orchestrator (PID: {orch_proc.pid})")
