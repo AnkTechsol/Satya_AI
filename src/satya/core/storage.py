@@ -2,12 +2,19 @@ import os
 import json
 import fcntl
 import logging
+from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = "."
 SATYA_DIR = "satya_data"
+
+# Cache for loaded JSON to prevent N+1 I/O reads.
+# Maps filepath -> (mtime, raw_json_string)
+_json_cache = OrderedDict()
+MAX_CACHE_SIZE = 10000
+
 TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
@@ -44,6 +51,17 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                # Update cache manually to prevent TOCTOU race condition
+                try:
+                    mtime = os.path.getmtime(filepath)
+                    _json_cache[filepath] = (mtime, json.dumps(data))
+                    _json_cache.move_to_end(filepath)
+                    if len(_json_cache) > MAX_CACHE_SIZE:
+                        _json_cache.popitem(last=False)
+                except FileNotFoundError:
+                    pass
+
                 return True
             finally:
                 # Release lock
@@ -62,6 +80,19 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        mtime = os.path.getmtime(filepath)
+    except FileNotFoundError:
+        return {}
+
+    if filepath in _json_cache:
+        cached_mtime, cached_str = _json_cache[filepath]
+        if mtime == cached_mtime:
+            _json_cache.move_to_end(filepath)
+            return json.loads(cached_str)
+        else:
+            del _json_cache[filepath]
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -71,7 +102,15 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
+
+                    # Store as raw string to avoid shared mutable state issues
+                    _json_cache[filepath] = (mtime, json.dumps(data))
+                    _json_cache.move_to_end(filepath)
+                    if len(_json_cache) > MAX_CACHE_SIZE:
+                        _json_cache.popitem(last=False)
+
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
