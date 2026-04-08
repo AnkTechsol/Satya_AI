@@ -173,16 +173,40 @@ class SatyaClient:
             self.log("No tasks in 'To Do' column.")
             return None
 
+        # Filter out tasks with unfulfilled dependencies (depends_on)
+        available_tasks = []
+        for t in todo_tasks:
+            depends_on = t.get("depends_on", [])
+            if not depends_on:
+                available_tasks.append(t)
+                continue
+
+            # Check if all dependencies are done
+            all_deps_met = True
+            for dep_id in depends_on:
+                # Find the dependency task in all_tasks
+                dep_task = next((task for task in all_tasks if task.get("id") == dep_id), None)
+                if not dep_task or dep_task.get("status") != "done":
+                    all_deps_met = False
+                    break
+
+            if all_deps_met:
+                available_tasks.append(t)
+
+        if not available_tasks:
+            self.log("Guardrail: Tasks are queued, but blocked by unfulfilled dependencies.")
+            return None
+
         # Prioritization Logic
         priority_map = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
 
         # Sort by Priority (asc) then Created At (asc - oldest first)
-        todo_tasks.sort(key=lambda t: (
+        available_tasks.sort(key=lambda t: (
             priority_map.get(t.get("priority", "Medium"), 2),
             t.get("created_at", "")
         ))
 
-        best_task = todo_tasks[0]
+        best_task = available_tasks[0]
 
         # Assign and Start
         self.log(f"Picking highest priority task: {best_task['title']}")

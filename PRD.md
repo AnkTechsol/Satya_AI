@@ -16,6 +16,7 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 3. **Web Dashboard:** Streamlit-based UI for humans to monitor tasks, completion rates, and agent logs.
 4. **Governance Rules:** Built-in checks (e.g., tasks require minimum description lengths, completion requires agent comments).
 5. **Main Owner Role:** Master administrator oversight for the workspace.
+6. **AI Project Manager / Orchestrator Tool:** Monitors agent heartbeats continuously, manages WIP guardrails via `depends_on` unfulfilled dependency checks, enforces SLAs, automatically reassigns orphaned tasks from dead agents, and provisions automated RCA resolution workflows.
 
 ## 4. Success Metrics
 * **Agent Reliability:** 100% of stuck tasks are automatically recovered and re-queued by the Project Manager.
@@ -32,6 +33,8 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 * **Enterprise Grade Billing & Analytics (ROI Dashboard):** Track per-agent token usage, task velocity, and calculate ROI of autonomous vs manual execution. Provide beautiful client-facing reports for AI agencies.
 * **B2B Multi-Tenant Workspaces:** Support different client profiles, isolated tasks, and branded dashboards within the same Satya installation.
 * **Slack / MS Teams Integrations:** Bring agent heartbeats, chat overrides, and SLA escalations directly into the human communication layer for zero-friction PM oversight.
+* **Predictive Resource Allocation (ML-based):** Intelligent task assignment analyzing agent throughput and predicting task resolution times to prevent queue bottlenecks.
+* **Advanced Cross-Agent Dependencies (DAG Workflows):** Enforce strict visual DAG execution flows to handle large-scale enterprise workflows with parallel execution stages.
 
 ## 6. Business & Ecosystem Strategy
 To position Satya AI as a winning, widely-adopted platform and enterprise standard:
@@ -44,8 +47,9 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
 
 ## 7. Recently Completed Work
-* **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued.
-* **Automated Issue Resolution Workflow (RCA):** Integrated Root Cause Analysis mechanism into the orchestrator where failed tasks automatically spawn targeted debugging sub-tasks for agents to triage errors autonomously.
-* **Self-Healing Task Re-assignment:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires.
+* **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued. This acts as a true zero-infrastructure AI project manager.
+* **Automated Issue Resolution Workflow (RCA):** Integrated Root Cause Analysis mechanism into the orchestrator where failed tasks automatically spawn targeted debugging sub-tasks for agents to triage errors autonomously, minimizing human intervention.
+* **Self-Healing Task Re-assignment & SLA Escalation:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires. Prolonged queued tasks are automatically bumped in priority.
 * **Dashboard Agent Status:** Streamlit UI dynamically displays real-time agent 'Online/Offline' statuses using the heartbeat freshness metrics.
 * **Agent Chat Control Panel:** Humans can interact directly with their agents in real-time. Manual overrides and instructions sent via the Dashboard are polled directly by SDK agents via `poll_chat()`.
+* **Strict WIP Guardrails:** Automated 'Scrum Master' features inside the Agent SDK ensure agents cannot pick up new tasks if they have tasks in progress or if dependencies (`depends_on`) are unfulfilled.
