@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import logging
 from . import storage
 from .tasks import Tasks, STATUS_IN_PROGRESS, STATUS_QUEUED, STATUS_FAILED
+from .watchdog import WatchdogChecker
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +150,25 @@ class AIOrchestrator:
         in_progress_tasks = [t for t in all_tasks if t.get("status") == STATUS_IN_PROGRESS]
         failed_tasks = [t for t in all_tasks if t.get("status") == STATUS_FAILED and not t.get("rca_spawned")]
         queued_tasks = [t for t in all_tasks if t.get("status") == STATUS_QUEUED]
+
+        # Enforce Time-boxes using WatchdogChecker
+        stale_tasks = WatchdogChecker(self.repo_path).scan(in_progress_tasks)
+        for task in stale_tasks:
+            logger.warning(f"Orchestrator: Task {task['id']} exceeded time limit ({task['elapsed_minutes']}m). Failing task to unlock RCA.")
+
+            # Unassign and Fail the task
+            self.tasks.update_task_status(task["id"], STATUS_FAILED, agent_name="AI_Orchestrator")
+            self.tasks.update_task(task["id"], {"assignee": "Unassigned", "locked_by": None, "locked_at": None}, agent_name="AI_Orchestrator")
+
+            self.tasks.add_comment(
+                task["id"],
+                f"Task failed by Orchestrator because it exceeded its time limit of {task.get('time_limit_minutes', 30)} minutes.",
+                commit=False,
+                agent_name="AI_Orchestrator"
+            )
+            # Make sure it's caught in this loop for RCA spawning
+            task["status"] = STATUS_FAILED
+            failed_tasks.append(task)
 
         # Process SLA Escalation for Queued Tasks
         self._escalate_stale_tasks(queued_tasks, now)
