@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import html
+import heapq
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
@@ -870,7 +871,7 @@ if page == "Dashboard":
 
     with col_left:
         st.markdown("#### Recent Tasks")
-        sorted_tasks = sorted(all_tasks, key=lambda t: t.get("updated_at", ""), reverse=True)[:5]
+        sorted_tasks = heapq.nlargest(5, all_tasks, key=lambda t: t.get("updated_at", ""))
 
         if sorted_tasks:
             for task in sorted_tasks:
@@ -983,10 +984,9 @@ if page == "Dashboard":
             audit_events.append(event_copy)
 
     if audit_events:
-        # Sort newest first
-        audit_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
-        # Display top 10
-        for event in audit_events[:10]:
+        # Display top 10 newest first using O(N log K) instead of O(N log N)
+        top_events = heapq.nlargest(10, audit_events, key=lambda e: e.get("timestamp", ""))
+        for event in top_events:
             ts = format_date(event.get('timestamp', ''))
             agent = event.get('agent', 'System')
             action = event.get('action', 'Unknown Action')
