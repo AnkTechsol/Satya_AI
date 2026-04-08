@@ -44,6 +44,7 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
 
 ## 7. Recently Completed Work
+* **AI Orchestrator Dashboard:** Integrated a fully-featured UI in the Streamlit dashboard for the Project Manager/AI Orchestrator tool. This visual control center allows human Product Managers to monitor orchestrator health, view automated SLA escalations, track task reassignments, and manually trigger resolution scans directly from the interface, reinforcing our core vision of bringing absolute transparency to agent operations.
 * **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued.
 * **Automated Issue Resolution Workflow (RCA):** Integrated Root Cause Analysis mechanism into the orchestrator where failed tasks automatically spawn targeted debugging sub-tasks for agents to triage errors autonomously.
 * **Self-Healing Task Re-assignment:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires.

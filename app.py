@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "AI Orchestrator", "Main Owner", "SDK Docs", "Agent Chat"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,8 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        nav_options,
+        index=default_index,
         label_visibility="collapsed"
     )
 
@@ -1465,6 +1466,120 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── AI ORCHESTRATOR PAGE ──────────────────────────────
+elif page == "AI Orchestrator":
+    st.markdown('<div class="hero-header">AI Orchestrator Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Visual control center for automated task recovery, SLA escalation, and self-healing systems</div>', unsafe_allow_html=True)
+
+    col_status, col_actions = st.columns([1, 2])
+
+    with col_status:
+        st.markdown("#### Service Status")
+
+        # Check if Orchestrator is running by looking at its heartbeat
+        orchestrator_hb = storage.get_heartbeats().get("AI_Orchestrator")
+        is_running = False
+        if orchestrator_hb:
+            try:
+                clean_iso = orchestrator_hb.get("last_seen", "")
+                if clean_iso.endswith('Z'):
+                    clean_iso = clean_iso[:-1]
+                    if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
+                        clean_iso += '+00:00'
+                dt = datetime.fromisoformat(clean_iso)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+
+                # Consider running if heartbeat in last 2 minutes
+                if (datetime.now(timezone.utc) - dt).total_seconds() < 120:
+                    is_running = True
+            except:
+                pass
+
+        status_color = "var(--success)" if is_running else "var(--danger)"
+        status_text = "Online & Monitoring" if is_running else "Offline (Daemon Not Running)"
+
+        st.markdown(f"""
+        <div class="metric-card" style="margin-bottom: 1rem; border-top: 4px solid {status_color};">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">{'&#9881;&#65039;' if is_running else '&#10060;'}</div>
+            <div style="font-weight: 700; color: {status_color}; font-size: 1.1rem; margin-bottom: 0.5rem;">{status_text}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                The Orchestrator daemon runs in the background, continuously scanning for dead agents, stuck tasks, and SLA violations.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if is_admin:
+            st.markdown("#### Manual Controls")
+            if st.button("Trigger Manual Resolution Scan", use_container_width=True, help="Force the Orchestrator to scan immediately"):
+                with st.spinner("Running AI Orchestrator scan..."):
+                    from satya.core.project_manager import AIOrchestrator
+                    orc = AIOrchestrator(repo_path=".", timeout_seconds=60)
+                    orc.scan_once()
+                    st.success("Scan complete! Tasks re-evaluated.")
+                    st.rerun()
+            st.caption("You can manually run the resolution logic if you suspect a task is stuck and the daemon is not running.")
+        else:
+            st.info("Admin Key required to trigger manual scans.")
+
+    with col_actions:
+        st.markdown("#### Recent Automated Interventions")
+
+        # Filter audit events for AI_Orchestrator
+        orchestrator_events = []
+        for task in all_tasks:
+            audit_trail = task.get("audit_trail", [])
+            for event in audit_trail:
+                if event.get("agent") == "AI_Orchestrator":
+                    event_copy = event.copy()
+                    event_copy["task_title"] = task.get("title", "Unknown Task")
+                    event_copy["task_id"] = task.get("id", "")
+                    orchestrator_events.append(event_copy)
+
+        if orchestrator_events:
+            orchestrator_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
+            for event in orchestrator_events[:15]:
+                action = event.get("action", "")
+                details = event.get("details", "")
+                task_title = event.get("task_title", "")
+                task_id = event.get("task_id", "")
+
+                icon = "&#128302;" # Robot default
+                if action == "priority_escalated":
+                    icon = "&#9888;&#65039;" # Warning sign
+                elif action == "status_updated" and "queue" in details.lower():
+                    icon = "&#128260;" # Recycle / reassign
+                elif action == "spawned_subtask":
+                    icon = "&#128373;" # Detective for RCA
+
+                st.markdown(f"""
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; margin-bottom: 0.5rem; display: flex; gap: 1rem; align-items: flex-start;">
+                    <div style="font-size: 1.5rem;">{icon}</div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.2rem;">
+                            {format_time_ago(event.get('timestamp', ''))} &middot; Task: <span style="font-family: monospace;">{task_id}</span>
+                        </div>
+                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.2rem;">
+                            {html.escape(task_title)}
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--primary-light);">
+                            {html.escape(details)}
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="empty-state" style="padding: 2rem;">
+                <div class="empty-state-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">&#128302;&#10024;</div>
+                <div class="empty-state-text" style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">No Automated Actions Yet</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); max-width: 80%; margin: 0 auto; line-height: 1.5;">
+                    The Orchestrator is quietly monitoring. If agents fail, tasks get stuck, or SLAs are breached, the automated interventions will appear here.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":
