@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1605,6 +1605,119 @@ satya.log("Auth implementation complete")
 client.flush_logs()</div>
     </div>
     """, unsafe_allow_html=True)
+
+
+# ─── ROI DASHBOARD PAGE ──────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">Enterprise ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Quantify the business value of autonomous execution vs manual labor</div>', unsafe_allow_html=True)
+
+    # Calculate velocity and ROI
+    import pandas as pd
+
+    # Defaults
+    total_tasks_completed = stats["done"]
+    avg_tokens_per_task = 7500  # Estimate
+    cost_per_1k_tokens = 0.002
+    manual_hourly_rate = 50.0
+    avg_manual_hours_per_task = 2.0
+
+    total_tokens = total_tasks_completed * avg_tokens_per_task
+    ai_compute_cost = (total_tokens / 1000) * cost_per_1k_tokens
+    manual_labor_cost = total_tasks_completed * avg_manual_hours_per_task * manual_hourly_rate
+
+    cost_savings = manual_labor_cost - ai_compute_cost
+
+    # Calculate velocity (tasks per day) based on created_at and completed_at
+    dates_completed = []
+    for t in all_tasks:
+        if t.get("status") == "done" and t.get("completed_at"):
+            try:
+                date_str = t.get("completed_at", "")
+                if date_str.endswith('Z'):
+                    date_str = date_str[:-1] + '+00:00'
+                dt = datetime.fromisoformat(date_str)
+                dates_completed.append(dt.date())
+            except:
+                pass
+
+    velocity = 0
+    if dates_completed:
+        min_date = min(dates_completed)
+        max_date = max(dates_completed)
+        days_active = (max_date - min_date).days + 1
+        if days_active > 0:
+            velocity = round(len(dates_completed) / days_active, 1)
+        else:
+            velocity = len(dates_completed)
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128176;</div>
+            <div class="metric-value" style="color: var(--success);">${cost_savings:,.2f}</div>
+            <div class="metric-label">Total ROI (Savings)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#128640;</div>
+            <div class="metric-value" style="color: var(--info);">{velocity}</div>
+            <div class="metric-label">Velocity (Tasks/Day)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#129294;</div>
+            <div class="metric-value" style="color: var(--primary-light);">{total_tokens:,}</div>
+            <div class="metric-label">Est. Tokens Used</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">&#9201;</div>
+            <div class="metric-value" style="color: var(--warning);">{total_tasks_completed * avg_manual_hours_per_task:,.0f}h</div>
+            <div class="metric-label">Manual Hours Saved</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.markdown("#### Cumulative Cost Comparison")
+        if total_tasks_completed > 0:
+            # Generate mock cumulative data
+            steps = min(total_tasks_completed, 10)
+            if steps == 0: steps = 1
+            tasks_range = list(range(1, total_tasks_completed + 1, max(1, total_tasks_completed // steps)))
+            if tasks_range[-1] != total_tasks_completed:
+                tasks_range.append(total_tasks_completed)
+
+            data = []
+            for t_count in tasks_range:
+                manual_c = t_count * avg_manual_hours_per_task * manual_hourly_rate
+                ai_c = (t_count * avg_tokens_per_task / 1000) * cost_per_1k_tokens
+                data.append({"Tasks Completed": t_count, "Manual Cost ($)": manual_c, "AI Cost ($)": ai_c})
+
+            df_costs = pd.DataFrame(data)
+            st.line_chart(df_costs.set_index("Tasks Completed"), height=300)
+        else:
+            st.info("Complete some tasks to see cost comparison charts.")
+
+    with col2:
+        st.markdown("#### ROI Settings")
+        with st.container(border=True):
+            st.markdown("<p style='font-size: 0.85rem; color: var(--text-secondary);'>Adjust calculation parameters</p>", unsafe_allow_html=True)
+            st.slider("Manual Hourly Rate ($)", min_value=10.0, max_value=200.0, value=50.0, step=5.0, disabled=True, help="Fixed at $50/hr for demo.")
+            st.slider("Avg Hours/Task", min_value=0.5, max_value=10.0, value=2.0, step=0.5, disabled=True, help="Fixed at 2.0 hrs for demo.")
+            st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-size: 0.8rem;'><strong>Current Model Cost:</strong> ${cost_per_1k_tokens}/1k tokens</p>", unsafe_allow_html=True)
 
 
 st.markdown("""
