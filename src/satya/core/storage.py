@@ -2,9 +2,15 @@ import os
 import json
 import fcntl
 import logging
+import threading
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# Bounded in-memory cache for JSON files
+_json_cache: Dict[str, Dict[str, Any]] = {}
+_cache_lock = threading.Lock()
+MAX_CACHE_SIZE = 1000
 
 ROOT_DIR = "."
 SATYA_DIR = "satya_data"
@@ -44,6 +50,19 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                # Update cache
+                try:
+                    mtime = os.path.getmtime(filepath)
+                    raw_str = json.dumps(data)
+                    with _cache_lock:
+                        if len(_json_cache) >= MAX_CACHE_SIZE and filepath not in _json_cache:
+                            # Evict first element (FIFO)
+                            _json_cache.pop(next(iter(_json_cache)))
+                        _json_cache[filepath] = {"mtime": mtime, "raw": raw_str}
+                except Exception as e:
+                    logger.warning(f"Failed to update cache for {filepath}: {e}")
+
                 return True
             finally:
                 # Release lock
@@ -62,6 +81,16 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        current_mtime = os.path.getmtime(filepath)
+    except FileNotFoundError:
+        return {}
+
+    # Check cache
+    cached = _json_cache.get(filepath)
+    if cached and cached["mtime"] == current_mtime:
+        return json.loads(cached["raw"])
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -71,7 +100,17 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    raw_str = f.read()
+                    data = json.loads(raw_str)
+
+                    # Update cache
+                    with _cache_lock:
+                        if len(_json_cache) >= MAX_CACHE_SIZE and filepath not in _json_cache:
+                            # Evict first element (FIFO)
+                            _json_cache.pop(next(iter(_json_cache)))
+                        _json_cache[filepath] = {"mtime": current_mtime, "raw": raw_str}
+
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
@@ -126,6 +165,8 @@ def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
+        # Invalidate cache safely
+        _json_cache.pop(filepath, None)
         return True
     return False
 
