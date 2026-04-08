@@ -153,6 +153,14 @@ class AIOrchestrator:
         # Process SLA Escalation for Queued Tasks
         self._escalate_stale_tasks(queued_tasks, now)
 
+        # Time-box enforcement for in-progress tasks
+        # ⚡ Bolt Optimization: Reuse all_tasks memory instead of disk scan inside WatchdogChecker
+        from .watchdog import WatchdogChecker
+        stale_tasks = WatchdogChecker(self.repo_path).scan(tasks_list=all_tasks)
+        for task in stale_tasks:
+            logger.warning(f"Orchestrator: Task {task['id']} exceeded time limit. Resetting.")
+            self._reassign_task(task, task.get("locked_by", "Unknown"))
+
         # Handle failed tasks (Automated Issue Resolution Workflow)
         for task in failed_tasks:
             logger.info(f"Orchestrator: Spawning RCA task for failed task {task['id']}")
