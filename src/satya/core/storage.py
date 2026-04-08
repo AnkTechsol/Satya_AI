@@ -2,9 +2,15 @@ import os
 import json
 import fcntl
 import logging
+import threading
+import copy
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# ⚡ Bolt Optimization: Thread-safe in-memory cache for loaded JSON files based on mtime
+_json_cache = {}
+_cache_lock = threading.Lock()
 
 ROOT_DIR = "."
 SATYA_DIR = "satya_data"
@@ -44,6 +50,12 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                # Invalidate cache to prevent TOCTOU race conditions with mtime
+                with _cache_lock:
+                    if filepath in _json_cache:
+                        del _json_cache[filepath]
+
                 return True
             finally:
                 # Release lock
@@ -62,6 +74,23 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        current_mtime = os.path.getmtime(filepath)
+    except OSError:
+        return {}
+
+    with _cache_lock:
+        cache_entry = _json_cache.get(filepath)
+        if cache_entry and cache_entry['mtime'] == current_mtime:
+            # Must deepcopy outside of lock to minimize contention, but since we are inside the lock here:
+            # actually we can just grab it and copy outside.
+            cached_data = cache_entry['data']
+        else:
+            cached_data = None
+
+    if cached_data is not None:
+        return copy.deepcopy(cached_data)
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -71,9 +100,15 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
+
+        # Cache the parsed data
+        with _cache_lock:
+            _json_cache[filepath] = {'mtime': current_mtime, 'data': copy.deepcopy(data)}
+
+        return data
     except Exception as e:
         logger.error(f"Error loading JSON from {filepath}: {e}")
         return {}
@@ -126,6 +161,9 @@ def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
+        with _cache_lock:
+            if filepath in _json_cache:
+                del _json_cache[filepath]
         return True
     return False
 
