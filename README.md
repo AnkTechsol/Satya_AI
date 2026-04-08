@@ -29,9 +29,9 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-03-18T14:54:36.397598+00:00
+- **Last Analytics Run:** 2026-04-08T14:52:20.798332+00:00
 - **Open Issues:** Unknown without GH CLI
-- **Recent CI Status:** Unknown (no .github/workflows found)
+- **Recent CI Status:** Unknown without GH CLI
 
 ## Human-Observer Policy (Agent-First)
 
@@ -46,6 +46,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Durable Append-Only Audit Store (SQLite)** (Added 2026-04)
+  - Replaces fragile flat JSONL files with an optional, durable SQLite database store while maintaining zero-config portability and atomic fallback.
+  - Runbook: Set `SATYA_USE_AUDIT_DB=1` to enable.
+  - Validation: Ensure `tests/test_auth_and_audit.py` passes.
 
 - **Agent Self-Test Harness + CI Analytics Job** (Added 2026-03)
   - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
