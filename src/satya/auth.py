@@ -50,10 +50,25 @@ def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
         payload_str = json.dumps(payload, sort_keys=True)
 
         expected_signature = sign_event(payload_str, prev_hmac)
-        if signature != expected_signature:
+        if not hmac.compare_digest(str(signature or ""), expected_signature):
             return False
         prev_hmac = signature
     return True
+
+import sqlite3
+
+def get_db_connection():
+    events_dir = os.path.join(storage.SATYA_DIR, "events")
+    db_path = os.path.join(events_dir, "audit_log.db")
+    conn = sqlite3.connect(db_path)
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS audit_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            signature TEXT NOT NULL,
+            payload TEXT NOT NULL
+        )
+    ''')
+    return conn
 
 def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, details: str, prev_hmac: str = "") -> str:
     """
@@ -84,39 +99,81 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
     }
 
     # Read the last HMAC if prev_hmac is not provided to maintain the chain
-    if not prev_hmac and os.path.exists(events_file):
+    if not prev_hmac:
         try:
-            with open(events_file, 'r') as f:
-                lines = f.readlines()
-                if lines:
-                    last_event = json.loads(lines[-1])
-                    prev_hmac = last_event.get("signature", "")
-                    signature = sign_event(payload_str, prev_hmac)
-                    event["signature"] = signature
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT signature FROM audit_events ORDER BY id DESC LIMIT 1')
+            row = cursor.fetchone()
+            if row:
+                prev_hmac = row[0]
+            elif os.path.exists(events_file):
+                with open(events_file, 'r') as f:
+                    lines = f.readlines()
+                    if lines:
+                        last_event = json.loads(lines[-1])
+                        prev_hmac = last_event.get("signature", "")
+            if prev_hmac:
+                signature = sign_event(payload_str, prev_hmac)
+                event["signature"] = signature
+            conn.close()
         except Exception as e:
             print(f"Failed to read previous HMAC: {e}")
 
     event_str = json.dumps(event) + "\n"
 
-    # Atomic append using fcntl
     try:
-        with open(events_file, 'a') as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            f.write(event_str)
-            fcntl.flock(f, fcntl.LOCK_UN)
-    except OSError:
-        # Fallback if fcntl fails (e.g. Windows or weird FS)
+        conn = get_db_connection()
+        conn.execute('INSERT INTO audit_events (signature, payload) VALUES (?, ?)', (signature, payload_str))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Failed to write to DB, falling back to file: {e}")
+        # Atomic append using fcntl
         try:
-            with open(tmp_file, 'w') as f_tmp:
-                if os.path.exists(events_file):
-                    with open(events_file, 'r') as f_in:
-                        f_tmp.write(f_in.read())
-                f_tmp.write(event_str)
-            os.replace(tmp_file, events_file)
-        except Exception as e:
-            print(f"Failed to write audit event atomically: {e}")
-            if os.path.exists(tmp_file):
-                os.remove(tmp_file)
-            raise
+            with open(events_file, 'a') as f:
+                fcntl.flock(f, fcntl.LOCK_EX)
+                f.write(event_str)
+                fcntl.flock(f, fcntl.LOCK_UN)
+        except OSError:
+            # Fallback if fcntl fails (e.g. Windows or weird FS)
+            try:
+                with open(tmp_file, 'w') as f_tmp:
+                    if os.path.exists(events_file):
+                        with open(events_file, 'r') as f_in:
+                            f_tmp.write(f_in.read())
+                    f_tmp.write(event_str)
+                os.replace(tmp_file, events_file)
+            except Exception as e:
+                print(f"Failed to write audit event atomically: {e}")
+                if os.path.exists(tmp_file):
+                    os.remove(tmp_file)
+                raise
 
     return signature
+
+def get_all_audit_events() -> list[Dict[str, Any]]:
+    events_dir = os.path.join(storage.SATYA_DIR, "events")
+    events_file = os.path.join(events_dir, "audit_log.jsonl")
+
+    events = []
+
+    if os.path.exists(events_file):
+        with open(events_file, 'r') as f:
+            for line in f:
+                events.append(json.loads(line))
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT signature, payload FROM audit_events ORDER BY id ASC')
+        for row in cursor.fetchall():
+            events.append({
+                "signature": row[0],
+                "payload": json.loads(row[1])
+            })
+        conn.close()
+    except Exception as e:
+        print(f"Failed to read from DB: {e}")
+
+    return events

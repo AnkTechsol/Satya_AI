@@ -42,12 +42,9 @@ def test_audit_event_append_and_verify():
     sig1 = auth.append_audit_event("agent_1", "task_A", "trace_1", "task_created", "demo create")
     sig2 = auth.append_audit_event("agent_1", "task_A", "trace_1", "status_updated", "in progress", prev_hmac=sig1)
 
-    assert os.path.exists(events_file)
-    with open(events_file, 'r') as f:
-        lines = f.readlines()
+    events = auth.get_all_audit_events()
 
-    assert len(lines) == 2
-    events = [json.loads(line) for line in lines]
+    assert len(events) == 2
 
     assert events[0]["signature"] == sig1
     assert events[1]["signature"] == sig2
@@ -79,12 +76,7 @@ def test_sdk_use_satya_audit_chain(monkeypatch):
     assert child_task["parent_trace_id"] == parent_task["trace_id"]
 
     # Verify events
-    events_dir = os.path.join(storage.SATYA_DIR, "events")
-    events_file = os.path.join(events_dir, "audit_log.jsonl")
-    with open(events_file, 'r') as f:
-        lines = f.readlines()
-
-    events = [json.loads(line) for line in lines]
+    events = auth.get_all_audit_events()
 
     # Look for spawned_subtask
     spawn_events = [e for e in events if e["payload"]["action"] == "spawned_subtask"]
