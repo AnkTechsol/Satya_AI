@@ -2,6 +2,8 @@ import os
 import json
 import fcntl
 import logging
+import threading
+import copy
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -12,6 +14,23 @@ TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
 HEARTBEATS_DIR = os.path.join(SATYA_DIR, "heartbeats")
+
+# In-memory cache to reduce file I/O overhead
+MAX_CACHE_SIZE = 1000
+_file_cache = {}
+_file_mtime = {}
+_cache_lock = threading.Lock()
+
+def _evict_cache_if_needed():
+    # Helper to enforce bounded cache size. Must be called with lock held.
+    while len(_file_cache) > MAX_CACHE_SIZE:
+        try:
+            oldest_key = next(iter(_file_cache))
+            del _file_cache[oldest_key]
+            if oldest_key in _file_mtime:
+                del _file_mtime[oldest_key]
+        except StopIteration:
+            break
 
 def set_root(path):
     global ROOT_DIR, SATYA_DIR, TASKS_DIR, TRUTH_DIR, AGENTS_DIR
@@ -44,6 +63,18 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                # Update cache
+                data_copy = copy.deepcopy(data)
+                try:
+                    current_mtime = os.path.getmtime(filepath)
+                    with _cache_lock:
+                        _file_cache[filepath] = data_copy
+                        _file_mtime[filepath] = current_mtime
+                        _evict_cache_if_needed()
+                except OSError:
+                    pass
+
                 return True
             finally:
                 # Release lock
@@ -62,6 +93,17 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        current_mtime = os.path.getmtime(filepath)
+        cached_data = None
+        with _cache_lock:
+            if filepath in _file_cache and _file_mtime.get(filepath) == current_mtime:
+                cached_data = _file_cache[filepath]
+        if cached_data is not None:
+            return copy.deepcopy(cached_data)
+    except OSError:
+        pass # File might have been deleted
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -71,7 +113,18 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    data_copy = copy.deepcopy(data)
+                    # Re-read mtime in case it changed during load
+                    try:
+                        current_mtime = os.path.getmtime(filepath)
+                        with _cache_lock:
+                            _file_mtime[filepath] = current_mtime
+                            _file_cache[filepath] = data_copy
+                            _evict_cache_if_needed()
+                    except OSError:
+                        pass
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
@@ -126,6 +179,9 @@ def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):
         os.remove(filepath)
+        with _cache_lock:
+            _file_cache.pop(filepath, None)
+            _file_mtime.pop(filepath, None)
         return True
     return False
 
@@ -134,5 +190,9 @@ def delete_truth_file(filename: str) -> bool:
     filepath = os.path.join(TRUTH_DIR, safe_filename)
     if os.path.exists(filepath):
         os.remove(filepath)
+        # Truth files might not be cached in JSON cache, but we can clean up just in case
+        with _cache_lock:
+            _file_cache.pop(filepath, None)
+            _file_mtime.pop(filepath, None)
         return True
     return False
