@@ -47,6 +47,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 ## SUSTAINABLE_FEATURES
 
+- **Durable append-only audit store (Postgres schema + S3 pointers)** (Added 2026-04)
+  - Replaces fragile flat files with minimal DB migration & easy rollback (using SQLite as fallback).
+  - Runbook: Runs by default when logging audit events.
+  - Validation: Check `satya_data/events/audit_log.db`.
+
 - **Agent Self-Test Harness + CI Analytics Job** (Added 2026-03)
   - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
