@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import html
+import heapq
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
@@ -870,7 +871,8 @@ if page == "Dashboard":
 
     with col_left:
         st.markdown("#### Recent Tasks")
-        sorted_tasks = sorted(all_tasks, key=lambda t: t.get("updated_at", ""), reverse=True)[:5]
+        # Optimization: O(N log K) nlargest instead of O(N log N) full sort for top 5 items
+        sorted_tasks = heapq.nlargest(5, all_tasks, key=lambda t: t.get("updated_at", ""))
 
         if sorted_tasks:
             for task in sorted_tasks:
