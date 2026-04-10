@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import sys
 import json
+import heapq
 import html
 from datetime import datetime, timezone
 
@@ -870,7 +871,8 @@ if page == "Dashboard":
 
     with col_left:
         st.markdown("#### Recent Tasks")
-        sorted_tasks = sorted(all_tasks, key=lambda t: t.get("updated_at", ""), reverse=True)[:5]
+        # ⚡ Bolt: Use heapq.nlargest instead of full O(N log N) sort to get the top 5 most recent tasks
+        sorted_tasks = heapq.nlargest(5, all_tasks, key=lambda t: t.get("updated_at", ""))
 
         if sorted_tasks:
             for task in sorted_tasks:
