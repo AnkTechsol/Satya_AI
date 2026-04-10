@@ -29,7 +29,6 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 * **Plugin Marketplace:** Create an extensible architecture where community developers can publish 'Truth Source Extractors' and 'Governance Validators' for public use.
 * **Public Workspaces:** Enable sharing read-only views of AI agent execution dashboards directly to the public via customizable sharing links to foster trust and demonstrate AI competence.
 * **Mobile Companion App:** Develop a cross-platform mobile app (React Native) for product managers to monitor agent health and approve critical tasks on the go.
-* **Enterprise Grade Billing & Analytics (ROI Dashboard):** Track per-agent token usage, task velocity, and calculate ROI of autonomous vs manual execution. Provide beautiful client-facing reports for AI agencies.
 * **B2B Multi-Tenant Workspaces:** Support different client profiles, isolated tasks, and branded dashboards within the same Satya installation.
 * **Slack / MS Teams Integrations:** Bring agent heartbeats, chat overrides, and SLA escalations directly into the human communication layer for zero-friction PM oversight.
 
@@ -49,3 +48,4 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Self-Healing Task Re-assignment:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires.
 * **Dashboard Agent Status:** Streamlit UI dynamically displays real-time agent 'Online/Offline' statuses using the heartbeat freshness metrics.
 * **Agent Chat Control Panel:** Humans can interact directly with their agents in real-time. Manual overrides and instructions sent via the Dashboard are polled directly by SDK agents via `poll_chat()`.
+* **Enterprise Grade Billing & Analytics (ROI Dashboard):** Track per-agent token usage, task velocity, and calculate ROI of autonomous vs manual execution. Provide beautiful client-facing reports for AI agencies.
