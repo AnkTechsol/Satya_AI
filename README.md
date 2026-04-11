@@ -29,9 +29,9 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-03-18T14:54:36.397598+00:00
+- **Last Analytics Run:** 2026-04-11T15:15:11.282675+00:00
 - **Open Issues:** Unknown without GH CLI
-- **Recent CI Status:** Unknown (no .github/workflows found)
+- **Recent CI Status:** Requires GH CLI to check
 
 ## Human-Observer Policy (Agent-First)
 
@@ -52,6 +52,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
 
+- **Export Adapter Framework (OTLP)** (Added 2026-04)
+  - Full implementation of OTLP Export adapter with HTTP POST requests using the `requests` library. We chose this framework as enterprises rarely rip out their observability, making Satya an easy on-ramp and having a high ROI.
+  - Runbook: Use `OTLPAdapter` in `satya.init(adapters=[...])`. The adapter defaults to `http://localhost:4318/v1/traces`. It will attempt to send spans via a HTTP POST request. Ensure the endpoint URL is reachable from where the agents are executed.
+  - Validation: Ensure traces are properly exported to the configured endpoint and run `PYTHONPATH=. pytest tests/test_otlp_adapter.py`.
+
 - **Export Adapter Framework (OTLP/Console)** (Added 2024-03)
   - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture.
   - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter()])`.
@@ -59,6 +64,9 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 - **Repo Analytics & Competitor Matrix**
   - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
+
+- **Changelog**
+  - View [Changelog](CHANGELOG.md).
 
 For more details on changes, see our [CHANGELOG](CHANGELOG.md).
 ## How It Works
