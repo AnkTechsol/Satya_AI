@@ -28,3 +28,15 @@ def test_console_adapter_methods(capsys):
     adapter.export_log("agent-1", "hello world", "task-1")
     captured = capsys.readouterr()
     assert "[ConsoleAdapter] Log | Agent: agent-1 | Task: task-1 | Message: hello world" in captured.out
+
+@patch('src.satya.sdk.adapters.otlp.requests.post')
+def test_otlp_export_trace(mock_post):
+    adapter = OTLPAdapter()
+    adapter.export_trace("test_trace", "test_agent", "test_event", {"key": "value"})
+    mock_post.assert_called_once()
+
+@patch('src.satya.sdk.adapters.otlp.requests.post')
+def test_otlp_export_log(mock_post):
+    adapter = OTLPAdapter()
+    adapter.export_log("test_agent", "test message", "123")
+    mock_post.assert_called_once()
