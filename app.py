@@ -1256,9 +1256,9 @@ elif page == "Agent Logs":
                 lines = log_content.strip().split('\n')
 
                 with st.container(border=True):
-                    for line in lines:
-                        if line.strip():
-                            st.markdown(f'<div class="log-entry">{html.escape(line)}</div>', unsafe_allow_html=True)
+                    log_entries_html = "".join([f'<div class="log-entry">{html.escape(line)}</div>' for line in lines if line.strip()])
+                    if log_entries_html:
+                        st.markdown(log_entries_html, unsafe_allow_html=True)
         else:
             st.markdown("""
             <div class="empty-state">
