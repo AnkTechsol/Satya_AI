@@ -1,5 +1,6 @@
 from .base import ExportAdapter
 import datetime
+import requests
 
 class OTLPAdapter(ExportAdapter):
     """
@@ -10,9 +11,37 @@ class OTLPAdapter(ExportAdapter):
         self.endpoint = endpoint or "http://localhost:4318/v1/traces"
 
     def export_trace(self, trace_id: str, agent_name: str, event_type: str, data: dict):
-        # Simulate OTLP span creation
-        pass
+        payload = {
+            "resourceSpans": [{
+                "scopeSpans": [{
+                    "spans": [{
+                        "traceId": trace_id,
+                        "name": event_type,
+                        "attributes": [{"key": k, "value": {"stringValue": str(v)}} for k, v in data.items()]
+                    }]
+                }]
+            }]
+        }
+        try:
+            requests.post(self.endpoint, json=payload, timeout=2)
+        except Exception:
+            pass
 
     def export_log(self, agent_name: str, message: str, task_id: str = None):
-        # Simulate OTLP log record creation
-        pass
+        payload = {
+            "resourceLogs": [{
+                "scopeLogs": [{
+                    "logRecords": [{
+                        "body": {"stringValue": message},
+                        "attributes": [
+                            {"key": "agent.name", "value": {"stringValue": agent_name}},
+                            {"key": "task.id", "value": {"stringValue": str(task_id)}}
+                        ]
+                    }]
+                }]
+            }]
+        }
+        try:
+            requests.post(self.endpoint.replace("traces", "logs"), json=payload, timeout=2)
+        except Exception:
+            pass

@@ -8,6 +8,19 @@
   <strong>Open-source dashboard & Python SDK that AI agents deploy themselves to track tasks, log progress, and build knowledge bases — while humans monitor everything from a real-time web UI.</strong>
 </p>
 
+**Repo Analytics Summary:**
+- Last Analytics Run: 2026-04-12T15:22:14.341680+00:00
+- Open Issues: Unknown without GH CLI
+- Recent CI Status: Requires GH CLI to check
+
+## SUSTAINABLE_FEATURES
+* **Export Adapter Framework (OTLP/Logs)** (2026-04-12)
+  * **Rationale:** Enterprises rarely rip out their observability. Exporting traces/events seamlessly via an OTLP adapter is an easy, lightweight on-ramp.
+  * **Runbook:** Instantiate `SatyaClient(adapters=[OTLPAdapter(endpoint="http://collector:4318/v1/traces")])`. It handles timeouts to prevent failures blocking agents.
+  * **Validation:** Set up an OpenTelemetry collector and trigger agent workflows to see telemetry locally.
+
+See [REPO_ANALYTICS.md](REPO_ANALYTICS.md), [COMPETITOR_MATRIX.md](COMPETITOR_MATRIX.md), and [CHANGELOG.md](CHANGELOG.md) for more details.
+
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/Streamlit-1.x-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"></a>
