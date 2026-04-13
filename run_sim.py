@@ -15,6 +15,7 @@ from src.satya.sdk import init
 # Ensure we're authorized
 os.environ['SATYA_AGENT_KEY'] = 'test-run'
 os.environ['SATYA_AGENT_KEYS'] = 'test-run'
+os.environ['AUDIT_SECRET'] = os.environ.get('AUDIT_SECRET', 'dummy_secret')
 
 from unittest.mock import patch
 

@@ -61,6 +61,9 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
     Fall back to salted atomic file append + rename semantics.
     """
     storage.ensure_satya_dirs()
+
+    # Lazy import to avoid circular dependency issues
+    from .core import audit_db
     events_dir = os.path.join(storage.SATYA_DIR, "events")
     os.makedirs(events_dir, exist_ok=True)
 
@@ -118,5 +121,11 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
             if os.path.exists(tmp_file):
                 os.remove(tmp_file)
             raise
+
+    # Also persist to sqlite
+    try:
+        audit_db.insert_event(payload, signature)
+    except Exception as e:
+        print(f"Warning: sqlite insert failed: {e}")
 
     return signature
