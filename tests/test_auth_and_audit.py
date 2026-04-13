@@ -94,3 +94,17 @@ def test_sdk_use_satya_audit_chain(monkeypatch):
 
     # Verify the chain is valid overall
     assert auth.verify_event_chain(events) is True
+
+def test_auth_checks_timing_attack_mitigation():
+    import hmac
+    # Tests that we are actually using hmac.compare_digest in auth checks by patching it
+    import src.satya.auth as auth
+    import unittest.mock
+
+    with unittest.mock.patch('hmac.compare_digest', return_value=True) as mock_compare:
+        assert auth.is_agent_authorized("any_key_because_mocked") is True
+        assert mock_compare.called
+
+    with unittest.mock.patch('hmac.compare_digest', return_value=True) as mock_compare:
+        assert auth.is_human_authorized("any_token_because_mocked") is True
+        assert mock_compare.called
