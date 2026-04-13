@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -987,7 +987,7 @@ if page == "Dashboard":
         audit_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
         # Display top 10
         for event in audit_events[:10]:
-            ts = format_date(event.get('timestamp', ''))
+            ts = format_time_ago(event.get('timestamp', ''))
             agent = event.get('agent', 'System')
             action = event.get('action', 'Unknown Action')
             details = event.get('details', '')
@@ -1077,7 +1077,7 @@ elif page == "Task Board":
                     <div class="task-meta">
                         <span title="Task ID" style="font-family: monospace; background: var(--border); padding: 1px 4px; border-radius: 4px; font-size: 0.7rem;">{html.escape(task.get('id', ''))}</span> &middot;
                         &#128100; {html.escape(task.get('assignee', 'Unassigned'))} &middot;
-                        &#128197; {format_date(task.get('created_at', ''))}
+                        &#128197; {format_time_ago(task.get('created_at', ''))}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1467,6 +1467,49 @@ elif page == "Agent Chat":
                     st.rerun()
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
+
+# ─── ROI DASHBOARD PAGE ──────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Enterprise Grade Billing & Analytics</div>', unsafe_allow_html=True)
+
+    st.markdown("### Agent Economics & Value Generation")
+
+    # Simple mock token usage and ROI calculation
+    total_tasks_completed = sum(1 for t in all_tasks if t.get("status") == "done")
+    total_in_progress = sum(1 for t in all_tasks if t.get("status") == "in_progress")
+
+    # Assumptions for ROI
+    avg_manual_task_cost = 50.00  # $50 human cost per task
+    avg_agent_task_cost = 0.50    # $0.50 agent token cost per task
+
+    total_human_cost = total_tasks_completed * avg_manual_task_cost
+    total_agent_cost = total_tasks_completed * avg_agent_task_cost
+    total_savings = total_human_cost - total_agent_cost
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Tasks Completed", total_tasks_completed)
+    col2.metric("Est. Manual Cost", f"${total_human_cost:,.2f}")
+    col3.metric("Est. Agent Cost", f"${total_agent_cost:,.2f}")
+    col4.metric("Total ROI (Savings)", f"${total_savings:,.2f}", delta=f"${total_savings:,.2f}")
+
+    st.markdown("---")
+
+    st.markdown("#### Task Velocity & Token Usage per Agent")
+    # Group completed tasks by agent
+    agent_tasks = {}
+    for t in all_tasks:
+        if t.get("status") == "done":
+            agent = t.get("assignee", "Unknown")
+            agent_tasks[agent] = agent_tasks.get(agent, 0) + 1
+
+    if agent_tasks:
+        chart_data = [{"Agent": k, "Tasks Completed": v, "Est. Token Cost ($)": v * avg_agent_task_cost} for k, v in agent_tasks.items()]
+        st.dataframe(chart_data, width='stretch')
+        st.bar_chart(pd.DataFrame(chart_data).set_index("Agent")["Tasks Completed"])
+    else:
+        st.info("No completed tasks yet to calculate velocity.")
+
 elif page == "SDK Docs":
     st.markdown('<div class="hero-header">SDK Documentation</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Integration guide for AI agents to self-deploy, operate, and report progress through Satya</div>', unsafe_allow_html=True)
