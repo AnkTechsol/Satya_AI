@@ -870,7 +870,9 @@ if page == "Dashboard":
 
     with col_left:
         st.markdown("#### Recent Tasks")
-        sorted_tasks = sorted(all_tasks, key=lambda t: t.get("updated_at", ""), reverse=True)[:5]
+        import heapq
+        # ⚡ Bolt Optimization: Use O(N log K) heapq.nlargest instead of O(N log N) sort for top 5 tasks
+        sorted_tasks = heapq.nlargest(5, all_tasks, key=lambda t: t.get("updated_at", ""))
 
         if sorted_tasks:
             for task in sorted_tasks:
@@ -983,10 +985,11 @@ if page == "Dashboard":
             audit_events.append(event_copy)
 
     if audit_events:
-        # Sort newest first
-        audit_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
+        import heapq
+        # ⚡ Bolt Optimization: Use O(N log K) heapq.nlargest instead of O(N log N) sort for top 10 events
+        top_events = heapq.nlargest(10, audit_events, key=lambda e: e.get("timestamp", ""))
         # Display top 10
-        for event in audit_events[:10]:
+        for event in top_events:
             ts = format_date(event.get('timestamp', ''))
             agent = event.get('agent', 'System')
             action = event.get('action', 'Unknown Action')
