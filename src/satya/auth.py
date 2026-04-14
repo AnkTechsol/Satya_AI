@@ -55,17 +55,36 @@ def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
         prev_hmac = signature
     return True
 
+import sqlite3
+
+def init_db(db_path: str):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS audit_events
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  timestamp REAL,
+                  agent_id TEXT,
+                  task_id TEXT,
+                  trace_id TEXT,
+                  action TEXT,
+                  details TEXT,
+                  signature TEXT)''')
+    conn.commit()
+    conn.close()
+
 def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, details: str, prev_hmac: str = "") -> str:
     """
     Append an atomic, signed audit event to the global events log.
-    Fall back to salted atomic file append + rename semantics.
+    Uses SQLite for durable append-only storage, with legacy JSONL fallback for HMAC continuity.
     """
     storage.ensure_satya_dirs()
     events_dir = os.path.join(storage.SATYA_DIR, "events")
     os.makedirs(events_dir, exist_ok=True)
 
+    db_path = os.path.join(events_dir, "audit_events.db")
     events_file = os.path.join(events_dir, "audit_log.jsonl")
-    tmp_file = events_file + f".{time.time()}.tmp"
+
+    init_db(db_path)
 
     payload = {
         "timestamp": time.time(),
@@ -78,34 +97,43 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
     payload_str = json.dumps(payload, sort_keys=True)
     signature = sign_event(payload_str, prev_hmac)
 
+    # Legacy JSONL continuity check
+    if not prev_hmac:
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.execute("SELECT signature FROM audit_events ORDER BY id DESC LIMIT 1")
+        row = c.fetchone()
+        conn.close()
+
+        if row:
+             prev_hmac = row[0]
+        elif os.path.exists(events_file):
+            try:
+                with open(events_file, 'r') as f:
+                    lines = f.readlines()
+                    if lines:
+                        last_event = json.loads(lines[-1])
+                        prev_hmac = last_event.get("signature", "")
+            except Exception as e:
+                print(f"Failed to read previous HMAC from legacy JSONL: {e}")
+
+        if prev_hmac:
+            signature = sign_event(payload_str, prev_hmac)
+
     event = {
         "payload": payload,
         "signature": signature
     }
-
-    # Read the last HMAC if prev_hmac is not provided to maintain the chain
-    if not prev_hmac and os.path.exists(events_file):
-        try:
-            with open(events_file, 'r') as f:
-                lines = f.readlines()
-                if lines:
-                    last_event = json.loads(lines[-1])
-                    prev_hmac = last_event.get("signature", "")
-                    signature = sign_event(payload_str, prev_hmac)
-                    event["signature"] = signature
-        except Exception as e:
-            print(f"Failed to read previous HMAC: {e}")
-
     event_str = json.dumps(event) + "\n"
 
-    # Atomic append using fcntl
+    # Write to legacy file to not break backward compatibility
+    tmp_file = events_file + f".{time.time()}.tmp"
     try:
         with open(events_file, 'a') as f:
             fcntl.flock(f, fcntl.LOCK_EX)
             f.write(event_str)
             fcntl.flock(f, fcntl.LOCK_UN)
     except OSError:
-        # Fallback if fcntl fails (e.g. Windows or weird FS)
         try:
             with open(tmp_file, 'w') as f_tmp:
                 if os.path.exists(events_file):
@@ -117,6 +145,15 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
             print(f"Failed to write audit event atomically: {e}")
             if os.path.exists(tmp_file):
                 os.remove(tmp_file)
-            raise
+
+    # Insert to DB
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('''INSERT INTO audit_events
+                 (timestamp, agent_id, task_id, trace_id, action, details, signature)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)''',
+              (payload["timestamp"], agent_id, task_id, trace_id, action, json.dumps(details) if isinstance(details, dict) else details, signature))
+    conn.commit()
+    conn.close()
 
     return signature

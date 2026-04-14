@@ -32,11 +32,16 @@ def test_auth_checks():
     assert auth.is_human_authorized("admin_secret") is True
     assert auth.is_human_authorized("wrong") is False
 
+import sqlite3
+
 def test_audit_event_append_and_verify():
     events_dir = os.path.join(storage.SATYA_DIR, "events")
     events_file = os.path.join(events_dir, "audit_log.jsonl")
+    db_path = os.path.join(events_dir, "audit_events.db")
     if os.path.exists(events_file):
         os.remove(events_file)
+    if os.path.exists(db_path):
+        os.remove(db_path)
 
     # Append events
     sig1 = auth.append_audit_event("agent_1", "task_A", "trace_1", "task_created", "demo create")
@@ -53,6 +58,17 @@ def test_audit_event_append_and_verify():
     assert events[1]["signature"] == sig2
 
     assert auth.verify_event_chain(events) is True
+
+    # DB tests
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("SELECT signature FROM audit_events ORDER BY id")
+    rows = c.fetchall()
+    conn.close()
+
+    assert len(rows) == 2
+    assert rows[0][0] == sig1
+    assert rows[1][0] == sig2
 
 def test_sdk_create_task_requires_auth(monkeypatch):
     monkeypatch.setenv("SATYA_AGENT_KEY", "invalid_key")

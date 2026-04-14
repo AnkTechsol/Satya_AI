@@ -24,6 +24,7 @@ def main():
     test_output = run_cmd('PYTHONPATH=. pytest tests/ --maxfail=1 --tb=short')
     has_tests = os.path.isdir('tests')
     failing_tests = "failed" in test_output.lower()
+    test_coverage = run_cmd('PYTHONPATH=. pytest tests/ --cov=src --cov-report=term-missing | grep "TOTAL" | awk \'{print $4}\'') if has_tests else "N/A"
 
     # Dependencies
     deps = []
@@ -33,8 +34,18 @@ def main():
     except:
         pass
 
+    # Packaging & Deploy
+    has_dockerfile = os.path.exists('Dockerfile')
+    has_k8s = os.path.isdir('k8s') or os.path.isdir('helm')
+    packaging_info = {
+        "has_dockerfile": has_dockerfile,
+        "has_k8s": has_k8s
+    }
+
     # Files
     top_files = run_cmd('find src -type f -exec wc -c {} + | sort -nr | head -20')
+    has_flake8 = os.path.exists('.flake8')
+    has_pylint = os.path.exists('.pylintrc')
 
     # PRs and Issues
     open_issues = "Unknown without GH CLI"
@@ -78,11 +89,15 @@ def main():
         },
         "tests": {
             "has_tests": has_tests,
-            "failing_tests": failing_tests
+            "failing_tests": failing_tests,
+            "coverage": test_coverage
         },
         "dependencies": deps,
+        "packaging": packaging_info,
         "code_health": {
-            "top_20_largest_files": top_files.split('\n') if top_files else []
+            "top_20_largest_files": top_files.split('\n') if top_files else [],
+            "has_flake8": has_flake8,
+            "has_pylint": has_pylint
         },
         "runtime_artifacts": runtime_artifacts.split('\n') if runtime_artifacts else [],
         "runtime_simulation": {
@@ -112,12 +127,20 @@ def main():
 - **GitHub Actions**: {has_github_actions}
 - **Tests Exist**: {has_tests}
 - **Failing Tests**: {failing_tests}
+- **Test Coverage**: {test_coverage}
+
+## Packaging & Deploy
+- **Dockerfile**: {has_dockerfile}
+- **K8s/Helm**: {has_k8s}
 
 ## Runtime Simulation
 - **Median Task Creation Latency**: {median:.4f}s
 - **P95 Task Creation Latency**: {p95:.4f}s
 
 ## Code Health
+- **Flake8**: {has_flake8}
+- **Pylint**: {has_pylint}
+
 **Top 20 Largest Files:**
 ```
 {top_files}

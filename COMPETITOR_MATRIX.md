@@ -7,9 +7,9 @@
 | **Observability Depth** | Tasks, logs, flat files | Token-level, prompt snapshots | Event-level, performance traces |
 | **Agent Runtime Support** | Core (SDK, Agent Chat, overrides) | Observability only | Observability & Testing |
 | **Self-Host Friendliness** | **Extremely High (Zero DB, flat files)** | Medium (Docker, Postgres/Clickhouse) | Low (SaaS primarily) |
-| **Enterprise Features** | RBAC, Audit Trails (HMAC) | SSO, RBAC, Data Retention | SSO, RBAC |
+| **Enterprise Features** | RBAC, Audit Trails (HMAC) | SSO, RBAC, Data Retention | SSO, RBAC, Audit |
 | **Export Adapters** | **Coming soon (OTLP, etc.)** | High (native + exports) | High |
-| **Pricing Model** | 100% OSS | Managed + OSS core | Managed SaaS |
+| **Pricing Model Signal** | 100% OSS | Managed + OSS core | Managed SaaS |
 
 ### Where Satya Wins
 - **Simplicity and Zero-DB Architecture**: Satya is uniquely defensible because it requires zero infrastructure. A single `pip install` and flat files make it the easiest way to add governance to agentic workflows.
