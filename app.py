@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1605,6 +1605,33 @@ satya.log("Auth implementation complete")
 client.flush_logs()</div>
     </div>
     """, unsafe_allow_html=True)
+
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Track task velocity and calculate ROI of autonomous vs manual execution.</div>', unsafe_allow_html=True)
+
+    st.markdown('<h3>Agent ROI & Velocity Analytics</h3>', unsafe_allow_html=True)
+
+    # Calculate simple ROI metrics
+    total_tasks = len(all_tasks)
+    done_tasks = len([t for t in all_tasks if t.get("status") == "done"])
+    failed_tasks = len([t for t in all_tasks if t.get("status") == "failed"])
+
+    # Assume arbitrary average token cost per task ($0.05) and manual hour cost ($50/hr)
+    avg_manual_time_hrs = 0.5
+    cost_per_manual_task = 50 * avg_manual_time_hrs
+    cost_per_ai_task = 0.05
+
+    total_manual_cost = done_tasks * cost_per_manual_task
+    total_ai_cost = done_tasks * cost_per_ai_task
+    savings = total_manual_cost - total_ai_cost
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Tasks Completed", done_tasks)
+    col2.metric("Manual Cost Equivalent", f"${total_manual_cost:.2f}")
+    col3.metric("AI Execution Cost", f"${total_ai_cost:.2f}")
+
+    st.metric("Total ROI Savings", f"${savings:.2f}", delta=f"${savings:.2f}")
 
 
 st.markdown("""

@@ -8,6 +8,10 @@ cmd = ["/home/jules/.local/bin/streamlit", "run", "app.py", "--server.port", "50
 proc = subprocess.Popen(cmd)
 print(f"Started Streamlit on port 5000 (PID: {proc.pid})")
 
+orch_cmd = [sys.executable, "orchestrator_runner.py", "--timeout", "60", "--poll-interval", "10"]
+orch_proc = subprocess.Popen(orch_cmd)
+print(f"Started Orchestrator (PID: {orch_proc.pid})")
+
 # Wait for it to be ready
 for i in range(15):
     try:
