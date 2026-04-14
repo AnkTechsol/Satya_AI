@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import html
+import heapq
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
@@ -870,7 +871,9 @@ if page == "Dashboard":
 
     with col_left:
         st.markdown("#### Recent Tasks")
-        sorted_tasks = sorted(all_tasks, key=lambda t: t.get("updated_at", ""), reverse=True)[:5]
+        # ⚡ Bolt Optimization: Replaced O(N log N) full list sort with O(N log K) heapq.nlargest.
+        # This significantly speeds up rendering for large task lists when we only need the top 5.
+        sorted_tasks = heapq.nlargest(5, all_tasks, key=lambda t: t.get("updated_at", ""))
 
         if sorted_tasks:
             for task in sorted_tasks:
@@ -983,10 +986,11 @@ if page == "Dashboard":
             audit_events.append(event_copy)
 
     if audit_events:
-        # Sort newest first
-        audit_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
+        # ⚡ Bolt Optimization: Use O(N log K) heapq.nlargest instead of O(N log N) list.sort().
+        # Avoids sorting the entire audit log array when only displaying the top 10 newest events.
+        top_audit_events = heapq.nlargest(10, audit_events, key=lambda e: e.get("timestamp", ""))
         # Display top 10
-        for event in audit_events[:10]:
+        for event in top_audit_events:
             ts = format_date(event.get('timestamp', ''))
             agent = event.get('agent', 'System')
             action = event.get('action', 'Unknown Action')
