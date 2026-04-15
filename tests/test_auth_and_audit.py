@@ -54,6 +54,19 @@ def test_audit_event_append_and_verify():
 
     assert auth.verify_event_chain(events) is True
 
+    # Test SQLite Fallback
+    import sqlite3
+    db_file = os.path.join(events_dir, "audit_log.db")
+    assert os.path.exists(db_file)
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    cursor.execute("SELECT signature FROM audit_events ORDER BY id")
+    db_events = cursor.fetchall()
+    assert len(db_events) == 2
+    assert db_events[0][0] == sig1
+    assert db_events[1][0] == sig2
+    conn.close()
+
 def test_sdk_create_task_requires_auth(monkeypatch):
     monkeypatch.setenv("SATYA_AGENT_KEY", "invalid_key")
     with pytest.raises(PermissionError):
@@ -67,6 +80,9 @@ def test_sdk_use_satya_audit_chain(monkeypatch):
     events_file = os.path.join(events_dir, "audit_log.jsonl")
     if os.path.exists(events_file):
         os.remove(events_file)
+    db_file = os.path.join(events_dir, "audit_log.db")
+    if os.path.exists(db_file):
+        os.remove(db_file)
 
     # Simulate picking a task
     parent_task = client.create_task("Parent Task", "Long enough description for parent.")
