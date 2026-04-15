@@ -48,6 +48,9 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 ## SUSTAINABLE_FEATURES
 
 - **Agent Self-Test Harness + CI Analytics Job** (Added 2026-03)
+- **Durable append-only audit store (SQLite / flat-file fallback)** (Added 2026-04)
+  - Provides robust audit trail immutability with automatic flat-file fallback.
+  - Validation: Ensure `satya_data/events/audit_log.db` is populated after an event.
   - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.

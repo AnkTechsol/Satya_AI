@@ -7,7 +7,7 @@
 | **Observability Depth** | Tasks, logs, flat files | Token-level, prompt snapshots | Event-level, performance traces |
 | **Agent Runtime Support** | Core (SDK, Agent Chat, overrides) | Observability only | Observability & Testing |
 | **Self-Host Friendliness** | **Extremely High (Zero DB, flat files)** | Medium (Docker, Postgres/Clickhouse) | Low (SaaS primarily) |
-| **Enterprise Features** | RBAC, Audit Trails (HMAC) | SSO, RBAC, Data Retention | SSO, RBAC |
+| **Enterprise Features** | RBAC, Durable Audit Store (HMAC, SQLite/File) | SSO, RBAC, Data Retention | SSO, RBAC |
 | **Export Adapters** | **Coming soon (OTLP, etc.)** | High (native + exports) | High |
 | **Pricing Model** | 100% OSS | Managed + OSS core | Managed SaaS |
 
