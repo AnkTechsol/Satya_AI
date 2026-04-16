@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1605,6 +1605,78 @@ satya.log("Auth implementation complete")
 client.flush_logs()</div>
     </div>
     """, unsafe_allow_html=True)
+
+
+
+# ─── ROI DASHBOARD PAGE ──────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Track per-agent task velocity and calculate business cost savings.</div>', unsafe_allow_html=True)
+
+    # Simple Mock ROI implementation
+    all_tasks = core_tasks.list_all()
+    completed_tasks = [t for t in all_tasks if t.get("status") == "done"]
+
+    # Basic assumptions
+    avg_human_hourly_rate = 50  # USD
+    avg_task_hours = 2  # Assumed hours per task
+    cost_per_agent_task = 0.50 # Assumed cost per task for AI
+
+    total_tasks_completed = len(completed_tasks)
+    human_cost = total_tasks_completed * avg_task_hours * avg_human_hourly_rate
+    ai_cost = total_tasks_completed * cost_per_agent_task
+    total_savings = human_cost - ai_cost
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-value">{total_tasks_completed}</div>
+            <div class="metric-label">Total Tasks Completed</div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-value">${human_cost:,.2f}</div>
+            <div class="metric-label">Estimated Human Cost</div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-value">${ai_cost:,.2f}</div>
+            <div class="metric-label">Estimated AI Cost</div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    with col4:
+        st.markdown(f'''
+        <div class="metric-card" style="border: 1px solid var(--success);">
+            <div class="metric-value" style="color: var(--success);">${total_savings:,.2f}</div>
+            <div class="metric-label">Total Business Savings</div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    # Tasks by Agent Chart
+    if completed_tasks:
+        agent_counts = {}
+        for t in completed_tasks:
+            agent = t.get("assignee", "Unknown")
+            agent_counts[agent] = agent_counts.get(agent, 0) + 1
+
+        if agent_counts:
+            df = pd.DataFrame({
+                "Agent": list(agent_counts.keys()),
+                "Tasks Completed": list(agent_counts.values())
+            })
+            st.markdown("#### Completed Tasks by Agent")
+            st.bar_chart(df.set_index("Agent"), width='stretch')
 
 
 st.markdown("""
