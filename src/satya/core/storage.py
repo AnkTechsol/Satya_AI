@@ -13,6 +13,13 @@ TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
 HEARTBEATS_DIR = os.path.join(SATYA_DIR, "heartbeats")
 
+import threading
+
+# Cache to avoid O(N) reads when iterating tasks in flat-file structure
+_json_cache: Dict[str, Dict[str, Any]] = {}
+_cache_lock = threading.Lock()
+MAX_CACHE_SIZE = 1000
+
 def set_root(path):
     global ROOT_DIR, SATYA_DIR, TASKS_DIR, TRUTH_DIR, AGENTS_DIR
     ROOT_DIR = path
@@ -44,6 +51,24 @@ def save_json(filepath: str, data: Any) -> bool:
 
                 # Atomic rename
                 os.rename(tmp_filepath, filepath)
+
+                # Update in-memory cache to prevent race conditions during test execution
+                try:
+                    mtime = os.path.getmtime(filepath)
+                    with _cache_lock:
+                        if len(_json_cache) >= MAX_CACHE_SIZE:
+                            # Thread-safe FIFO eviction via pop(next(iter))
+                            try:
+                                _json_cache.pop(next(iter(_json_cache)))
+                            except StopIteration:
+                                pass
+                        _json_cache[filepath] = {
+                            'mtime': mtime,
+                            'data': json.dumps(data)
+                        }
+                except FileNotFoundError:
+                    pass
+
                 return True
             finally:
                 # Release lock
@@ -62,6 +87,17 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
+    try:
+        mtime = os.path.getmtime(filepath)
+    except FileNotFoundError:
+        return {}
+
+    with _cache_lock:
+        cached = _json_cache.get(filepath)
+        if cached and cached['mtime'] == mtime:
+            # parse raw string to prevent shared mutable state bugs
+            return json.loads(cached['data'])
+
     lock_filepath = filepath + ".lock"
 
     try:
@@ -71,7 +107,20 @@ def load_json(filepath: str) -> Dict[str, Any]:
             fcntl.flock(lock_f, fcntl.LOCK_SH)
             try:
                 with open(filepath, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    if data is not None:
+                        with _cache_lock:
+                            if len(_json_cache) >= MAX_CACHE_SIZE:
+                                # Thread-safe FIFO eviction via pop(next(iter))
+                                try:
+                                    _json_cache.pop(next(iter(_json_cache)))
+                                except StopIteration:
+                                    pass
+                            _json_cache[filepath] = {
+                                'mtime': mtime,
+                                'data': json.dumps(data)
+                            }
+                    return data
             finally:
                 fcntl.flock(lock_f, fcntl.LOCK_UN)
     except Exception as e:
@@ -124,6 +173,11 @@ def get_heartbeats() -> Dict[str, Dict[str, Any]]:
 
 def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
+
+    # atomic pop from cache with lock
+    with _cache_lock:
+        _json_cache.pop(filepath, None)
+
     if os.path.exists(filepath):
         os.remove(filepath)
         return True
