@@ -39,11 +39,13 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Template Galleries:** Provide pre-configured "AI Missions" allowing non-technical users to launch curated agent workflows (e.g., "SEO Content Writer", "Code Reviewer Swarm") out-of-the-box.
 * **Ecosystem Integrations:** Build pre-configured integrations with popular AI frameworks (LangChain, AutoGen, CrewAI) and standard tools (Slack, GitHub, Notion, Jira) to drive organic growth.
 * **Webhooks & Event Triggers:** Enable external systems to react to task changes or agent failures instantly, supporting complex automation chains.
-* **Advanced Analytics Dashboard:** Provide executive-level metrics, such as agent efficiency, average task duration, ROI estimation per agent, and error rates.
+* **Predictive Task Failure Modeling:** Train ML models on historical task failures to predict and preempt agent crashes before they occur.
+* **Automated Agent Provisioning:** Dynamically spin up new agents based on workload surges.
 * **Enterprise Security & SSO:** Implement role-based access control (RBAC), Single Sign-On (SAML/OAuth), and automated compliance reporting (SOC2 readiness) to support large-scale organizational deployments.
 * **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
 
 ## 7. Recently Completed Work
+* **Advanced Analytics Dashboard:** Provide executive-level metrics, such as agent efficiency, average task duration, ROI estimation per agent, and error rates.
 * **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued.
 * **Automated Issue Resolution Workflow (RCA):** Integrated Root Cause Analysis mechanism into the orchestrator where failed tasks automatically spawn targeted debugging sub-tasks for agents to triage errors autonomously.
 * **Self-Healing Task Re-assignment:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires.

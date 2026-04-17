@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1465,6 +1465,63 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD PAGE ──────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Track the business value of your autonomous workforce</div>', unsafe_allow_html=True)
+
+    # Fetch tasks explicitly since we are in a different routing block
+    from satya.core import Tasks
+    all_tasks = Tasks().list_all()
+
+    human_rate = 50  # $50/hr
+    hours_per_task = 2
+
+    done_tasks = len([t for t in all_tasks if t.get("status") == "done"])
+    total_tasks = len(all_tasks)
+
+    human_hours_saved = done_tasks * hours_per_task
+    estimated_savings = human_hours_saved * human_rate
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Tasks Automated", f"{done_tasks} / {total_tasks}")
+    with col2:
+        st.metric("Human Hours Saved", f"{human_hours_saved} hrs")
+    with col3:
+        st.metric("Human Rate", f"${human_rate}/hr")
+    with col4:
+        st.metric("Estimated Savings", f"${estimated_savings}")
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("#### Agent Execution Metrics")
+
+    # Calculate agent metrics
+    agent_metrics_roi = {}
+    for t in all_tasks:
+        assignee = t.get("assignee", "Unassigned")
+        status = t.get("status", "queued")
+        if assignee not in agent_metrics_roi:
+            agent_metrics_roi[assignee] = {"completed": 0, "in_progress": 0, "total": 0}
+
+        agent_metrics_roi[assignee]["total"] += 1
+        if status == "done":
+            agent_metrics_roi[assignee]["completed"] += 1
+        elif status == "in_progress":
+            agent_metrics_roi[assignee]["in_progress"] += 1
+
+    if agent_metrics_roi:
+        agent_data = []
+        for agent, data in agent_metrics_roi.items():
+            agent_data.append({"Agent": agent, "Completed": data["completed"], "In Progress": data["in_progress"]})
+
+        import pandas as pd
+        df_roi = pd.DataFrame(agent_data)
+        st.bar_chart(df_roi, x="Agent", y=["Completed", "In Progress"], height=300)
+    else:
+        st.info("No agent metrics available.")
+
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":
