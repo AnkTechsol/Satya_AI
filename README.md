@@ -85,6 +85,22 @@ Satya separates **who does the work** from **who watches the work**:
 
 ---
 
+
+---
+
+## SUSTAINABLE_FEATURES
+
+- **Export Adapter Framework (OTLP)** (Added: 2026-04-17)
+  - **Why**: Allows enterprises to pipe Satya's agent-level orchestration data into their existing observability stacks (Datadog, LangSmith, etc.) via the standard OTLP JSON over HTTP protocol. This is lightweight, modular, and requires zero core rewrites.
+  - **Runbook**: Initialize `SatyaClient` with `adapters=[OTLPAdapter(endpoint="http://your-otel-collector:4318/v1/traces")]`. Ensure your collector is configured to accept JSON over HTTP.
+  - **Validation Command**: Run tests with `pytest tests/test_otlp_adapter.py`.
+
+- [View Repo Analytics](REPO_ANALYTICS.md)
+- [View Competitor Matrix](COMPETITOR_MATRIX.md)
+- [View Changelog](CHANGELOG.md)
+
+---
+
 ## What's New: Agent Chat & Manual Overrides 🚀
 
 Humans now have direct control over their AI workforce! The new **Agent Chat** control panel allows you to interact with your agents in real-time.

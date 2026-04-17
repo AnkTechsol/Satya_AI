@@ -11,3 +11,10 @@
 
 ### Security
 - Evaluated impact of new framework: Low Risk. Opt-in only via environment variables.
+
+## [2026-04-17]
+### Added
+- **OTLP Export Adapter**: Added OpenTelemetry standard export adapter (`OTLPAdapter`) for tracing and logs. Uses standard OTLP JSON format to easily integrate into any enterprise observability stack.
+  - **Risk Level**: Low (Opt-in component).
+- **Repo Analytics & Competitor Matrix**: Automated snapshot of repo health, simulator latencies, and competitor comparisons.
+  - **Risk Level**: Low (Documentation).
