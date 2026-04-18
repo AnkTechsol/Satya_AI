@@ -1,5 +1,6 @@
 import os
 import json
+import sqlite3
 import pytest
 import shutil
 from src.satya.auth import is_agent_authorized, is_human_authorized, sign_event, verify_event_chain, append_audit_event
@@ -35,14 +36,19 @@ def test_auth_checks():
 def test_audit_event_append_and_verify():
     events_dir = os.path.join(storage.SATYA_DIR, "events")
     events_file = os.path.join(events_dir, "audit_log.jsonl")
+    db_file = os.path.join(events_dir, "audit_log.db")
     if os.path.exists(events_file):
         os.remove(events_file)
+    if os.path.exists(db_file):
+        os.remove(db_file)
 
     # Append events
     sig1 = auth.append_audit_event("agent_1", "task_A", "trace_1", "task_created", "demo create")
     sig2 = auth.append_audit_event("agent_1", "task_A", "trace_1", "status_updated", "in progress", prev_hmac=sig1)
 
     assert os.path.exists(events_file)
+    assert os.path.exists(db_file)
+
     with open(events_file, 'r') as f:
         lines = f.readlines()
 
@@ -53,6 +59,17 @@ def test_audit_event_append_and_verify():
     assert events[1]["signature"] == sig2
 
     assert auth.verify_event_chain(events) is True
+
+    # Check SQLite DB
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    cursor.execute('SELECT agent_id, task_id, action, signature FROM events ORDER BY id ASC')
+    db_events = cursor.fetchall()
+    conn.close()
+
+    assert len(db_events) == 2
+    assert db_events[0][3] == sig1
+    assert db_events[1][3] == sig2
 
 def test_sdk_create_task_requires_auth(monkeypatch):
     monkeypatch.setenv("SATYA_AGENT_KEY", "invalid_key")

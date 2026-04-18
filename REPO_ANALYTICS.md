@@ -1,10 +1,10 @@
 # Repo Analytics
 
-**Last Run**: 2026-04-18T02:50:46.747152+00:00
+**Last Run**: 2026-04-18T14:41:07.736837+00:00
 
 ## Git Stats
 - **Commits (last 90d)**: 1
-- **Last Commit Date**: Fri Apr 17 03:18:52 2026 +0000
+- **Last Commit Date**: Sat Apr 18 02:50:46 2026 +0000
 
 ## Issues & PRs
 - **Open**: Unknown without GH CLI
@@ -16,44 +16,44 @@
 - **Failing Tests**: False
 
 ## Runtime Simulation
-- **Median Task Creation Latency**: 0.0000s
-- **P95 Task Creation Latency**: 0.0000s
+- **Median Task Creation Latency**: 0.0014s
+- **P95 Task Creation Latency**: 0.0017s
 
 ## Code Health
 **Top 20 Largest Files:**
 ```
-137946 total
- 17767 src/satya/sdk/__pycache__/client.cpython-311.pyc
- 12324 src/satya/core/__pycache__/project_manager.cpython-311.pyc
- 11987 src/satya/core/__pycache__/tasks.cpython-311.pyc
+127731 total
+ 16083 src/satya/sdk/__pycache__/client.cpython-312.pyc
  11642 src/satya/sdk/client.py
- 10274 src/satya/core/__pycache__/storage.cpython-311.pyc
+ 10874 src/satya/core/__pycache__/tasks.cpython-312.pyc
+ 10630 src/satya/core/__pycache__/project_manager.cpython-312.pyc
   9919 src/satya/core/project_manager.py
+  8919 src/satya/core/__pycache__/storage.cpython-312.pyc
   8892 src/satya/core/tasks.py
-  7924 src/satya/__pycache__/auth.cpython-311.pyc
-  4621 src/satya/core/__pycache__/scraper.cpython-311.pyc
+  6877 src/satya/__pycache__/auth.cpython-312.pyc
   4566 src/satya/core/storage.py
   4445 src/satya/auth.py
-  4138 src/satya/core/__pycache__/completion.cpython-311.pyc
-  3589 src/satya/core/__pycache__/git_handler.cpython-311.pyc
-  3087 src/satya/core/__pycache__/watchdog.cpython-311.pyc
-  3064 src/satya/sdk/__pycache__/__init__.cpython-311.pyc
+  4062 src/satya/core/__pycache__/scraper.cpython-312.pyc
+  3586 src/satya/core/__pycache__/completion.cpython-312.pyc
+  3174 src/satya/core/__pycache__/git_handler.cpython-312.pyc
   2975 src/satya/core/completion.py
   2948 src/satya/core/scraper.py
+  2643 src/satya/core/__pycache__/watchdog.cpython-312.pyc
+  2583 src/satya/sdk/__pycache__/__init__.cpython-312.pyc
   2546 src/satya/core/watchdog.py
-  1904 src/satya/sdk/adapters/__pycache__/console.cpython-311.pyc
+  1695 src/satya/sdk/adapters/__pycache__/console.cpython-312.pyc
 ```
 
 ## Runtime Artifacts
 ```
-satya_data/agents/tester_20260418.log
 satya_data/events/audit_log.jsonl
-satya_data/tasks/a05f56e8.json
-satya_data/tasks/bec888bd.json.lock
-satya_data/tasks/76c2c8ba.json
-satya_data/tasks/76c2c8ba.json.lock
-satya_data/tasks/5928b8f0.json.lock
-satya_data/tasks/5928b8f0.json
-satya_data/tasks/a05f56e8.json.lock
-satya_data/tasks/bec888bd.json
+satya_data/agents/tester_20260418.log
+satya_data/agents/sim_agent_20260418.log
+satya_data/tasks/e68a6bed.json.lock
+satya_data/tasks/a4c8883e.json.lock
+satya_data/tasks/d3106c80.json
+satya_data/tasks/a7cf3cd4.json.lock
+satya_data/tasks/ad2837b5.json
+satya_data/tasks/b8a578c4.json
+satya_data/tasks/b0a630e3.json
 ```
