@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"],
         label_visibility="collapsed"
     )
 
@@ -1465,6 +1465,51 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD PAGE ─────────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">ROI Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Enterprise Grade Billing & Analytics</div>', unsafe_allow_html=True)
+
+    st.markdown("### Agent Token Usage & Task Velocity")
+    # Fetch tasks and calculate metrics
+    tasks_manager, _ = get_managers()
+    all_tasks = tasks_manager.list_all()
+
+    # Calculate velocity (tasks completed per agent)
+    agent_tasks = {}
+    for t in all_tasks:
+        if t.get("status") == "done":
+            agent = t.get("assignee", "Unknown")
+            agent_tasks[agent] = agent_tasks.get(agent, 0) + 1
+
+    if not agent_tasks:
+        st.info("No completed tasks yet to calculate ROI metrics.")
+    else:
+        import pandas as pd
+        df = pd.DataFrame(list(agent_tasks.items()), columns=["Agent", "Tasks Completed"])
+        # Mock token usage for demonstration (e.g., 1000 tokens per task)
+        df["Tokens Used"] = df["Tasks Completed"] * 1000
+        # Mock cost (e.g., $0.01 per 1000 tokens)
+        df["Cost ($)"] = df["Tokens Used"] / 1000 * 0.01
+
+        st.dataframe(df, width="stretch")
+
+        # Calculate ROI
+        st.markdown("### Return on Investment")
+        manual_hourly_rate = 50
+        manual_hours_per_task = 1
+
+        total_tasks = sum(agent_tasks.values())
+        total_manual_cost = total_tasks * manual_hours_per_task * manual_hourly_rate
+        total_ai_cost = df["Cost ($)"].sum()
+
+        savings = total_manual_cost - total_ai_cost
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Manual Cost (Est.)", f"${total_manual_cost:,.2f}")
+        col2.metric("AI Agent Cost", f"${total_ai_cost:,.2f}")
+        col3.metric("Total Savings", f"${savings:,.2f}")
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":
