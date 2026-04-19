@@ -5,7 +5,7 @@ import json
 import time
 import fcntl
 from typing import Optional, Dict, Any
-from .core import storage
+from .core import storage, db
 
 # Simple header/env based auth for agents. ENV:
 # SATYA_AGENT_KEYS -> comma separated keys (e.g. key1,key2)
@@ -97,6 +97,13 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
             print(f"Failed to read previous HMAC: {e}")
 
     event_str = json.dumps(event) + "\n"
+
+    # Opt-in SQLite Durable Audit Store fallback
+    if os.environ.get("SATYA_SQLITE_DB"):
+        try:
+            db.append_event_to_db(event)
+        except Exception as e:
+            print(f"Failed to append to SQLite Audit Store: {e}")
 
     # Atomic append using fcntl
     try:
