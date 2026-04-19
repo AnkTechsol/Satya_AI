@@ -131,5 +131,37 @@ def main():
     with open('REPO_ANALYTICS.md', 'w') as f:
         f.write(md)
 
+    # Auto-update README.md
+    try:
+        with open('README.md', 'r') as f:
+            readme_content = f.read()
+
+        import re
+        # Find the block for Repository Status
+        status_block = f"""## Repository Status
+- **Last Analytics Run:** {analytics['timestamp']}
+- **Open Issues:** {open_issues}
+- **Recent CI Status:** {ci_status}
+"""
+        # Replace existing or append before Human-Observer Policy
+        if "## Repository Status" in readme_content:
+            readme_content = re.sub(
+                r"## Repository Status.*?(?=## Human-Observer Policy|\Z)",
+                status_block + "\n",
+                readme_content,
+                flags=re.DOTALL
+            )
+        else:
+            # If not there, inject right before Human-Observer Policy
+            readme_content = readme_content.replace(
+                "## Human-Observer Policy",
+                status_block + "\n## Human-Observer Policy"
+            )
+
+        with open('README.md', 'w') as f:
+            f.write(readme_content)
+    except Exception as e:
+        print(f"Failed to auto-update README: {e}")
+
 if __name__ == '__main__':
     main()

@@ -94,3 +94,28 @@ def test_sdk_use_satya_audit_chain(monkeypatch):
 
     # Verify the chain is valid overall
     assert auth.verify_event_chain(events) is True
+
+def test_sqlite_audit_store(monkeypatch, tmp_path):
+    db_path = os.path.join(tmp_path, "test_audit.db")
+    monkeypatch.setenv("SATYA_SQLITE_DB", db_path)
+
+    # Need to reset the initialized flag because tests might re-use it
+    from src.satya.core import db
+    db._DB_INITIALIZED = False
+
+    sig = auth.append_audit_event("agent_sqlite", "task_db", "trace_db", "sqlite_test", "demo details")
+
+    assert os.path.exists(db_path)
+
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT agent_id, task_id, action, signature FROM audit_log;")
+    rows = cursor.fetchall()
+    conn.close()
+
+    assert len(rows) == 1
+    assert rows[0][0] == "agent_sqlite"
+    assert rows[0][1] == "task_db"
+    assert rows[0][2] == "sqlite_test"
+    assert rows[0][3] == sig
