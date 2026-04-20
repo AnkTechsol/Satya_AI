@@ -1,3 +1,7 @@
+---
+**Analytics:** Last run: Thu Apr 16 03:23:42 2026 +0000 | Open Issues: Unknown | CI Status: passing
+---
+
 <p align="center">
   <img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" alt="Satya Logo" width="80"/>
 </p>
@@ -108,6 +112,15 @@ Humans now have direct control over their AI workforce! The new **Agent Chat** c
 * Agents poll for these messages continuously, keeping them on task and aligned with your agenda.
 
 ---
+
+
+## SUSTAINABLE_FEATURES
+
+- **Export Adapter Framework (OTLP)** (Added: 2026-04-16): Lightweight framework to export traces to Langfuse/LangSmith/OTLP. Keeps the core lightweight and supports enterprise telemetry integration.
+  - Runbook: Add `OTLPAdapter` to the `adapters` list when calling `satya.init()`. Ensure your system allows egress to the OTLP endpoint.
+  - Validation: Ensure traces are received on the target tracing backend. Can be validated by running `pytest tests/test_otlp_adapter.py`.
+
+See [REPO_ANALYTICS.md](REPO_ANALYTICS.md), [COMPETITOR_MATRIX.md](COMPETITOR_MATRIX.md), and [CHANGELOG.md](CHANGELOG.md) for more details.
 
 ## Why Satya?
 
