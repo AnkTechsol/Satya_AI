@@ -5,7 +5,7 @@ import json
 import time
 import fcntl
 from typing import Optional, Dict, Any
-from .core import storage
+from .core import storage, db
 
 # Simple header/env based auth for agents. ENV:
 # SATYA_AGENT_KEYS -> comma separated keys (e.g. key1,key2)
@@ -19,11 +19,11 @@ _AUDIT_SECRET = os.environ.get("AUDIT_SECRET")
 
 def is_agent_authorized(key: str) -> bool:
     """Check if the provided key is in the allowed agent keys."""
-    return key in _AGENT_KEYS
+    return any(hmac.compare_digest(str(key or ""), str(allowed_key or "")) for allowed_key in _AGENT_KEYS)
 
 def is_human_authorized(token: str) -> bool:
     """Check if the provided token matches the human view/admin token."""
-    return bool(_HUMAN_VIEW and token == _HUMAN_VIEW)
+    return bool(_HUMAN_VIEW and hmac.compare_digest(str(token or ""), str(_HUMAN_VIEW or "")))
 
 def get_agent_key_from_env() -> str:
     """Helper to get the configured agent key from the environment."""
@@ -50,7 +50,7 @@ def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
         payload_str = json.dumps(payload, sort_keys=True)
 
         expected_signature = sign_event(payload_str, prev_hmac)
-        if signature != expected_signature:
+        if not hmac.compare_digest(str(signature or ""), str(expected_signature or "")):
             return False
         prev_hmac = signature
     return True
@@ -97,6 +97,13 @@ def append_audit_event(agent_id: str, task_id: str, trace_id: str, action: str, 
             print(f"Failed to read previous HMAC: {e}")
 
     event_str = json.dumps(event) + "\n"
+
+    # Opt-in SQLite Durable Audit Store fallback
+    if os.environ.get("SATYA_SQLITE_DB"):
+        try:
+            db.append_event_to_db(event)
+        except Exception as e:
+            print(f"Failed to append to SQLite Audit Store: {e}")
 
     # Atomic append using fcntl
     try:

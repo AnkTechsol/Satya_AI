@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner Guide", "SDK Docs"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -630,7 +630,8 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat"],
+        nav_options,
+        index=default_index,
         label_visibility="collapsed"
     )
 
@@ -1256,9 +1257,13 @@ elif page == "Agent Logs":
                 lines = log_content.strip().split('\n')
 
                 with st.container(border=True):
-                    for line in lines:
-                        if line.strip():
-                            st.markdown(f'<div class="log-entry">{html.escape(line)}</div>', unsafe_allow_html=True)
+                    # ⚡ Bolt Optimization: Batching markdown reduces Streamlit rendering overhead.
+                    batched_log_html = "".join([
+                        f'<div class="log-entry">{html.escape(line)}</div>'
+                        for line in lines if line.strip()
+                    ])
+                    if batched_log_html:
+                        st.markdown(batched_log_html, unsafe_allow_html=True)
         else:
             st.markdown("""
             <div class="empty-state">
@@ -1465,6 +1470,83 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── ROI DASHBOARD ─────────────────────────────────────
+elif page == "ROI Dashboard":
+    st.markdown('<div class="hero-header">Enterprise Grade Billing & Analytics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Track per-agent task velocity and calculate ROI of autonomous vs manual execution.</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    all_tasks = tasks_manager.list_all()
+    completed_tasks = [t for t in all_tasks if t.get("status") == "done"]
+
+    total_completed = len(completed_tasks)
+
+    # Constants for ROI calculation
+    AGENT_COST_PER_TASK = 0.50 # e.g., LLM API cost estimate
+    MANUAL_COST_PER_TASK = 25.00 # e.g., human time cost estimate
+
+    total_agent_cost = total_completed * AGENT_COST_PER_TASK
+    total_manual_cost = total_completed * MANUAL_COST_PER_TASK
+    savings = total_manual_cost - total_agent_cost
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-value">{total_completed}</div>
+            <div class="stat-label">Tasks Completed</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--primary);">${total_agent_cost:,.2f}</div>
+            <div class="stat-label">Estimated Autonomous Cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--success);">${total_manual_cost:,.2f}</div>
+            <div class="stat-label">Estimated Manual Cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="background-color: var(--bg-card); border-radius: 12px; padding: 2rem; border: 1px solid var(--border-color); text-align: center; margin-bottom: 2rem;">
+        <h3 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 1.5rem;">Total Estimated Savings</h3>
+        <div style="font-size: 3rem; font-weight: 700; color: var(--success); text-shadow: 0 0 20px rgba(74, 222, 128, 0.2);">${savings:,.2f}</div>
+        <div style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">By utilizing autonomous agents instead of manual labor</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Breakdown by agent
+    st.markdown("### Cost Breakdown by Agent")
+    agent_tasks = {}
+    for t in completed_tasks:
+        agent = t.get("assignee", "Unassigned")
+        agent_tasks[agent] = agent_tasks.get(agent, 0) + 1
+
+    if agent_tasks:
+        agent_data = []
+        for agent, count in agent_tasks.items():
+            agent_data.append({
+                "Agent": agent,
+                "Tasks Completed": count,
+                "Agent Cost": f"${count * AGENT_COST_PER_TASK:.2f}",
+                "Manual Cost Equivalent": f"${count * MANUAL_COST_PER_TASK:.2f}",
+                "Savings Generated": f"${(count * MANUAL_COST_PER_TASK) - (count * AGENT_COST_PER_TASK):.2f}"
+            })
+        import pandas as pd
+        df_agents = pd.DataFrame(agent_data)
+        st.dataframe(df_agents, use_container_width=True, hide_index=True)
+    else:
+        st.info("No completed tasks to display agent breakdown.")
+
 
 # ─── SDK DOCS PAGE ─────────────────────────────────────
 elif page == "SDK Docs":

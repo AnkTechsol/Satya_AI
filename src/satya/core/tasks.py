@@ -241,23 +241,3 @@ class Tasks:
             return True
         return False
 
-    def get_stats(self) -> dict[str, int]:
-        tasks = self.list_all()
-        counts = {
-            STATUS_QUEUED: 0,
-            STATUS_IN_PROGRESS: 0,
-            STATUS_DONE: 0,
-            STATUS_FAILED: 0
-        }
-        for t in tasks:
-            status = t.get("status")
-            if status in counts:
-                counts[status] += 1
-
-        return {
-            "total": len(tasks),
-            "queued": counts[STATUS_QUEUED],
-            "in_progress": counts[STATUS_IN_PROGRESS],
-            "done": counts[STATUS_DONE],
-            "failed": counts[STATUS_FAILED]
-        }
