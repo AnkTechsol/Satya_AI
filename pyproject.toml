@@ -11,3 +11,9 @@ dependencies = [
     "requests>=2.32.5",
     "streamlit>=1.54.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+]

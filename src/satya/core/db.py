@@ -78,5 +78,7 @@ def append_event_to_db(event: Dict[str, Any]):
         ))
         conn.commit()
         conn.close()
+    except sqlite3.Error as e:
+        logger.error(f"SQLite DB Error while appending event (falling back to flat file): {e}")
     except Exception as e:
-        logger.error(f"Failed to append event to SQLite DB: {e}")
+        logger.error(f"Unexpected error appending event to SQLite DB: {e}")
