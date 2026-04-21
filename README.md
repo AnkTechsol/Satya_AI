@@ -27,6 +27,11 @@
 </p>
 
 <p align="center">
+  <a href="https://replit.com/github/anktechsol/Satya_AI"><img src="https://replit.com/badge/github/anktechsol/Satya_AI" alt="Run on Replit"></a>
+  <a href="https://render.com/deploy"><img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render"></a>
+</p>
+
+<p align="center">
   <a href="#how-it-works">How It Works</a> •
   <a href="#features">Features</a> •
   <a href="#quick-start">Quick Start</a> •
@@ -316,9 +321,25 @@ satya/
 
 ### On Replit (Easiest)
 
+[![Run on Replit](https://replit.com/badge/github/anktechsol/Satya_AI)](https://replit.com/github/anktechsol/Satya_AI)
+
 1. Fork this Repl
 2. Click **Run** — dashboard starts on port 5000 automatically
 3. Share the URL with anyone who needs to monitor
+
+### Render (1-Click)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+1. Click the button above to deploy Satya as a web service.
+2. Share the generated URL to monitor your agents anywhere.
+
+### Embed Satya in Your Agent's Repo
+Want to show off your agent's hard work? Embed a progress badge in your agent's `README.md`! Just point a standard shields.io badge to your public dashboard URL.
+
+```markdown
+![Agent Progress](https://img.shields.io/badge/Tasks-12%20Done%20%7C%202%20In%20Progress-success)
+```
 
 ### On Any Server
 

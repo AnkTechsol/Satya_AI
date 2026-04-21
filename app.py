@@ -939,14 +939,17 @@ if page == "Dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-        if stats["total"] > 0:
-            st.markdown("#### Task Distribution")
-            import pandas as pd
-            chart_data = pd.DataFrame({
-                "Status": ["Queued", "In Progress", "Done"],
-                "Count": [stats["queued"], stats["in_progress"], stats["done"]]
-            })
-            st.bar_chart(chart_data, x="Status", y="Count", color="#6C5CE7", height=200)
+        try:
+            if stats["total"] > 0:
+                st.markdown("#### Task Distribution")
+                import pandas as pd
+                chart_data = pd.DataFrame({
+                    "Status": ["Queued", "In Progress", "Done"],
+                    "Count": [stats["queued"], stats["in_progress"], stats["done"]]
+                })
+                st.bar_chart(chart_data, x="Status", y="Count", color="#6C5CE7", height=200)
+        except Exception as e:
+            st.error("Error rendering task distribution chart.")
 
         if agent_metrics:
             st.markdown("#### Agent Performance & Health")
@@ -964,12 +967,15 @@ if page == "Dashboard":
                     </div>
                     """, unsafe_allow_html=True)
 
-            agent_data = []
-            for agent, data in agent_metrics.items():
-                agent_data.append({"Agent": agent, "Completed": data["completed"], "In Progress": data["in_progress"]})
+            try:
+                agent_data = []
+                for agent, data in agent_metrics.items():
+                    agent_data.append({"Agent": agent, "Completed": data["completed"], "In Progress": data["in_progress"]})
 
-            df_agents = pd.DataFrame(agent_data)
-            st.bar_chart(df_agents, x="Agent", y=["Completed", "In Progress"], height=200)
+                df_agents = pd.DataFrame(agent_data)
+                st.bar_chart(df_agents, x="Agent", y=["Completed", "In Progress"], height=200)
+            except Exception as e:
+                st.error("Error rendering agent metrics chart.")
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown("#### Audit Trail (Governance)")
@@ -1532,18 +1538,21 @@ elif page == "ROI Dashboard":
         agent_tasks[agent] = agent_tasks.get(agent, 0) + 1
 
     if agent_tasks:
-        agent_data = []
-        for agent, count in agent_tasks.items():
-            agent_data.append({
-                "Agent": agent,
-                "Tasks Completed": count,
-                "Agent Cost": f"${count * AGENT_COST_PER_TASK:.2f}",
-                "Manual Cost Equivalent": f"${count * MANUAL_COST_PER_TASK:.2f}",
-                "Savings Generated": f"${(count * MANUAL_COST_PER_TASK) - (count * AGENT_COST_PER_TASK):.2f}"
-            })
-        import pandas as pd
-        df_agents = pd.DataFrame(agent_data)
-        st.dataframe(df_agents, use_container_width=True, hide_index=True)
+        try:
+            agent_data = []
+            for agent, count in agent_tasks.items():
+                agent_data.append({
+                    "Agent": agent,
+                    "Tasks Completed": count,
+                    "Agent Cost": f"${count * AGENT_COST_PER_TASK:.2f}",
+                    "Manual Cost Equivalent": f"${count * MANUAL_COST_PER_TASK:.2f}",
+                    "Savings Generated": f"${(count * MANUAL_COST_PER_TASK) - (count * AGENT_COST_PER_TASK):.2f}"
+                })
+            import pandas as pd
+            df_agents = pd.DataFrame(agent_data)
+            st.dataframe(df_agents, use_container_width=True, hide_index=True)
+        except Exception as e:
+            st.error("Error rendering agent ROI dataframe.")
     else:
         st.info("No completed tasks to display agent breakdown.")
 
@@ -1690,7 +1699,10 @@ client.flush_logs()</div>
 
 
 st.markdown("""
-<div class="footer-text">
-    Satya v0.1.0 &middot; Built by <strong>Anktechsol.com</strong> &middot; Open Source AI Agent Tracker
+<div class="footer-text" style="text-align: center; margin-top: 1rem;">
+    Satya v0.1.0 &middot; Built by <strong>Anktechsol.com</strong> &middot; Open Source AI Agent Tracker<br>
+    <a href="https://twitter.com/intent/tweet?text=I%20am%20tracking%20my%20AI%20agents%20with%20Satya%2C%20the%20open-source%20tracker!%20%F0%9F%9A%80&url=https://github.com/anktechsol/Satya_AI" target="_blank" style="text-decoration: none; color: #1DA1F2; font-weight: bold; margin-top: 0.5rem; display: inline-block;">
+        Share on Twitter / X
+    </a>
 </div>
 """, unsafe_allow_html=True)

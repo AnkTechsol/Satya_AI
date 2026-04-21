@@ -39,7 +39,14 @@ class Scraper:
                     print(f"Error scraping {current_url}: URL resolved to unsafe IP or invalid scheme.")
                     return None
 
-                response = requests.get(current_url, timeout=10, allow_redirects=False)
+                try:
+                    response = requests.get(current_url, timeout=10, allow_redirects=False)
+                except requests.exceptions.Timeout:
+                    print(f"Error scraping {current_url}: Request timed out.")
+                    return None
+                except requests.exceptions.RequestException as e:
+                    print(f"Error scraping {current_url}: Request failed: {e}")
+                    return None
 
                 if 300 <= response.status_code < 400 and 'location' in response.headers:
                     next_url = response.headers['location']
@@ -66,7 +73,7 @@ class Scraper:
 
             markdown_content = markdownify.markdownify(response.text, heading_style="ATX")
 
-            full_content = f"# {title}\n\nSource: {url}\n\n---\n\n{markdown_content}"
+            full_content = f"# {title}\n\nSource: {url}\n\n---\n\n{markdown_content}\n\n---\n*Scraped autonomously via [Satya Agent Tracker](https://github.com/anktechsol/Satya_AI)*"
 
             saved_path = storage.save_markdown(filename, full_content)
 
