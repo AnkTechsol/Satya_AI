@@ -33,7 +33,8 @@
   <a href="#sdk-reference">SDK Reference</a> •
   <a href="#for-ai-agents">For AI Agents</a> •
   <a href="#architecture">Architecture</a> •
-  <a href="#contributing">Contributing</a>
+  <a href="#contributing">Contributing</a>  •
+      <a href="#roadmap">Roadmap</a>
 </p>
 <p align="center">
   <a href="REPO_ANALYTICS.md">Repo Analytics</a> •
@@ -352,11 +353,16 @@ CMD ["streamlit", "run", "app.py", "--server.port", "5000", "--server.address", 
 
 ---
 
+### Roadmap
+
+See our full project roadmap in [ROADMAP.md](ROADMAP.md).
+
 ## Contributing
 
 Contributions are welcome! Here's how:
 
-1. **Fork** the repository
+
+
 2. **Create a branch**: `git checkout -b feature/my-feature`
 3. **Make your changes** and test locally
 4. **Submit a Pull Request** with a clear description
