@@ -11,7 +11,7 @@
 <a href="https://github.com/AnkTechsol/Satya_AI/stargazers"><img src="https://img.shields.io/github/stars/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=gold" alt="GitHub stars"/></a>
 <a href="https://github.com/AnkTechsol/Satya_AI/network/members"><img src="https://img.shields.io/github/forks/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=blue" alt="GitHub forks"/></a>
 <a href="https://github.com/AnkTechsol/Satya_AI/issues"><img src="https://img.shields.io/github/issues/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=red" alt="GitHub issues"/></a>
-<a href="https://github.com/AnkTechsol/Satya_AI/pulls"><img src="https://img.shields.io/github/issues-pr/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=green" alt="GitHub pull requests"/></a>
+<a href="https://github.com/AnkTechsol/Satya_AI/pulls"><img src="https://img.shields.io/github/issu<a href="https://github.com/AnkTechsol/Satya_AI/actions"><img src="https://github.com/AnkTechsol/Satya_AI/actions/workflows/analytics_and_test.yml/badge.svg" alt="CI"></a>es-pr/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=green" alt="GitHub pull requests"/></a>
 </p>
 
 <p align="center">
