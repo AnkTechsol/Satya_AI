@@ -4,7 +4,7 @@ from ..core import storage, Tasks, Scraper, GitHandler
 from ..auth import require_agent, get_agent_key_from_env, append_audit_event
 
 class SatyaClient:
-    def __init__(self, agent_name="default_agent", repo_path=".", adapters=None):
+    def __init__(self, agent_name="default_agent", repo_path=".", adapters=None, skills=None):
         self.agent_key = get_agent_key_from_env()
         require_agent(self.agent_key)
 
@@ -15,6 +15,7 @@ class SatyaClient:
         self.scraper = Scraper(repo_path)
         self.git = GitHandler(repo_path)
         self.adapters = adapters or []
+        self.skills = skills or []
 
         self.current_task = None
         storage.ensure_satya_dirs()
@@ -39,6 +40,7 @@ class SatyaClient:
             "last_seen": now,
             "status": status,
             "agent_name": self.agent_name,
+            "skills": self.skills,
             "current_task_id": self.current_task["id"] if self.current_task else None
         }
         storage.save_heartbeat(self.agent_name, heartbeat_data)
@@ -88,7 +90,7 @@ class SatyaClient:
         self.log(f"BLOCKED: '{action}' not permitted for task {task_id}")
         return False
 
-    def create_task(self, title, description, parent_trace_id=None):
+    def create_task(self, title, description, parent_trace_id=None, dependencies=None, required_skills=None):
         require_agent(self.agent_key)
         # GOVERNANCE RULE 1: Tasks must have meaningful descriptions
         if not description or len(description.strip()) < 10:
@@ -97,7 +99,7 @@ class SatyaClient:
             raise ValueError(err_msg)
 
         self.log(f"Creating task: {title}")
-        task = self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id)
+        task = self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id, dependencies=dependencies, required_skills=required_skills)
         if task:
             append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {title}")
             for adapter in self.adapters:
@@ -167,10 +169,27 @@ class SatyaClient:
 
         # Guardrail: Check WIP limits (future: implement strict count)
 
-        todo_tasks = [t for t in all_tasks if t.get("status") == "queued"]
+        done_task_ids = {t["id"] for t in all_tasks if t.get("status") == "done"}
+
+        todo_tasks = []
+        for t in all_tasks:
+            if t.get("status") != "queued":
+                continue
+
+            # Check dependencies (all must be done)
+            deps = t.get("dependencies", [])
+            if not all(d in done_task_ids for d in deps):
+                continue
+
+            # Check skills (agent must have all required skills)
+            req_skills = t.get("required_skills", [])
+            if not all(s in self.skills for s in req_skills):
+                continue
+
+            todo_tasks.append(t)
 
         if not todo_tasks:
-            self.log("No tasks in 'To Do' column.")
+            self.log("No available tasks in 'To Do' column (or blocked by dependencies/skills).")
             return None
 
         # Prioritization Logic

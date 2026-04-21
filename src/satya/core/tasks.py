@@ -15,7 +15,7 @@ class Tasks:
         self.git_handler = GitHandler(repo_path)
         storage.ensure_satya_dirs()
 
-    def create_task(self, title, description, assignee=None, priority="Medium", agent_name="System", time_limit_minutes=30, parent_trace_id=None):
+    def create_task(self, title, description, assignee=None, priority="Medium", agent_name="System", time_limit_minutes=30, parent_trace_id=None, dependencies=None, required_skills=None):
         task_id = str(uuid.uuid4())[:8]
         trace_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat() + "Z"
@@ -29,6 +29,8 @@ class Tasks:
             "status": STATUS_QUEUED,
             "priority": priority,
             "assignee": assignee or "Unassigned",
+            "dependencies": dependencies or [],
+            "required_skills": required_skills or [],
             "allowed_actions": [],
             "forbidden_actions": [],
             "output_path": "",

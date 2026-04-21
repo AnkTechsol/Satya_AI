@@ -150,6 +150,38 @@ class AIOrchestrator:
         failed_tasks = [t for t in all_tasks if t.get("status") == STATUS_FAILED and not t.get("rca_spawned")]
         queued_tasks = [t for t in all_tasks if t.get("status") == STATUS_QUEUED]
 
+        # Auto-Triage Queued Tasks based on keywords
+        critical_keywords = ["crash", "urgent", "security", "vulnerability", "fatal", "blocker"]
+        for task in queued_tasks:
+            current_priority = task.get("priority", "Medium")
+            if current_priority in ["Low", "Medium"]:
+                text_to_scan = (task.get("title", "") + " " + task.get("description", "")).lower()
+                if any(kw in text_to_scan for kw in critical_keywords):
+                    new_priority = "High" if current_priority == "Medium" else "Medium"
+                    if "crash" in text_to_scan or "security" in text_to_scan or "vulnerability" in text_to_scan:
+                        new_priority = "Critical"
+
+                    logger.info(f"Orchestrator: Auto-Triaging task {task['id']} to {new_priority} based on keywords.")
+                    self.tasks.update_task(
+                        task["id"],
+                        {"priority": new_priority},
+                        agent_name="AI_Orchestrator"
+                    )
+                    self.tasks.add_comment(
+                        task["id"],
+                        f"Auto-Triage: Escalated priority to {new_priority} due to critical keywords detected.",
+                        commit=False,
+                        agent_name="AI_Orchestrator"
+                    )
+                    from satya.auth import append_audit_event
+                    append_audit_event(
+                        "AI_Orchestrator",
+                        task["id"],
+                        task.get("trace_id", "unknown"),
+                        "auto_triaged",
+                        f"Auto-escalated priority to {new_priority}"
+                    )
+
         # Process SLA Escalation for Queued Tasks
         self._escalate_stale_tasks(queued_tasks, now)
 

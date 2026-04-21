@@ -38,9 +38,9 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-04-19T15:17:15.220995+00:00
-- **Open Issues:** Unknown without GH CLI
-- **Recent CI Status:** Requires GH CLI to check
+- **Last Analytics Run:** 2026-04-20T17:36:42.107667Z
+- **Open Issues:** Unknown
+- **Recent CI Status:** passing
 
 ## Human-Observer Policy (Agent-First)
 

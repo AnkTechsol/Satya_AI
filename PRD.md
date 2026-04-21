@@ -44,6 +44,9 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 
 ## 7. Recently Completed Work
 * **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued.
+* **Task Dependency Management:** The Orchestrator supports task blockers. Tasks with dependencies will only be available to agents once their blocking tasks are marked as 'Done'.
+* **Skill-Based Routing:** Agents can define and broadcast their specialized skills via heartbeats. Tasks are automatically routed only to agents with the required skills, enabling complex swarm architectures.
+* **Intelligent Auto-Triage:** The Orchestrator acts as an active Project Manager, auto-scanning queued task descriptions for critical keywords (like "crash", "security") and automatically escalating their priority.
 * **Automated Issue Resolution Workflow (RCA):** Integrated Root Cause Analysis mechanism into the orchestrator where failed tasks automatically spawn targeted debugging sub-tasks for agents to triage errors autonomously.
 * **Self-Healing Task Re-assignment:** Stuck tasks from dead/offline agents are now automatically unlocked and returned to the `queued` state after the grace period expires.
 * **Dashboard Agent Status:** Streamlit UI dynamically displays real-time agent 'Online/Offline' statuses using the heartbeat freshness metrics.
