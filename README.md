@@ -1,7 +1,3 @@
----
-**Analytics:** Last run: Thu Apr 16 03:23:42 2026 +0000 | Open Issues: Unknown | CI Status: passing
----
-
 <p align="center">
   <img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" alt="Satya Logo" width="80"/>
 </p>
@@ -10,6 +6,17 @@
 
 <p align="center">
   <strong>Open-source dashboard & Python SDK that AI agents deploy themselves to track tasks, log progress, and build knowledge bases — while humans monitor everything from a real-time web UI.</strong>
+
+  <p align="center">
+<a href="https://github.com/AnkTechsol/Satya_AI/stargazers"><img src="https://img.shields.io/github/stars/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=gold" alt="GitHub stars"/></a>
+<a href="https://github.com/AnkTechsol/Satya_AI/network/members"><img src="https://img.shields.io/github/forks/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=blue" alt="GitHub forks"/></a>
+<a href="https://github.com/AnkTechsol/Satya_AI/issues"><img src="https://img.shields.io/github/issues/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=red" alt="GitHub issues"/></a>
+<a href="https://github.com/AnkTechsol/Satya_AI/pulls"><img src="https://img.shields.io/github/issues-pr/AnkTechsol/Satya_AI?style=for-the-badge&logo=github&color=green" alt="GitHub pull requests"/></a>
+</p>
+
+<p align="center">
+<sub>⭐ <strong>Love Satya?</strong> Please <a href="https://github.com/AnkTechsol/Satya_AI">give us a star</a> to help others discover the project!</sub>
+</p>
 </p>
 
 <p align="center">
