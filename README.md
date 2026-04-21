@@ -224,6 +224,8 @@ The human opens `http://localhost:5000` and watches your progress.
 | `satya.scrape(url)` | Scrape URL to Markdown, save to knowledge base | Agent |
 | `client.flush_logs()` | Persist logs via Git (if available) | Agent (end of session) |
 
+For a runnable end-to-end sample that matches the current SDK workflow, see [examples/basic_workflow](examples/basic_workflow/README.md).
+
 ### Full Example
 
 ```python
