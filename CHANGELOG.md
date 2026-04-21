@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-04-21] **Updated:** Improved `generate_analytics.py` to correctly calculate repo test coverage, metrics, and simulation latencies for `repo_analytics.json` and `REPO_ANALYTICS.md`. (Risk: Low)
 - [2026-04-16] **Added:** Repository analytics generation script and CI mock for automated code health checks. (Risk: Low)
 - [2026-04-16] **Added:** Competitor analysis matrix (`COMPETITOR_MATRIX.md`). (Risk: Low)
 - [2026-04-16] **Added:** OTLP Export Adapter framework for OpenTelemetry support (`satya.sdk.adapters.otlp`). (Risk: Low)
