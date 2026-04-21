@@ -993,6 +993,8 @@ if page == "Dashboard":
         # Sort newest first
         audit_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
         # Display top 10
+        # ⚡ Bolt Optimization: Batching markdown calls to reduce Streamlit rendering overhead
+        batched_events_html = []
         for event in audit_events[:10]:
             ts = format_date(event.get('timestamp', ''))
             agent = event.get('agent', 'System')
@@ -1000,12 +1002,13 @@ if page == "Dashboard":
             details = event.get('details', '')
             task_title = event.get('task_title', '')
 
-            st.markdown(f"""
+            batched_events_html.append(f"""
             <div style="font-size: 0.85rem; padding: 0.5rem; border-left: 3px solid var(--info); margin-bottom: 0.5rem; background: var(--bg-card); border-radius: 4px;">
                 <span style="color: var(--text-secondary); font-size: 0.75rem;">{ts}</span> &mdash;
                 <strong>{html.escape(agent)}</strong> <span style="color: var(--primary-light);">{html.escape(action)}</span> on <em>{html.escape(task_title)}</em>: {html.escape(details)}
             </div>
-            """, unsafe_allow_html=True)
+            """)
+        st.markdown("".join(batched_events_html), unsafe_allow_html=True)
     else:
         st.markdown("<p style='color: var(--text-secondary); font-size: 0.85rem;'>No audit events recorded yet.</p>", unsafe_allow_html=True)
 
@@ -1120,6 +1123,8 @@ elif page == "Task Board":
                 with st.expander("Activity Log", expanded=False):
                     comments = task.get("comments", [])
                     if comments:
+                        # ⚡ Bolt Optimization: Batching markdown calls to reduce Streamlit rendering overhead
+                        batched_comments_html = []
                         for c in reversed(comments):
                             try:
                                 ts_obj = datetime.fromisoformat(c.get("timestamp", ""))
@@ -1127,7 +1132,8 @@ elif page == "Task Board":
                             except ValueError:
                                 ts_str = html.escape(str(c.get("timestamp", "")))
                             txt = html.escape(c.get("text", ""))
-                            st.markdown(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>", unsafe_allow_html=True)
+                            batched_comments_html.append(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>")
+                        st.markdown("".join(batched_comments_html), unsafe_allow_html=True)
                     else:
                         st.caption("No activity recorded yet.")
 
@@ -1611,8 +1617,10 @@ client.flush_logs()</div>
         ("satya.scrape(url)", "Scrape a URL, convert to Markdown, and save to the Truth Source knowledge base."),
     ]
 
+    # ⚡ Bolt Optimization: Batching markdown calls to reduce Streamlit rendering overhead
+    batched_funcs_html = []
     for func_sig, func_desc in funcs:
-        st.markdown(f"""
+        batched_funcs_html.append(f"""
         <div class="truth-card">
             <div style="font-weight: 600; color: var(--primary-light); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
                 {func_sig}
@@ -1621,7 +1629,8 @@ client.flush_logs()</div>
                 {func_desc}
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
+    st.markdown("".join(batched_funcs_html), unsafe_allow_html=True)
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
