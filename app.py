@@ -874,9 +874,11 @@ if page == "Dashboard":
         sorted_tasks = sorted(all_tasks, key=lambda t: t.get("updated_at", ""), reverse=True)[:5]
 
         if sorted_tasks:
+            # ⚡ Bolt Optimization: Batching markdown reduces Streamlit rendering overhead.
+            batched_tasks_html = []
             for task in sorted_tasks:
                 priority = task.get("priority", "Medium")
-                st.markdown(f"""
+                batched_tasks_html.append(f"""
                 <div class="task-card {get_priority_class(priority)}">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="task-title">{html.escape(task.get('title', 'Untitled'))}</div>
@@ -888,7 +890,9 @@ if page == "Dashboard":
                         {format_time_ago(task.get('updated_at', ''))}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
+            if batched_tasks_html:
+                st.markdown("".join(batched_tasks_html), unsafe_allow_html=True)
         else:
             st.markdown("""
             <div class="empty-state">
@@ -956,16 +960,20 @@ if page == "Dashboard":
 
             # Show live agents first
             if heartbeats:
+                # ⚡ Bolt Optimization: Batching markdown reduces Streamlit rendering overhead.
+                batched_agents_html = []
                 for agent_name, hb in heartbeats.items():
                     status_color = "var(--success)" if hb.get("status") == "online" else "var(--danger)"
                     status_text = "Online" if hb.get("status") == "online" else "Offline"
-                    st.markdown(f"""
+                    batched_agents_html.append(f"""
                     <div style="display: flex; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
                         <div style="width: 10px; height: 10px; border-radius: 50%; background-color: {status_color}; margin-right: 0.5rem;"></div>
                         <div style="flex-grow: 1; font-weight: 600; color: var(--text-primary);">{html.escape(agent_name)}</div>
                         <div style="font-size: 0.75rem; color: var(--text-secondary);">{status_text} &middot; {format_time_ago(hb.get('last_seen', ''))}</div>
                     </div>
-                    """, unsafe_allow_html=True)
+                    """)
+                if batched_agents_html:
+                    st.markdown("".join(batched_agents_html), unsafe_allow_html=True)
 
             try:
                 agent_data = []
@@ -993,6 +1001,8 @@ if page == "Dashboard":
         # Sort newest first
         audit_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
         # Display top 10
+        # ⚡ Bolt Optimization: Batching markdown reduces Streamlit rendering overhead.
+        batched_audit_html = []
         for event in audit_events[:10]:
             ts = format_date(event.get('timestamp', ''))
             agent = event.get('agent', 'System')
@@ -1000,12 +1010,14 @@ if page == "Dashboard":
             details = event.get('details', '')
             task_title = event.get('task_title', '')
 
-            st.markdown(f"""
+            batched_audit_html.append(f"""
             <div style="font-size: 0.85rem; padding: 0.5rem; border-left: 3px solid var(--info); margin-bottom: 0.5rem; background: var(--bg-card); border-radius: 4px;">
                 <span style="color: var(--text-secondary); font-size: 0.75rem;">{ts}</span> &mdash;
                 <strong>{html.escape(agent)}</strong> <span style="color: var(--primary-light);">{html.escape(action)}</span> on <em>{html.escape(task_title)}</em>: {html.escape(details)}
             </div>
-            """, unsafe_allow_html=True)
+            """)
+        if batched_audit_html:
+            st.markdown("".join(batched_audit_html), unsafe_allow_html=True)
     else:
         st.markdown("<p style='color: var(--text-secondary); font-size: 0.85rem;'>No audit events recorded yet.</p>", unsafe_allow_html=True)
 
@@ -1120,6 +1132,8 @@ elif page == "Task Board":
                 with st.expander("Activity Log", expanded=False):
                     comments = task.get("comments", [])
                     if comments:
+                        # ⚡ Bolt Optimization: Batching markdown reduces Streamlit rendering overhead.
+                        batched_comments_html = []
                         for c in reversed(comments):
                             try:
                                 ts_obj = datetime.fromisoformat(c.get("timestamp", ""))
@@ -1127,7 +1141,9 @@ elif page == "Task Board":
                             except ValueError:
                                 ts_str = html.escape(str(c.get("timestamp", "")))
                             txt = html.escape(c.get("text", ""))
-                            st.markdown(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>", unsafe_allow_html=True)
+                            batched_comments_html.append(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>")
+                        if batched_comments_html:
+                            st.markdown("".join(batched_comments_html), unsafe_allow_html=True)
                     else:
                         st.caption("No activity recorded yet.")
 
