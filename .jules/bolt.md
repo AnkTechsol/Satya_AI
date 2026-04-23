@@ -17,3 +17,6 @@ BOLT'S PHILOSOPHY:
 ## 2026-04-19 - Batching Streamlit markdown calls
 **Learning:** Rendering many lines individually via `st.markdown` causes heavy Streamlit communication overhead and blocks the UI thread.
 **Action:** Batch HTML/Markdown strings and render them using a single `st.markdown` call.
+## 2024-05-23 - Reuse global variables across Streamlit pages
+**Learning:** In Streamlit applications, variables instantiated at the root level of the script (e.g., `all_tasks = tasks_manager.list_all()`) are available globally during the top-to-bottom render. Re-fetching them inside specific page `if` blocks (like the ROI Dashboard) leads to duplicate, redundant I/O operations.
+**Action:** Always check if a data structure has already been fetched earlier in the main execution path before calling an expensive I/O or processing function again. Reuse root-level variables within page blocks.
