@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-04-20T17:36:42.107667Z
+- **Last Analytics Run:** 2026-04-24
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -418,3 +418,13 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 <p align="center">
   <sub>If Satya helps your AI agents stay on track, give it a star on GitHub!</sub>
 </p>
+
+## SUSTAINABLE_FEATURES
+
+- **Export Adapter Framework (OTLP/Langfuse)**: Added on April 2026. A small, modular adapter system that enables Satya to export traces/events to Langfuse or OTLP. It keeps the core lightweight while letting enterprises reuse existing investments.
+  - *Validation command:* `pytest tests/test_langfuse_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[LangfuseAdapter(public_key="...", secret_key="...")])`.
+
+- **Agent Self-Test Harness + CI Analytics Job**: Added on April 2026. A harness that runs demo agents against APIs in CI, generating latency traces and metrics to `repo_analytics.json` to monitor repository and agent health continuously.
+  - *Validation command:* `python generate_analytics.py`
+  - *Runbook:* Automatically executes on GitHub Actions. Checks performance and auto-updates README stats.

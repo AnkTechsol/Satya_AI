@@ -3,6 +3,11 @@ import time
 import os
 import json
 
+# Ensure we're authorized before importing SDK
+os.environ['SATYA_AGENT_KEY'] = 'test-run'
+os.environ['SATYA_AGENT_KEYS'] = 'test-run'
+os.environ['AUDIT_SECRET'] = 'dummy'
+
 from unittest.mock import MagicMock
 sys.modules['requests'] = MagicMock()
 sys.modules['bs4'] = MagicMock()
@@ -11,10 +16,6 @@ sys.modules['streamlit'] = MagicMock()
 sys.modules['markdownify'] = MagicMock()
 
 from src.satya.sdk import init
-
-# Ensure we're authorized
-os.environ['SATYA_AGENT_KEY'] = 'test-run'
-os.environ['SATYA_AGENT_KEYS'] = 'test-run'
 
 from unittest.mock import patch
 

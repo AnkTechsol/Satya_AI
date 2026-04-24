@@ -2,7 +2,8 @@ import json
 import os
 import subprocess
 import time
-from datetime import datetime
+from datetime import datetime, timezone
+import statistics
 
 def run_cmd(cmd):
     try:
@@ -13,43 +14,68 @@ def run_cmd(cmd):
 # Git stats
 git_log = run_cmd('git log -1 --format="%cd"')
 commits_count = run_cmd('git rev-list --count HEAD')
+commits_90d = run_cmd('git rev-list --count --since="90 days ago" HEAD')
+
+# Issues (simulated since no GH CLI)
+open_issues = "Unknown"
+closed_issues = "Unknown"
 
 # Code health
-large_files = run_cmd('find . -type f -not -path "*/\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -exec ls -l {} + | sort -k 5 -nr | head -n 20').split('\n')
+large_files = run_cmd('find . -type f -not -path "*/\\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -not -path "*/__pycache__/*" -exec ls -l {} + | sort -k 5 -nr | head -n 20').split('\n')
 largest_files = [f.split()[-1] for f in large_files if f]
 
 # Tests
-test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1')
+has_tests = "Yes" if os.path.exists("tests") else "No"
+has_github_actions = "Yes" if os.path.exists(".github/workflows") else "No"
+
+test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1 -q')
+failing_tests = "0" if "failed" not in test_out.lower() else "1+"
+ci_status = "passing" if failing_tests == "0" else "failing"
 
 def main():
-    # Runtime
+    # Run sim and calculate latencies
+    sim_out = run_cmd('python run_sim.py')
+    try:
+        lats = json.loads(sim_out)
+        create_lats = [lat[1] for lat in lats if lat[0] == "create"]
+        complete_lats = [lat[1] for lat in lats if lat[0] == "complete"]
+
+        create_median = statistics.median(create_lats) if create_lats else 0
+        create_p95 = statistics.quantiles(create_lats, n=100)[94] if len(create_lats) > 1 else (create_lats[0] if create_lats else 0)
+    except Exception as e:
+        print(f"Error parsing sim: {e}")
+        create_median = 0
+        create_p95 = 0
+
     analytics = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "git_stats": {
             "total_commits": int(commits_count) if commits_count.isdigit() else 0,
+            "commits_90d": int(commits_90d) if commits_90d.isdigit() else 0,
             "last_commit_date": git_log
         },
+        "issues": {
+            "open": open_issues,
+            "closed": closed_issues
+        },
         "ci": {
-            "latest_run": "passing"
+            "latest_run": ci_status,
+            "has_workflows": has_github_actions
+        },
+        "tests": {
+            "has_tests": has_tests,
+            "failing": failing_tests
+        },
+        "performance": {
+            "task_create_median_s": create_median,
+            "task_create_p95_s": create_p95
         },
         "code_health": {
             "top_largest_files": largest_files
         }
     }
 
-    # Simulate other missing vars
-    commits_90d = "Unknown"
-    last_commit_date = git_log
-    open_issues = "Unknown"
-    closed_issues = "Unknown"
-    has_github_actions = "Yes" if os.path.exists(".github/workflows") else "No"
-    has_tests = "Yes" if os.path.exists("tests") else "No"
-    failing_tests = "0"
-    median = 0.0
-    p95 = 0.0
     top_files = "\n".join(largest_files)
-    runtime_artifacts = "Unknown"
-    ci_status = "passing"
 
     with open('repo_analytics.json', 'w') as f:
         json.dump(analytics, f, indent=2)
@@ -59,31 +85,26 @@ def main():
 **Last Run**: {analytics['timestamp']}
 
 ## Git Stats
-- **Commits (last 90d)**: {commits_90d}
-- **Last Commit Date**: {last_commit_date}
+- **Commits (last 90d)**: {analytics['git_stats']['commits_90d']}
+- **Last Commit Date**: {analytics['git_stats']['last_commit_date']}
 
 ## Issues & PRs
-- **Open**: {open_issues}
-- **Closed**: {closed_issues}
+- **Open**: {analytics['issues']['open']}
+- **Closed**: {analytics['issues']['closed']}
 
 ## CI & Tests
-- **GitHub Actions**: {has_github_actions}
-- **Tests Exist**: {has_tests}
-- **Failing Tests**: {failing_tests}
+- **GitHub Actions**: {analytics['ci']['has_workflows']}
+- **Tests Exist**: {analytics['tests']['has_tests']}
+- **Failing Tests**: {analytics['tests']['failing']}
 
 ## Runtime Simulation
-- **Median Task Creation Latency**: {median:.4f}s
-- **P95 Task Creation Latency**: {p95:.4f}s
+- **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s
+- **P95 Task Creation Latency**: {analytics['performance']['task_create_p95_s']:.4f}s
 
 ## Code Health
 **Top 20 Largest Files:**
-```
+```text
 {top_files}
-```
-
-## Runtime Artifacts
-```
-{runtime_artifacts}
 ```
 """
     with open('REPO_ANALYTICS.md', 'w') as f:
@@ -95,13 +116,11 @@ def main():
             readme_content = f.read()
 
         import re
-        # Find the block for Repository Status
         status_block = f"""## Repository Status
 - **Last Analytics Run:** {analytics['timestamp']}
-- **Open Issues:** {open_issues}
-- **Recent CI Status:** {ci_status}
+- **Open Issues:** {analytics['issues']['open']}
+- **Recent CI Status:** {analytics['ci']['latest_run']}
 """
-        # Replace existing or append before Human-Observer Policy
         if "## Repository Status" in readme_content:
             readme_content = re.sub(
                 r"## Repository Status.*?(?=## Human-Observer Policy|\Z)",
@@ -110,7 +129,6 @@ def main():
                 flags=re.DOTALL
             )
         else:
-            # If not there, inject right before Human-Observer Policy
             readme_content = readme_content.replace(
                 "## Human-Observer Policy",
                 status_block + "\n## Human-Observer Policy"
