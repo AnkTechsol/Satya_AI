@@ -13,6 +13,12 @@ class AIOrchestrator:
         self.timeout_seconds = timeout_seconds
         self.tasks = Tasks(repo_path)
         storage.ensure_satya_dirs()
+        self.metrics = storage.get_orchestrator_status().get("metrics", {
+            "tasks_reassigned": 0,
+            "tasks_escalated": 0,
+            "tasks_auto_triaged": 0,
+            "rca_tasks_spawned": 0
+        })
 
     def _get_agent_heartbeats(self) -> dict[str, datetime]:
         """Reads all heartbeat files and returns a dictionary of agent_name -> last_heartbeat_time."""
@@ -61,6 +67,7 @@ class AIOrchestrator:
             commit=False,
             agent_name="AI_Orchestrator"
         )
+        self.metrics["tasks_reassigned"] = self.metrics.get("tasks_reassigned", 0) + 1
 
     def _escalate_stale_tasks(self, queued_tasks: list[dict], now: datetime):
         """Bumps priority of tasks that have been queued for too long."""
@@ -132,6 +139,7 @@ class AIOrchestrator:
                             "priority_escalated",
                             f"Escalated priority to {new_priority}"
                         )
+                        self.metrics["tasks_escalated"] = self.metrics.get("tasks_escalated", 0) + 1
                     except ValueError:
                         pass # Should not happen if priority is in ladder
 
@@ -181,6 +189,7 @@ class AIOrchestrator:
                         "auto_triaged",
                         f"Auto-escalated priority to {new_priority}"
                     )
+                    self.metrics["tasks_auto_triaged"] = self.metrics.get("tasks_auto_triaged", 0) + 1
 
         # Process SLA Escalation for Queued Tasks
         self._escalate_stale_tasks(queued_tasks, now)
@@ -203,6 +212,7 @@ class AIOrchestrator:
 
             # Mark the original task to prevent duplicate RCAs
             self.tasks.update_task(task["id"], {"rca_spawned": True}, agent_name="AI_Orchestrator")
+            self.metrics["rca_tasks_spawned"] = self.metrics.get("rca_tasks_spawned", 0) + 1
 
         # Group tasks by assignee in-memory
         tasks_by_agent = {}
@@ -247,6 +257,13 @@ class AIOrchestrator:
                         self._reassign_task(task, agent_name)
                     else:
                         logger.info(f"Agent {agent_name} has no recent heartbeat but task {task['id']} is within grace period.")
+
+        status_data = {
+            "last_scan": now.isoformat(),
+            "timeout_seconds": self.timeout_seconds,
+            "metrics": self.metrics
+        }
+        storage.save_orchestrator_status(status_data)
 
     def run(self, poll_interval=10, run_once=False):
         """Main loop for the orchestrator."""

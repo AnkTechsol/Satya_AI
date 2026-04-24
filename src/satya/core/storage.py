@@ -122,6 +122,14 @@ def get_heartbeats() -> Dict[str, Dict[str, Any]]:
             heartbeats[agent_name] = load_json(os.path.join(HEARTBEATS_DIR, f))
     return heartbeats
 
+def save_orchestrator_status(status_data: Dict[str, Any]) -> bool:
+    filepath = os.path.join(SATYA_DIR, "orchestrator_status.json")
+    return save_json(filepath, status_data)
+
+def get_orchestrator_status() -> Dict[str, Any]:
+    filepath = os.path.join(SATYA_DIR, "orchestrator_status.json")
+    return load_json(filepath)
+
 def delete_task_file(task_id: str) -> bool:
     filepath = get_task_path(task_id)
     if os.path.exists(filepath):

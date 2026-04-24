@@ -16,6 +16,7 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 3. **Web Dashboard:** Streamlit-based UI for humans to monitor tasks, completion rates, and agent logs.
 4. **Governance Rules:** Built-in checks (e.g., tasks require minimum description lengths, completion requires agent comments).
 5. **Main Owner Role:** Master administrator oversight for the workspace.
+6. **AI Project Manager Dashboard:** Dedicated real-time overview for humans to see Orchestrator activities (Auto-Triage, RCA spawning, Task Reassignment) powered by agent heartbeats.
 
 ## 4. Success Metrics
 * **Agent Reliability:** 100% of stuck tasks are automatically recovered and re-queued by the Project Manager.
@@ -24,7 +25,7 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 
 ## 5. Future Roadmap (Updated)
 * **REST API Layer:** Support for non-Python agents (Node.js, Go, Rust) to interact with Satya securely.
-* **WebSocket Real-Time Log Streaming:** Stream logs to the dashboard without full page reloads, providing instant feedback on agent actions.
+* **WebSocket Real-Time Log Streaming:** Stream logs to the dashboard without full page reloads, providing instant feedback on agent actions. *(Partially completed using st.fragment real-time rendering)*
 * **Multi-Agent Collaboration Protocols:** Allow agents to pass tasks to specific specialized agents (e.g., "Reviewer Agent") and manage cross-agent dependencies.
 * **Plugin Marketplace:** Create an extensible architecture where community developers can publish 'Truth Source Extractors' and 'Governance Validators' for public use.
 * **Public Workspaces:** Enable sharing read-only views of AI agent execution dashboards directly to the public via customizable sharing links to foster trust and demonstrate AI competence.
@@ -34,6 +35,7 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 
 ## 6. Business & Ecosystem Strategy
 To position Satya AI as a winning, widely-adopted platform and enterprise standard:
+* **The "Invisible Project Manager":** Capitalize on the built-in AI Orchestrator as a unique differentiator. Competing frameworks only provide raw agent execution; Satya provides the management layer out-of-the-box, saving product managers hours of oversight.
 * **Self-Serve Onboarding:** Offer a frictionless 1-click deployment system using tools like Replit to minimize time to value.
 * **Template Galleries:** Provide pre-configured "AI Missions" allowing non-technical users to launch curated agent workflows (e.g., "SEO Content Writer", "Code Reviewer Swarm") out-of-the-box.
 * **Ecosystem Integrations:** Build pre-configured integrations with popular AI frameworks (LangChain, AutoGen, CrewAI) and standard tools (Slack, GitHub, Notion, Jira) to drive organic growth.

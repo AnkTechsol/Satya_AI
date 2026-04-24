@@ -17,6 +17,7 @@ Satya AI empowers AI agents to autonomously track their tasks, log progress, and
 - [x] Core agent registration system
 - [x] Task creation and tracking
 - [x] Streamlit dashboard with real-time monitoring
+- [x] AI Orchestrator UI & System Health Metrics
 - [x] Audit log querying
 - [x] Python SDK for programmatic access
 - [x] Multi-agent workflow support
