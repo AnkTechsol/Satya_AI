@@ -620,7 +620,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"]
+    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard", "AI Orchestrator"]
     query_params = st.query_params
     default_index = 0
     if "page" in query_params:
@@ -1476,6 +1476,84 @@ elif page == "Agent Chat":
                     storage.save_json(chat_file, msg_payload)
                     st.success("Message sent to agent queue.")
                     st.rerun()
+
+# ─── AI ORCHESTRATOR ───────────────────────────────────
+elif page == "AI Orchestrator":
+    @st.fragment(run_every="5s")
+    def render_orchestrator():
+        st.markdown('<div class="hero-header">AI Orchestrator Tool</div>', unsafe_allow_html=True)
+        st.markdown('<div class="page-subtitle">Real-time Project Manager monitoring and automated governance.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+        status_data = storage.get_orchestrator_status()
+
+        if not status_data:
+            st.warning("Orchestrator is not running or hasn't recorded status yet. Start it via `python3 orchestrator_runner.py`")
+        else:
+            last_scan_str = status_data.get("last_scan", "")
+            timeout = status_data.get("timeout_seconds", "Unknown")
+            metrics = status_data.get("metrics", {})
+
+            # Compute time since last scan
+            is_active = False
+            last_scan_text = "Never"
+            if last_scan_str:
+                try:
+                    if last_scan_str.endswith('Z'):
+                        last_scan_str = last_scan_str[:-1] + '+00:00'
+                    last_scan_dt = datetime.fromisoformat(last_scan_str)
+                    if last_scan_dt.tzinfo is None:
+                        last_scan_dt = last_scan_dt.replace(tzinfo=timezone.utc)
+                    now_utc = datetime.now(timezone.utc)
+                    diff_seconds = (now_utc - last_scan_dt).total_seconds()
+
+                    if diff_seconds < 30:
+                        is_active = True
+                        last_scan_text = f"{int(diff_seconds)}s ago"
+                    else:
+                        last_scan_text = f"{int(diff_seconds)}s ago (Offline)"
+                except Exception:
+                    last_scan_text = "Invalid Time"
+
+            # Render Status
+            st.markdown("### System Health")
+            status_color = "var(--success)" if is_active else "var(--danger)"
+            status_label = "Running" if is_active else "Stopped"
+
+            st.markdown(f"""
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; flex: 1;">
+                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">Status</div>
+                    <div style="display: flex; align-items: center; font-size: 1.2rem; font-weight: bold; color: {status_color};">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {status_color}; margin-right: 0.5rem;"></div>
+                        {status_label}
+                    </div>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; flex: 1;">
+                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">Last Heartbeat Check</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary);">{last_scan_text}</div>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; flex: 1;">
+                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">Agent Timeout Threshold</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary);">{timeout}s</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("### Lifetime Metrics")
+            st.markdown('<div class="page-subtitle">Aggregated actions performed by the AI Orchestrator</div>', unsafe_allow_html=True)
+
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                st.metric("Auto-Triaged Tasks", metrics.get("tasks_auto_triaged", 0), help="Tasks automatically marked High/Critical due to keywords")
+            with c2:
+                st.metric("SLA Escalations", metrics.get("tasks_escalated", 0), help="Tasks escalated due to lingering in queue")
+            with c3:
+                st.metric("Reassigned Tasks", metrics.get("tasks_reassigned", 0), help="Tasks taken from dead agents and returned to queue")
+            with c4:
+                st.metric("RCA Tasks Spawned", metrics.get("rca_tasks_spawned", 0), help="Root Cause Analysis subtasks spawned for failed tasks")
+
+    render_orchestrator()
 
 # ─── ROI DASHBOARD ─────────────────────────────────────
 elif page == "ROI Dashboard":
