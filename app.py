@@ -620,8 +620,14 @@ with st.sidebar:
     st.markdown("---")
 
     # Handle Navigation via Query Parameters
-    nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"]
     query_params = st.query_params
+    is_public = query_params.get("is_public", "").lower() == "true"
+
+    if is_public:
+        nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs"]
+    else:
+        nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"]
+
     default_index = 0
     if "page" in query_params:
         target_page = query_params["page"].replace("+", " ")
@@ -638,13 +644,22 @@ with st.sidebar:
     st.markdown("---")
 
     # Admin Auth for Mutations
-    st.markdown("#### Operator Access")
-    admin_key = st.text_input("Admin Key", type="password", help="Enter the Admin Key to unlock mutating controls.")
-    is_admin = is_human_authorized(admin_key)
-    if is_admin:
-        st.success("Admin unlocked")
+    if not is_public:
+        st.markdown("#### Operator Access")
+        admin_key = st.text_input("Admin Key", type="password", help="Enter the Admin Key to unlock mutating controls.")
+        is_admin = is_human_authorized(admin_key)
+        if is_admin:
+            st.success("Admin unlocked")
+        else:
+            st.info("Read-only mode")
+
+        # Add public sharing toggle/link
+        st.markdown("#### Public Link")
+        public_url = f"/?is_public=true&page={page.replace(' ', '+')}"
+        st.markdown(f"[Copy Public Link]({public_url})")
     else:
-        st.info("Read-only mode")
+        is_admin = False
+        st.info("Public View (Read-only)")
 
     st.markdown("---")
 
@@ -1375,6 +1390,23 @@ elif page == "Main Owner":
 }
         </div>
         """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("### 🤖 AI Orchestrator Control")
+    st.markdown("Manually trigger the orchestrator to perform auto-triage, RCA spawning, and heartbeat checks.")
+
+    if st.button("Run Orchestrator Scan Now", key="orch_run_btn"):
+        if is_admin:
+            with st.spinner("Scanning heartbeats and queues..."):
+                from satya.core.project_manager import AIOrchestrator
+                orch = AIOrchestrator()
+                try:
+                    orch.scan_once()
+                    st.success("Orchestrator scan complete!")
+                except Exception as e:
+                    st.error(f"Orchestrator scan failed: {html.escape(str(e))}")
+        else:
+            st.error("Admin Access Required: You must enter a valid Admin Key to run the Orchestrator.")
 
 
 # ─── AGENT CHAT PAGE ───────────────────────────────────
