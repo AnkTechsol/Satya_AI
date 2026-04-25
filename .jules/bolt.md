@@ -17,3 +17,6 @@ BOLT'S PHILOSOPHY:
 ## 2026-04-19 - Batching Streamlit markdown calls
 **Learning:** Rendering many lines individually via `st.markdown` causes heavy Streamlit communication overhead and blocks the UI thread.
 **Action:** Batch HTML/Markdown strings and render them using a single `st.markdown` call.
+## 2024-05-23 - Reusing Top-level Streamlit Variables
+**Learning:** In Streamlit apps with a flat-file backend, fetching data repeatedly in specific page conditionally branches (like `if page == 'ROI Dashboard':`) causes redundant disk I/O.
+**Action:** Lift common data fetch calls (like `list_all()`) to the root level outside conditional branches and reuse the variable in all downstream page views to eliminate duplicate disk reads.
