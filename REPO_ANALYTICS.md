@@ -1,10 +1,10 @@
 # Repo Analytics
 
-**Last Run**: 2026-04-26T03:30:39.040042Z
+**Last Run**: 2026-04-26T14:59:04.110216Z
 
 ## Git Stats
 - **Commits (last 90d)**: Unknown
-- **Last Commit Date**: Sat Apr 25 02:52:44 2026 +0000
+- **Last Commit Date**: Sun Apr 26 03:30:39 2026 +0000
 
 ## Issues & PRs
 - **Open**: Unknown
@@ -26,22 +26,22 @@
 ./uv.lock
 ./app.py
 ./docs/index.html
-./tests/__pycache__/test_auth_and_audit.cpython-311-pytest-9.0.3.pyc
 ./README.md
-./src/satya/sdk/__pycache__/client.cpython-311.pyc
+./src/satya/sdk/__pycache__/client.cpython-312.pyc
 ./AGENTS.md
-./tests/__pycache__/test_completion_checker.cpython-311-pytest-9.0.3.pyc
-./tests/__pycache__/test_task_status_flow.cpython-311-pytest-9.0.3.pyc
-./src/satya/core/__pycache__/project_manager.cpython-311.pyc
 ./src/satya/sdk/client.py
+./src/satya/core/__pycache__/project_manager.cpython-312.pyc
 ./src/satya/core/project_manager.py
-./tests/__pycache__/test_basic_workflow_example.cpython-311-pytest-9.0.3.pyc
-./src/satya/core/__pycache__/tasks.cpython-311.pyc
-./src/satya/core/__pycache__/storage.cpython-311.pyc
+./src/satya/core/__pycache__/tasks.cpython-312.pyc
 ./satya-ai/satya/core/policy_engine.py
-./tests/__pycache__/test_can_do_validator.cpython-311-pytest-9.0.3.pyc
-./tests/__pycache__/test_project_manager.cpython-311-pytest-9.0.3.pyc
-./src/satya/__pycache__/auth.cpython-311.pyc
+./src/satya/core/__pycache__/storage.cpython-312.pyc
+./src/satya/core/tasks.py
+./src/satya/__pycache__/auth.cpython-312.pyc
+./examples/basic_workflow/run_example.py
+./tests/test_completion_checker.py
+./PRD.md
+./tests/test_project_manager.py
+./satya-ai/satya/core/audit_logger.py
 ```
 
 ## Runtime Artifacts
