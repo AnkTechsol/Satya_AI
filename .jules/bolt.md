@@ -17,3 +17,6 @@ BOLT'S PHILOSOPHY:
 ## 2026-04-19 - Batching Streamlit markdown calls
 **Learning:** Rendering many lines individually via `st.markdown` causes heavy Streamlit communication overhead and blocks the UI thread.
 **Action:** Batch HTML/Markdown strings and render them using a single `st.markdown` call.
+## 2026-04-20 - Redundant disk I/O in Streamlit apps
+**Learning:** Calling data fetch functions (like `list_all` reading flat files) inside conditional page blocks in Streamlit when the same data was already fetched at the root level causes redundant disk I/O and slows down rendering.
+**Action:** Always check if variables defined at the root level are available to reuse inside Streamlit page blocks instead of re-fetching the same data.
