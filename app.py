@@ -1397,7 +1397,8 @@ elif page == "Agent Chat":
             # Chat History
             st.markdown("##### Chat History")
 
-            chat_dir = os.path.join(storage.SATYA_DIR, "chat", selected_agent)
+            safe_agent = os.path.basename(selected_agent)
+            chat_dir = os.path.join(storage.SATYA_DIR, "chat", safe_agent)
             chat_messages = []
 
             if os.path.exists(chat_dir):
@@ -1464,7 +1465,8 @@ elif page == "Agent Chat":
             if st.button("Send", use_container_width=True):
                 if chat_input:
                     # Append to agent's chat flat-file
-                    chat_dir = os.path.join(storage.SATYA_DIR, "chat", selected_agent)
+                    safe_agent = os.path.basename(selected_agent)
+                    chat_dir = os.path.join(storage.SATYA_DIR, "chat", safe_agent)
                     os.makedirs(chat_dir, exist_ok=True)
                     chat_file = os.path.join(chat_dir, f"msg_{datetime.now().timestamp()}.json")
                     msg_payload = {
