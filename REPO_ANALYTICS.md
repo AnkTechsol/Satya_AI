@@ -16,35 +16,30 @@
 - **Failing Tests**: 0
 
 ## Runtime Simulation
-- **Median Task Creation Latency**: 0.0000s
-- **P95 Task Creation Latency**: 0.0000s
+- **Median Task Creation Latency**: 0.0010s
+- **P95 Task Creation Latency**: 0.0020s
 
 ## Code Health
 **Top 20 Largest Files:**
-```
+```text
 ./attached_assets/Open-Source-Improvement_1770443530665.zip
 ./uv.lock
 ./app.py
 ./docs/index.html
-./tests/__pycache__/test_auth_and_audit.cpython-311-pytest-9.0.3.pyc
 ./README.md
-./src/satya/sdk/__pycache__/client.cpython-311.pyc
 ./AGENTS.md
-./tests/__pycache__/test_completion_checker.cpython-311-pytest-9.0.3.pyc
-./tests/__pycache__/test_task_status_flow.cpython-311-pytest-9.0.3.pyc
-./src/satya/core/__pycache__/project_manager.cpython-311.pyc
 ./src/satya/sdk/client.py
 ./src/satya/core/project_manager.py
-./tests/__pycache__/test_basic_workflow_example.cpython-311-pytest-9.0.3.pyc
-./src/satya/core/__pycache__/tasks.cpython-311.pyc
-./src/satya/core/__pycache__/storage.cpython-311.pyc
 ./satya-ai/satya/core/policy_engine.py
-./tests/__pycache__/test_can_do_validator.cpython-311-pytest-9.0.3.pyc
-./tests/__pycache__/test_project_manager.cpython-311-pytest-9.0.3.pyc
-./src/satya/__pycache__/auth.cpython-311.pyc
-```
-
-## Runtime Artifacts
-```
-Unknown
+./src/satya/core/tasks.py
+./examples/basic_workflow/run_example.py
+./tests/test_completion_checker.py
+./PRD.md
+./tests/test_project_manager.py
+./satya-ai/satya/core/audit_logger.py
+./CODE_OF_CONDUCT.md
+./satya-ai/alembic.ini
+./src/satya/auth.py
+./generate_analytics.py
+./tests/test_auth_and_audit.py
 ```
