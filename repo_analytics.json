@@ -1,8 +1,13 @@
 {
-  "timestamp": "2026-04-27T02:46:27.882757Z",
+  "timestamp": "2026-04-27T02:49:40.478647+00:00Z",
   "git_stats": {
     "total_commits": 1,
-    "last_commit_date": "Mon Apr 27 08:15:59 2026 +0530"
+    "commits_90d": 1,
+    "last_commit_date": "Mon Apr 27 08:19:09 2026 +0530"
+  },
+  "issues": {
+    "open": "Unknown",
+    "closed": "Unknown"
   },
   "ci": {
     "latest_run": "passing",
@@ -13,8 +18,8 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.0010137557983398438,
-    "task_create_p95_s": 0.0020194768905639647
+    "task_create_median_s": 0.0005307197570800781,
+    "task_create_p95_s": 0.0007750511169433594
   },
   "code_health": {
     "top_largest_files": [
