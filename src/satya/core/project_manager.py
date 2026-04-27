@@ -138,6 +138,66 @@ class AIOrchestrator:
             except ValueError:
                 pass
 
+    def _check_overdue_tasks(self, in_progress_tasks: list[dict], now: datetime):
+        """Identifies tasks that have been 'in_progress' for too long and warns/escalates."""
+        # Configurable: 2 hours in a real system, but we'll use a shorter time for the demo
+        overdue_threshold_seconds = 7200
+
+        for task in in_progress_tasks:
+            locked_at_str = task.get("locked_at")
+            if not locked_at_str:
+                continue
+
+            try:
+                if locked_at_str.endswith("Z"):
+                    locked_at_str = locked_at_str[:-1] + "+00:00"
+                locked_at = datetime.fromisoformat(locked_at_str)
+                if locked_at.tzinfo is None:
+                    locked_at = locked_at.replace(tzinfo=timezone.utc)
+
+                elapsed = (now - locked_at).total_seconds()
+
+                if elapsed > overdue_threshold_seconds:
+                    # Check if we already warned to avoid spamming
+                    already_warned = False
+                    comments = task.get("comments", [])
+                    for c in reversed(comments):
+                        if c.get("agent") == "AI_Orchestrator" and "Overdue WIP Alert" in c.get("text", ""):
+                            # We warned recently. (You could add logic to re-warn every X hours).
+                            already_warned = True
+                            break
+
+                    if not already_warned:
+                        logger.warning(f"Orchestrator: Task {task['id']} is overdue ({elapsed}s). Escalating.")
+
+                        self.tasks.add_comment(
+                            task["id"],
+                            f"⚠️ Overdue WIP Alert: This task has been in progress for more than {overdue_threshold_seconds // 3600} hours. Please provide an update or mark it blocked.",
+                            commit=False,
+                            agent_name="AI_Orchestrator"
+                        )
+
+                        # Optionally escalate priority
+                        current_priority = task.get("priority", "Medium")
+                        if current_priority in ["Low", "Medium"]:
+                            new_priority = "High" if current_priority == "Medium" else "Medium"
+                            self.tasks.update_task(
+                                task["id"],
+                                {"priority": new_priority},
+                                agent_name="AI_Orchestrator"
+                            )
+                            from satya.auth import append_audit_event
+                            append_audit_event(
+                                "AI_Orchestrator",
+                                task["id"],
+                                task.get("trace_id", "unknown"),
+                                "wip_overdue",
+                                f"Task overdue. Escalated to {new_priority}"
+                            )
+
+            except ValueError:
+                pass
+
     def scan_once(self):
         """Performs a single scan of heartbeats and reassigns tasks if necessary."""
         logger.info("AI Orchestrator heartbeat scan running...")
@@ -184,6 +244,9 @@ class AIOrchestrator:
 
         # Process SLA Escalation for Queued Tasks
         self._escalate_stale_tasks(queued_tasks, now)
+
+        # Check for Overdue WIP tasks
+        self._check_overdue_tasks(in_progress_tasks, now)
 
         # Handle failed tasks (Automated Issue Resolution Workflow)
         for task in failed_tasks:

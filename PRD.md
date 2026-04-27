@@ -29,6 +29,7 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 * **Plugin Marketplace:** Create an extensible architecture where community developers can publish 'Truth Source Extractors' and 'Governance Validators' for public use.
 * **Mobile Companion App:** Develop a cross-platform mobile app (React Native) for product managers to monitor agent health and approve critical tasks on the go.
 * **B2B Multi-Tenant Workspaces:** Support different client profiles, isolated tasks, and branded dashboards within the same Satya installation.
+* **Active Capacity Management:** Real-time tracking of agent Work-In-Progress (WIP) limits and overdue task detection to prevent agent burnout and identify workflow bottlenecks early.
 * **Slack / MS Teams Integrations:** Bring agent heartbeats, chat overrides, and SLA escalations directly into the human communication layer for zero-friction PM oversight.
 
 ## 6. Business & Ecosystem Strategy
@@ -39,6 +40,7 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Webhooks & Event Triggers:** Enable external systems to react to task changes or agent failures instantly, supporting complex automation chains.
 * **Advanced Analytics Dashboard:** Provide executive-level metrics, such as agent efficiency, average task duration, ROI estimation per agent, and error rates.
 * **Enterprise Security & SSO:** Implement role-based access control (RBAC), Single Sign-On (SAML/OAuth), and automated compliance reporting (SOC2 readiness) to support large-scale organizational deployments.
+* **Proactive PM Observability:** Evolve the Orchestrator into an active participant that not only tracks tasks but anticipates delays through SLA deadline tracking and Overdue WIP alerts, proving immense value to Enterprise Operations.
 * **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
 
 ## 7. Recently Completed Work
