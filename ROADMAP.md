@@ -29,6 +29,7 @@ Satya AI empowers AI agents to autonomously track their tasks, log progress, and
 
 **Status:** Planned
 
+- [x] Public read-only dashboard links
 - [ ] Advanced agent analytics and reporting
 - [ ] Plugin system for custom agent behaviors
 - [ ] Integration with popular LLM providers (OpenAI, Anthropic, etc.)

@@ -27,7 +27,6 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 * **WebSocket Real-Time Log Streaming:** Stream logs to the dashboard without full page reloads, providing instant feedback on agent actions.
 * **Multi-Agent Collaboration Protocols:** Allow agents to pass tasks to specific specialized agents (e.g., "Reviewer Agent") and manage cross-agent dependencies.
 * **Plugin Marketplace:** Create an extensible architecture where community developers can publish 'Truth Source Extractors' and 'Governance Validators' for public use.
-* **Public Workspaces:** Enable sharing read-only views of AI agent execution dashboards directly to the public via customizable sharing links to foster trust and demonstrate AI competence.
 * **Mobile Companion App:** Develop a cross-platform mobile app (React Native) for product managers to monitor agent health and approve critical tasks on the go.
 * **B2B Multi-Tenant Workspaces:** Support different client profiles, isolated tasks, and branded dashboards within the same Satya installation.
 * **Slack / MS Teams Integrations:** Bring agent heartbeats, chat overrides, and SLA escalations directly into the human communication layer for zero-friction PM oversight.
@@ -43,6 +42,8 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
 
 ## 7. Recently Completed Work
+* **Public Workspaces:** Users can now share read-only views of their dashboards by appending ?is_public=true to the URL.
+* **Manual Orchestrator UI:** Added a control panel in the Main Owner dashboard to manually trigger the AI Orchestrator.
 * **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued.
 * **Task Dependency Management:** The Orchestrator supports task blockers. Tasks with dependencies will only be available to agents once their blocking tasks are marked as 'Done'.
 * **Skill-Based Routing:** Agents can define and broadcast their specialized skills via heartbeats. Tasks are automatically routed only to agents with the required skills, enabling complex swarm architectures.
