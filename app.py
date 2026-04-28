@@ -1516,7 +1516,7 @@ elif page == "ROI Dashboard":
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    all_tasks = tasks_manager.list_all()
+    # We reuse the root-level all_tasks variable fetched above (line ~666) to avoid redundant disk I/O
     completed_tasks = [t for t in all_tasks if t.get("status") == "done"]
 
     total_completed = len(completed_tasks)

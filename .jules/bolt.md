@@ -17,3 +17,6 @@ BOLT'S PHILOSOPHY:
 ## 2026-04-19 - Batching Streamlit markdown calls
 **Learning:** Rendering many lines individually via `st.markdown` causes heavy Streamlit communication overhead and blocks the UI thread.
 **Action:** Batch HTML/Markdown strings and render them using a single `st.markdown` call.
+## 2024-05-23 - Remove redundant root-level variable recalculations
+**Learning:** Streamlit evaluates the entire script on every interaction. If expensive operations (like `tasks_manager.list_all()`, which scans the flat-file database) are executed in a specific page block, but have already been executed at the root level, it causes a severe N+1 I/O penalty.
+**Action:** When a variable is already computed at the root level (outside of page conditionals), reuse it directly inside page blocks instead of re-fetching it.
