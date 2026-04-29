@@ -31,7 +31,7 @@ def test_add_and_remove_webhook():
     loaded = webhooks.load_webhooks()
     assert len(loaded) == 0
 
-@patch("requests.post")
+@patch("satya.core.webhooks.requests.post")
 def test_dispatch(mock_post):
     url = "https://example.com/webhook"
     webhooks.add_webhook(url, events=["task_created"])
