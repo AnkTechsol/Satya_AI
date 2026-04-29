@@ -1516,10 +1516,9 @@ elif page == "ROI Dashboard":
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    all_tasks = tasks_manager.list_all()
-    completed_tasks = [t for t in all_tasks if t.get("status") == "done"]
-
-    total_completed = len(completed_tasks)
+    # ⚡ Bolt Optimization: Reuse `stats` and `agent_metrics` computed at the root level
+    # instead of re-fetching tasks from disk and iterating over them again.
+    total_completed = stats.get("done", 0)
 
     # Constants for ROI calculation
     AGENT_COST_PER_TASK = 0.50 # e.g., LLM API cost estimate
@@ -1564,10 +1563,7 @@ elif page == "ROI Dashboard":
 
     # Breakdown by agent
     st.markdown("### Cost Breakdown by Agent")
-    agent_tasks = {}
-    for t in completed_tasks:
-        agent = t.get("assignee", "Unassigned")
-        agent_tasks[agent] = agent_tasks.get(agent, 0) + 1
+    agent_tasks = {agent: data["completed"] for agent, data in agent_metrics.items() if data.get("completed", 0) > 0}
 
     if agent_tasks:
         try:
