@@ -47,7 +47,7 @@ Satya AI empowers AI agents to autonomously track their tasks, log progress, and
 - [ ] Role-based access control (RBAC)
 - [ ] Custom reporting and dashboards
 - [ ] SSO integration
-- [ ] Webhook support for external integrations
+- [x] Webhook support for external integrations
 - [ ] Kubernetes deployment support
 - [ ] SLA monitoring and alerting
 

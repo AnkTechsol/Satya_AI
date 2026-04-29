@@ -626,7 +626,7 @@ with st.sidebar:
     if is_public:
         nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs"]
     else:
-        nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"]
+        nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard", "Template Galleries"]
 
     default_index = 0
     if "page" in query_params:
@@ -1391,6 +1391,42 @@ elif page == "Main Owner":
         </div>
         """, unsafe_allow_html=True)
 
+    # Webhooks Settings
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("### 🪝 Webhooks Configuration")
+    st.markdown("Register webhook URLs to be notified of task events.")
+
+    from satya.core.webhooks import load_webhooks, add_webhook, remove_webhook
+
+    col_wh1, col_wh2 = st.columns([3, 1])
+    with col_wh1:
+        new_webhook_url = st.text_input("Webhook URL", key="new_webhook_url")
+    with col_wh2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Add Webhook", key="add_webhook_btn"):
+            if is_admin:
+                if new_webhook_url:
+                    add_webhook(new_webhook_url)
+                    st.success("Webhook added successfully!")
+                    st.rerun()
+            else:
+                st.error("Admin Access Required: You must enter a valid Admin Key.")
+
+    webhooks = load_webhooks()
+    if webhooks:
+        for wh in webhooks:
+            col_list1, col_list2 = st.columns([4, 1])
+            col_list1.code(wh["url"])
+            if col_list2.button("Remove", key=f"rm_wh_{wh['url']}"):
+                if is_admin:
+                    remove_webhook(wh["url"])
+                    st.success("Webhook removed.")
+                    st.rerun()
+                else:
+                    st.error("Admin Access Required: You must enter a valid Admin Key.")
+    else:
+        st.info("No webhooks configured.")
+
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown("### 🤖 AI Orchestrator Control")
     st.markdown("Manually trigger the orchestrator to perform auto-triage, RCA spawning, and heartbeat checks.")
@@ -1408,6 +1444,49 @@ elif page == "Main Owner":
         else:
             st.error("Admin Access Required: You must enter a valid Admin Key to run the Orchestrator.")
 
+
+# ─── TEMPLATE GALLERIES ─────────────────────────────────────
+elif page == "Template Galleries":
+    st.markdown('<div class="hero-header">AI Template Galleries</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">1-click deployments of pre-configured AI task swarms</div>', unsafe_allow_html=True)
+
+    templates = [
+        {
+            "name": "Software Dev Swarm",
+            "description": "A set of tasks for developing a new feature, including coding, reviewing, and testing.",
+            "tasks": [
+                {"title": "Write Code", "description": "Implement the feature requirements.", "priority": "High", "required_skills": ["python", "coding"]},
+                {"title": "Code Review", "description": "Review the implemented code.", "priority": "Medium", "required_skills": ["python", "reviewing"]},
+                {"title": "Write Tests", "description": "Write unit and integration tests.", "priority": "Medium", "required_skills": ["python", "testing"]}
+            ]
+        },
+        {
+            "name": "SEO Content Swarm",
+            "description": "Tasks for generating SEO-optimized blog content.",
+            "tasks": [
+                {"title": "Keyword Research", "description": "Find top keywords for the topic.", "priority": "High", "required_skills": ["seo", "research"]},
+                {"title": "Write Article", "description": "Draft the article incorporating keywords.", "priority": "High", "required_skills": ["writing"]},
+                {"title": "SEO Optimization", "description": "Optimize the drafted article for search engines.", "priority": "Medium", "required_skills": ["seo", "editing"]}
+            ]
+        }
+    ]
+
+    for t in templates:
+        st.markdown(f"### {t['name']}")
+        st.write(t['description'])
+        if st.button(f"Deploy {t['name']}", key=f"deploy_{t['name']}"):
+            try:
+                for task_def in t['tasks']:
+                    tasks_manager.create_task(
+                        title=task_def["title"],
+                        description=task_def["description"],
+                        priority=task_def["priority"],
+                        required_skills=task_def["required_skills"]
+                    )
+                st.success(f"Successfully deployed {t['name']} tasks!")
+            except Exception as e:
+                st.error(f"Failed to deploy template: {e}")
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
 # ─── AGENT CHAT PAGE ───────────────────────────────────
 elif page == "Agent Chat":

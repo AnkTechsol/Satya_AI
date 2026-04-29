@@ -34,14 +34,14 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 ## 6. Business & Ecosystem Strategy
 To position Satya AI as a winning, widely-adopted platform and enterprise standard:
 * **Self-Serve Onboarding:** Offer a frictionless 1-click deployment system using tools like Replit to minimize time to value.
-* **Template Galleries:** Provide pre-configured "AI Missions" allowing non-technical users to launch curated agent workflows (e.g., "SEO Content Writer", "Code Reviewer Swarm") out-of-the-box.
 * **Ecosystem Integrations:** Build pre-configured integrations with popular AI frameworks (LangChain, AutoGen, CrewAI) and standard tools (Slack, GitHub, Notion, Jira) to drive organic growth.
-* **Webhooks & Event Triggers:** Enable external systems to react to task changes or agent failures instantly, supporting complex automation chains.
 * **Advanced Analytics Dashboard:** Provide executive-level metrics, such as agent efficiency, average task duration, ROI estimation per agent, and error rates.
 * **Enterprise Security & SSO:** Implement role-based access control (RBAC), Single Sign-On (SAML/OAuth), and automated compliance reporting (SOC2 readiness) to support large-scale organizational deployments.
 * **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
 
 ## 7. Recently Completed Work
+* **Webhooks & Event Triggers:** Enabled external systems to react to task changes and agent failures instantly, supporting complex automation chains.
+* **Template Galleries:** Provided pre-configured "AI Missions" allowing non-technical users to launch curated agent workflows (e.g., "Software Dev Swarm", "SEO Content Swarm") out-of-the-box.
 * **Public Workspaces:** Users can now share read-only views of their dashboards by appending ?is_public=true to the URL.
 * **Manual Orchestrator UI:** Added a control panel in the Main Owner dashboard to manually trigger the AI Orchestrator.
 * **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued.

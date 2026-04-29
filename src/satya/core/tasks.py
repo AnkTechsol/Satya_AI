@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from . import storage
 from .git_handler import GitHandler
+from .webhooks import dispatch
 
 STATUS_QUEUED = "queued"
 STATUS_IN_PROGRESS = "in_progress"
@@ -55,6 +56,7 @@ class Tasks:
         filepath = storage.get_task_path(task_id)
         if storage.save_json(filepath, task):
             self.git_handler.commit_and_push([filepath], f"Task created: {title} ({task_id})")
+            dispatch("task_created", task)
             return task
         return None
 
@@ -180,6 +182,7 @@ class Tasks:
 
         if storage.save_json(filepath, task):
             self.git_handler.commit_and_push([filepath], f"Task {task_id} updated")
+            dispatch("task_updated", task)
             return True
         return False
 
