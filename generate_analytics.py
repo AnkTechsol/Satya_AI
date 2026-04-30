@@ -24,6 +24,33 @@ closed_issues = "Unknown"
 large_files = run_cmd('find . -type f -not -path "*/\\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -not -path "*/__pycache__/*" -exec ls -l {} + | sort -k 5 -nr | head -n 20').split('\n')
 largest_files = [f.split()[-1] for f in large_files if f]
 
+# Dependencies & Packaging
+has_dockerfile = "Yes" if os.path.exists("Dockerfile") else "No"
+import re
+deps = []
+try:
+    with open("pyproject.toml") as f:
+        content = f.read()
+        match = re.search(r'dependencies\s*=\s*\[(.*?)\]', content, re.DOTALL)
+        if match:
+            deps_str = match.group(1)
+            deps = [d.strip().strip('"').strip("'").split('>')[0].split('=')[0].strip() for d in deps_str.split(',') if d.strip()]
+except Exception:
+    pass
+
+try:
+    safety_out = run_cmd("safety check --bare 2>/dev/null")
+    security_flags = safety_out if safety_out else "None"
+except:
+    security_flags = "Not available"
+
+try:
+    bandit_out = run_cmd("bandit -r src -ll -ii -f json 2>/dev/null")
+    bandit_data = json.loads(bandit_out)
+    bandit_issues = len(bandit_data.get("results", []))
+except:
+    bandit_issues = "Not available"
+
 # Tests
 has_tests = "Yes" if os.path.exists("tests") else "No"
 has_github_actions = "Yes" if os.path.exists(".github/workflows") else "No"
@@ -66,6 +93,14 @@ def main():
             "has_tests": has_tests,
             "failing": failing_tests
         },
+        "dependencies": deps,
+        "packaging": {
+            "dockerfile": has_dockerfile
+        },
+        "security": {
+            "safety_flags": security_flags,
+            "bandit_issues": bandit_issues
+        },
         "performance": {
             "task_create_median_s": create_median,
             "task_create_p95_s": create_p95
@@ -96,6 +131,12 @@ def main():
 - **GitHub Actions**: {analytics['ci']['has_workflows']}
 - **Tests Exist**: {analytics['tests']['has_tests']}
 - **Failing Tests**: {analytics['tests']['failing']}
+
+## Dependencies & Packaging
+- **Dockerfile**: {analytics['packaging']['dockerfile']}
+- **Dependencies**: {', '.join(analytics['dependencies']) if analytics['dependencies'] else 'None found'}
+- **Security Flags (safety)**: {analytics['security']['safety_flags']}
+- **Security Flags (bandit)**: {analytics['security']['bandit_issues']}
 
 ## Runtime Simulation
 - **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s

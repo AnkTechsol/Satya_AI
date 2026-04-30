@@ -6,7 +6,7 @@
 | Agent Runtime Support | Native (Task Board/Chat) | API only | API only |
 | Self-host Friendliness | Excellent (Zero infra, flat-file) | Complex (Docker/K8s) | Good (Docker) |
 | Enterprise Features | Basic (Auth via Key) | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
-| Export Adapters | **NEW: OTLP/Langfuse support** | N/A | N/A |
+| Export Adapters | **NEW: OTLP/Langfuse/LangSmith support** | N/A | N/A |
 | Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
 
 ## Strategic Gaps & Differentiators
