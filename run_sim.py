@@ -47,6 +47,21 @@ def run():
     except Exception as e:
         sys.stderr.write(f"Error during simulation: {e}\n")
 
+    # Attempt to write to otel-traces.json for basic simulated traces
+    traces = []
+    for event, latency in latencies:
+        traces.append({
+            "trace_id": f"sim-trace-{int(time.time()*1000)}",
+            "name": event,
+            "duration_s": latency,
+            "timestamp": time.time()
+        })
+    try:
+        with open("otel-traces.json", "w") as f:
+            json.dump(traces, f, indent=2)
+    except Exception as e:
+        sys.stderr.write(f"Failed to write traces: {e}\n")
+
     return latencies
 
 if __name__ == '__main__':
