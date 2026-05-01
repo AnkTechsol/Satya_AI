@@ -17,3 +17,6 @@ BOLT'S PHILOSOPHY:
 ## 2026-04-19 - Batching Streamlit markdown calls
 **Learning:** Rendering many lines individually via `st.markdown` causes heavy Streamlit communication overhead and blocks the UI thread.
 **Action:** Batch HTML/Markdown strings and render them using a single `st.markdown` call.
+## 2024-05-24 - Streamlit Page Routing Optimization
+**Learning:** In Streamlit applications where page navigation uses `if/elif` blocks on `st.radio` input, defining shared data variables like `all_tasks` at the root/module scope ensures they are fetched exactly once per rerun and are safely accessible to all subsequent page blocks. Redundant data fetches inside specific page blocks (like `ROI Dashboard`) bypass this cache and cause unnecessary file I/O operations.
+**Action:** When optimizing Streamlit apps for performance, always hoist shared database queries or file reads to the top-level script scope (or use `@st.cache_data`) before the page routing conditional logic.
