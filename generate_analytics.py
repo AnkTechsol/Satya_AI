@@ -15,26 +15,43 @@ def run_cmd(cmd):
 git_log = run_cmd('git log -1 --format="%cd"')
 commits_count = run_cmd('git rev-list --count HEAD')
 commits_90d = run_cmd('git rev-list --count --since="90 days ago" HEAD')
+recent_authors = run_cmd('git log --since="90 days ago" --format="%aN" | sort | uniq -c | sort -nr | head -n 5')
 
 # Issues (simulated since no GH CLI)
 open_issues = "Unknown"
 closed_issues = "Unknown"
+avg_time_to_close = "Unknown"
+top_unresolved_issues = "None found"
 
 # Code health
-large_files = run_cmd('find . -type f -not -path "*/\\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -not -path "*/__pycache__/*" -exec ls -l {} + | sort -k 5 -nr | head -n 20').split('\n')
+large_files = run_cmd(r'find . -type f -not -path "*/\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -not -path "*/__pycache__/*" -exec ls -l {} + | sort -k 5 -nr | head -n 20').split('\n')
 largest_files = [f.split()[-1] for f in large_files if f]
+language_breakdown = run_cmd('find . -type f -name "*.py" | wc -l') + " Python files"
+linter_presence = "Yes" if os.path.exists(".flake8") or os.path.exists(".pylintrc") or "ruff" in run_cmd('cat pyproject.toml 2>/dev/null || echo ""') else "No"
+
+# Dependencies
+deps = run_cmd('cat pyproject.toml requirements.txt 2>/dev/null || echo "No dependency file found"')
+security_flags = run_cmd('pip audit 2>/dev/null || echo "No security scan tools available"')
+
+# Packaging & deploy
+dockerfile_presence = "Yes" if os.path.exists("Dockerfile") else "No"
+k8s_helm = "Yes" if os.path.exists("k8s") or os.path.exists("helm") else "No"
+
+# Runtime artifacts
+runtime_artifacts = run_cmd('ls satya_data 2>/dev/null || echo "None"')
 
 # Tests
 has_tests = "Yes" if os.path.exists("tests") else "No"
 has_github_actions = "Yes" if os.path.exists(".github/workflows") else "No"
 
-test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1 -q')
+test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python3 -m pytest tests/ --maxfail=1 --cov=src -q')
 failing_tests = "0" if "failed" not in test_out.lower() else "1+"
 ci_status = "passing" if failing_tests == "0" else "failing"
+coverage = run_cmd('coverage report | grep TOTAL | awk \'{print $4}\'') if "failed" not in test_out.lower() else "Unknown"
 
 def main():
     # Run sim and calculate latencies
-    sim_out = run_cmd('python run_sim.py')
+    sim_out = run_cmd('PYTHONPATH=$PWD python3 run_sim.py')
     try:
         lats = json.loads(sim_out)
         create_lats = [lat[1] for lat in lats if lat[0] == "create"]
@@ -42,21 +59,26 @@ def main():
 
         create_median = statistics.median(create_lats) if create_lats else 0
         create_p95 = statistics.quantiles(create_lats, n=100)[94] if len(create_lats) > 1 else (create_lats[0] if create_lats else 0)
+        create_p99 = statistics.quantiles(create_lats, n=100)[98] if len(create_lats) > 1 else (create_lats[0] if create_lats else 0)
     except Exception as e:
         print(f"Error parsing sim: {e}")
         create_median = 0
         create_p95 = 0
+        create_p99 = 0
 
     analytics = {
-        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         "git_stats": {
             "total_commits": int(commits_count) if commits_count.isdigit() else 0,
             "commits_90d": int(commits_90d) if commits_90d.isdigit() else 0,
-            "last_commit_date": git_log
+            "last_commit_date": git_log,
+            "recent_authors": recent_authors
         },
         "issues": {
             "open": open_issues,
-            "closed": closed_issues
+            "closed": closed_issues,
+            "avg_time_to_close": avg_time_to_close,
+            "top_unresolved_issues": top_unresolved_issues
         },
         "ci": {
             "latest_run": ci_status,
@@ -64,14 +86,28 @@ def main():
         },
         "tests": {
             "has_tests": has_tests,
-            "failing": failing_tests
+            "failing": failing_tests,
+            "coverage": coverage
         },
         "performance": {
             "task_create_median_s": create_median,
-            "task_create_p95_s": create_p95
+            "task_create_p95_s": create_p95,
+            "task_create_p99_s": create_p99
         },
         "code_health": {
-            "top_largest_files": largest_files
+            "top_largest_files": largest_files,
+            "language_breakdown": language_breakdown,
+            "linter_presence": linter_presence
+        },
+        "dependencies": {
+            "security_flags": security_flags
+        },
+        "packaging": {
+            "dockerfile": dockerfile_presence,
+            "k8s_helm": k8s_helm
+        },
+        "runtime_artifacts": {
+            "files": runtime_artifacts
         }
     }
 
@@ -87,25 +123,39 @@ def main():
 ## Git Stats
 - **Commits (last 90d)**: {analytics['git_stats']['commits_90d']}
 - **Last Commit Date**: {analytics['git_stats']['last_commit_date']}
+- **Recent Authors**: {analytics['git_stats']['recent_authors']}
 
 ## Issues & PRs
 - **Open**: {analytics['issues']['open']}
 - **Closed**: {analytics['issues']['closed']}
+- **Avg Time to Close**: {analytics['issues']['avg_time_to_close']}
+- **Top Unresolved**: {analytics['issues']['top_unresolved_issues']}
 
 ## CI & Tests
 - **GitHub Actions**: {analytics['ci']['has_workflows']}
 - **Tests Exist**: {analytics['tests']['has_tests']}
 - **Failing Tests**: {analytics['tests']['failing']}
+- **Coverage**: {analytics['tests']['coverage']}
 
-## Runtime Simulation
-- **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s
-- **P95 Task Creation Latency**: {analytics['performance']['task_create_p95_s']:.4f}s
+## Dependencies & Packaging
+- **Security Flags**: {analytics['dependencies']['security_flags']}
+- **Dockerfile**: {analytics['packaging']['dockerfile']}
+- **K8s/Helm**: {analytics['packaging']['k8s_helm']}
 
 ## Code Health
+- **Language Breakdown**: {analytics['code_health']['language_breakdown']}
+- **Linter Presence**: {analytics['code_health']['linter_presence']}
+
 **Top 20 Largest Files:**
 ```text
 {top_files}
 ```
+
+## Runtime Simulation & Artifacts
+- **Runtime Artifacts**: {analytics['runtime_artifacts']['files']}
+- **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s
+- **P95 Task Creation Latency**: {analytics['performance']['task_create_p95_s']:.4f}s
+- **P99 Task Creation Latency**: {analytics['performance']['task_create_p99_s']:.4f}s
 """
     with open('REPO_ANALYTICS.md', 'w') as f:
         f.write(md)

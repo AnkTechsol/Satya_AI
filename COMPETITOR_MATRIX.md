@@ -1,14 +1,14 @@
 # Competitor Matrix
 
-| Feature | Satya | LangSmith | Langfuse |
-|---|---|---|---|
-| Observability Depth | High (Log/Task level) | High (Token/Prompt level) | High (Token/Prompt level) |
-| Agent Runtime Support | Native (Task Board/Chat) | API only | API only |
-| Self-host Friendliness | Excellent (Zero infra, flat-file) | Complex (Docker/K8s) | Good (Docker) |
-| Enterprise Features | Basic (Auth via Key) | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
-| Export Adapters | **NEW: OTLP/Langfuse support** | N/A | N/A |
-| Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
+| Feature | Satya | Competitor 1 | Competitor 2 |
+| :--- | :--- | :--- | :--- |
+| **Observability Depth** | Basic (traces, latencies) | Token-level, prompt snapshots | Advanced tracing |
+| **Agent Runtime Support** | Strong (native tasks/agents) | Good | Moderate |
+| **Self-Host Friendliness** | High (Zero-config sqlite/files) | Medium | Low (managed focus) |
+| **Enterprise Features** | Limited (Basic auth key) | High (SSO, RBAC, Audit) | High (SSO, Audit) |
+| **Export Adapters** | **Missing (Need to implement)** | Native LangSmith/OTLP | Native integrations |
+| **Pricing Model** | OSS / Self-hosted | Managed + Enterprise OSS | Managed Cloud |
 
-## Strategic Gaps & Differentiators
-*   **Where Satya wins:** Zero-infrastructure setup, native task tracking, flat-file architecture, human-observer paradigm.
-*   **Where Satya must catch up:** Deep trace analytics, robust enterprise identity, and long-term durable storage for audits.
+## Strategy
+* **Where Satya wins (defensible differentiator):** Extremely lightweight, zero-configuration self-hosting, tightly integrated agent runtime loop.
+* **Where Satya must catch up:** Observability (exporting traces cleanly) and Enterprise Features (durable audit stores).

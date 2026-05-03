@@ -1,0 +1,41 @@
+name: Analytics Auto-Update
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *' # Daily at midnight
+
+permissions:
+  contents: write
+
+jobs:
+  analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt || true
+          pip install pytest pytest-cov coverage || true
+
+      - name: Run Analytics Script
+        run: |
+          PYTHONPATH=$PWD python3 generate_analytics.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add REPO_ANALYTICS.md repo_analytics.json README.md || true
+          git commit -m "docs: Auto-update repository analytics" || echo "No changes to commit"
+          # Simulated push

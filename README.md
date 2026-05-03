@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-04-24
+- **Last Analytics Run:** 2026-05-03T15:03:03.626124Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -93,6 +93,15 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
 
 For more details on changes, see our [CHANGELOG](CHANGELOG.md).
+## Related Documents
+- [Repo Analytics (Updated Automtically)](REPO_ANALYTICS.md)
+- [Competitor Matrix](COMPETITOR_MATRIX.md)
+- [Changelog](CHANGELOG.md)
+
+## SUSTAINABLE_FEATURES
+- **Export Adapter Framework (2026-05-03):** Implemented a modular `OTLPJsonExporter` and `TelemetryManager` allowing traces and task lifecycle events to be cleanly exported to external services like LangSmith/Datadog. (Runbook: Modify `src/satya/core/telemetry.py` to add new adapters. Validate: Check `otel-traces.json` after running tasks).
+- **Agent Self-Test & Analytics CI Action (2026-05-03):** Added `.github/workflows/analytics.yml` and `self-test.yml` to automatically run tests, update `REPO_ANALYTICS.md` and capture performance regressions on each push to `main`. (Runbook: Check Actions tab on GitHub. Validate: Verify `REPO_ANALYTICS.md` commits via bot).
+
 ## How It Works
 
 Satya separates **who does the work** from **who watches the work**:

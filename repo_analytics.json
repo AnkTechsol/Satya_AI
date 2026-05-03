@@ -1,13 +1,16 @@
 {
-  "timestamp": "2026-05-03T03:43:07.058859+00:00Z",
+  "timestamp": "2026-05-03T15:03:03.626124Z",
   "git_stats": {
-    "total_commits": 1,
-    "commits_90d": 1,
-    "last_commit_date": "Sat May 2 03:24:48 2026 +0000"
+    "total_commits": 10,
+    "commits_90d": 10,
+    "last_commit_date": "Sun May 3 14:58:55 2026 +0000",
+    "recent_authors": "9 google-labs-jules[bot]\n      1 github-actions[bot]"
   },
   "issues": {
     "open": "Unknown",
-    "closed": "Unknown"
+    "closed": "Unknown",
+    "avg_time_to_close": "Unknown",
+    "top_unresolved_issues": "None found"
   },
   "ci": {
     "latest_run": "passing",
@@ -15,17 +18,20 @@
   },
   "tests": {
     "has_tests": "Yes",
-    "failing": "0"
+    "failing": "0",
+    "coverage": "68%"
   },
   "performance": {
-    "task_create_median_s": 0.0004913806915283203,
-    "task_create_p95_s": 0.0008122920989990234
+    "task_create_median_s": 0.004788398742675781,
+    "task_create_p95_s": 0.0052004575729370115,
+    "task_create_p99_s": 0.005223288536071778
   },
   "code_health": {
     "top_largest_files": [
       "./attached_assets/Open-Source-Improvement_1770443530665.zip",
       "./uv.lock",
       "./app.py",
+      "./otel-traces.json",
       "./docs/index.html",
       "./README.md",
       "./AGENTS.md",
@@ -33,6 +39,7 @@
       "./src/satya/core/project_manager.py",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
+      "./generate_analytics.py",
       "./examples/basic_workflow/run_example.py",
       "./tests/test_completion_checker.py",
       "./PRD.md",
@@ -40,9 +47,19 @@
       "./satya-ai/satya/core/audit_logger.py",
       "./CODE_OF_CONDUCT.md",
       "./satya-ai/alembic.ini",
-      "./src/satya/auth.py",
-      "./generate_analytics.py",
-      "./tests/test_auth_and_audit.py"
-    ]
+      "./src/satya/auth.py"
+    ],
+    "language_breakdown": "78 Python files",
+    "linter_presence": "No"
+  },
+  "dependencies": {
+    "security_flags": "No security scan tools available"
+  },
+  "packaging": {
+    "dockerfile": "No",
+    "k8s_helm": "No"
+  },
+  "runtime_artifacts": {
+    "files": "agents\nevents\nheartbeats\ntasks\ntruth"
   }
 }

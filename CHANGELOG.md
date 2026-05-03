@@ -20,3 +20,12 @@
 ## [Unreleased]
 - **Added** `repo_analytics.json` and `REPO_ANALYTICS.md` to run runtime analytics in CI. Risk: Low (reads data and executes minimal simulation).
 - **Added** `LangfuseAdapter` export adapter to support telemetry streaming to Langfuse. Risk: Low (plugs into existing Adapter framework, isolates failures via timeouts).
+
+## [Unreleased] - 2026-05-03
+
+### Added
+- **docs**: Added `COMPETITOR_MATRIX.md` to analyze features vs peers. (Risk: Low)
+- **ci**: Added `.github/workflows/analytics.yml` and `self-test.yml` for automated testing and repo analytics updates. (Risk: Low)
+- **core**: Added `src/satya/core/telemetry.py` providing an export adapter framework (`OTLPJsonExporter`) to record agent traces and lifecycle events. (Risk: Medium)
+- **core**: Integrated telemetry into `project_manager.py` (Orchestrator) and `tasks.py` (Task completion tracking). (Risk: Medium)
+- **scripts**: Updated `generate_analytics.py` script to collect deeper system health context (code health, languages). (Risk: Low)

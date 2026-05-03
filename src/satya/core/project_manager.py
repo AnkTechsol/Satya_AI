@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import logging
 from . import storage
 from .tasks import Tasks, STATUS_IN_PROGRESS, STATUS_QUEUED, STATUS_FAILED
+from .telemetry import track_agent_action
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,10 @@ class AIOrchestrator:
             commit=False,
             agent_name="AI_Orchestrator"
         )
+        track_agent_action("Orchestrator", "unassign_dead_agent", {
+            "task_id": task["id"],
+            "agent": assigned_agent
+        })
 
     def _escalate_stale_tasks(self, queued_tasks: list[dict], now: datetime):
         """Bumps priority of tasks that have been queued for too long."""
@@ -122,6 +127,12 @@ class AIOrchestrator:
                             commit=False,
                             agent_name="AI_Orchestrator"
                         )
+
+                        track_agent_action("Orchestrator", "escalate_priority", {
+                            "task_id": task["id"],
+                            "old_priority": current_priority,
+                            "new_priority": new_priority
+                        })
 
                         # Add audit event
                         from satya.auth import append_audit_event

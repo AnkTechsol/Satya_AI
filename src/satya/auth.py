@@ -12,14 +12,19 @@ from .core import storage, db
 # HUMAN_VIEW_TOKEN -> token for read-only view (optional)
 # AUDIT_SECRET -> secret for signing audit events
 
-_AGENT_KEYS = set(k.strip() for k in os.environ.get("SATYA_AGENT_KEYS", "DEMO_KEY").split(",") if k.strip())
 _HUMAN_VIEW = os.environ.get("HUMAN_VIEW_TOKEN", "")
-_AUDIT_SECRET = os.environ.get("AUDIT_SECRET")
 
+def get_agent_keys():
+    """Helper to dynamically fetch current agent keys"""
+    return set(k.strip() for k in os.environ.get("SATYA_AGENT_KEYS", "DEMO_KEY").split(",") if k.strip())
+
+def get_audit_secret():
+    return os.environ.get("AUDIT_SECRET")
 
 def is_agent_authorized(key: str) -> bool:
     """Check if the provided key is in the allowed agent keys."""
-    return any(hmac.compare_digest(str(key or ""), str(allowed_key or "")) for allowed_key in _AGENT_KEYS)
+    agent_keys = get_agent_keys()
+    return any(hmac.compare_digest(str(key or ""), str(allowed_key or "")) for allowed_key in agent_keys)
 
 def is_human_authorized(token: str) -> bool:
     """Check if the provided token matches the human view/admin token."""
@@ -36,10 +41,11 @@ def require_agent(key: str):
 
 def sign_event(event_data: str, prev_hmac: str = "") -> str:
     """Sign an event payload using HMAC-SHA256, optionally chaining a previous HMAC."""
-    if not _AUDIT_SECRET:
+    audit_secret = get_audit_secret()
+    if not audit_secret:
         raise ValueError("AUDIT_SECRET environment variable is mandatory for signing audit events.")
     msg = f"{prev_hmac}:{event_data}".encode('utf-8')
-    return hmac.new(_AUDIT_SECRET.encode('utf-8'), msg, hashlib.sha256).hexdigest()
+    return hmac.new(audit_secret.encode('utf-8'), msg, hashlib.sha256).hexdigest()
 
 def verify_event_chain(events: list[Dict[str, Any]]) -> bool:
     """Verify a chain of signed events."""
