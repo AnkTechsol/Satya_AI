@@ -32,3 +32,6 @@ venv/
 satya_data/
 verification/
 *.log
+
+# Telemetry and generated outputs
+otel-traces.jsonl

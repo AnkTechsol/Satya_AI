@@ -1,0 +1,34 @@
+name: Agent Self-Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-cov
+
+      - name: Run CI Tests
+        env:
+          AUDIT_SECRET: ci_secret
+          SATYA_AGENT_KEY: ci_key
+          SATYA_AGENT_KEYS: ci_key
+        run: |
+          PYTHONPATH=$PWD python -m pytest tests/
+
+      - name: Run System Simulator
+        run: |
+          PYTHONPATH=$PWD python run_sim.py

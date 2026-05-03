@@ -1,7 +1,9 @@
 import uuid
+import time
 from datetime import datetime, timezone
 from . import storage
 from .git_handler import GitHandler
+from .telemetry import track_task_lifecycle
 
 STATUS_QUEUED = "queued"
 STATUS_IN_PROGRESS = "in_progress"
@@ -55,6 +57,7 @@ class Tasks:
         filepath = storage.get_task_path(task_id)
         if storage.save_json(filepath, task):
             self.git_handler.commit_and_push([filepath], f"Task created: {title} ({task_id})")
+            track_task_lifecycle(task_id, STATUS_QUEUED)
             return task
         return None
 
@@ -109,6 +112,18 @@ class Tasks:
 
         if storage.save_json(filepath, task):
             self.git_handler.commit_and_push([filepath], f"Task {task_id} moved to {new_status}")
+
+            # calculate latency if completed
+            latency_ms = None
+            if new_status in [STATUS_DONE, STATUS_FAILED] and task.get("created_at"):
+                try:
+                    created = datetime.fromisoformat(task["created_at"].replace("Z", "+00:00"))
+                    now_dt = datetime.fromisoformat(now.replace("Z", "+00:00"))
+                    latency_ms = (now_dt - created).total_seconds() * 1000
+                except Exception:
+                    pass
+
+            track_task_lifecycle(task_id, new_status, latency_ms)
             return True
         return False
 
