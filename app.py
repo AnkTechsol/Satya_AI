@@ -1516,7 +1516,9 @@ elif page == "ROI Dashboard":
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    all_tasks = tasks_manager.list_all()
+    # ⚡ Bolt Optimization:
+    # `all_tasks` is already fetched at the app root level (`all_tasks = tasks_manager.list_all()`).
+    # Removing this redundant fetch prevents an O(N) file I/O bottleneck when rendering this page.
     completed_tasks = [t for t in all_tasks if t.get("status") == "done"]
 
     total_completed = len(completed_tasks)
