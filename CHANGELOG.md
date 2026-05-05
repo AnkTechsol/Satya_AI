@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-05-05] **Added:** Postgres + S3 Durable Append-only Audit Store. (Risk: Low)
+- [2026-05-05] **Updated:** Analytics data (REPO_ANALYTICS.md, repo_analytics.json) and Competitor Matrix. (Risk: Low)
 - [2026-04-16] **Added:** Repository analytics generation script and CI mock for automated code health checks. (Risk: Low)
 - [2026-04-16] **Added:** Competitor analysis matrix (`COMPETITOR_MATRIX.md`). (Risk: Low)
 - [2026-04-16] **Added:** OTLP Export Adapter framework for OpenTelemetry support (`satya.sdk.adapters.otlp`). (Risk: Low)
