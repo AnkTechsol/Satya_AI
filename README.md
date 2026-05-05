@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-04-24
+- **Last Analytics Run:** 2026-05-05T15:34:21.866390+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -68,6 +68,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Durable Append-only Audit Store (Postgres schema + S3 pointers)** (Added 2026-05)
+  - Implements an opt-in Postgres backend (`satya/core/db_postgres.py`) with S3 offloading to store signed audit events. This gives enterprises a fully scalable, durable storage solution for audit immutability, while retaining the SQLite and flat-file fallback defaults.
+  - Runbook: Set the `SATYA_POSTGRES_DB_URI` and `SATYA_S3_BUCKET` environment variables before starting the runtime or testing to enable the durable Postgres+S3 store. Fallbacks to SQLite or file system automatically if not set.
+  - Validation: Run `PYTHONPATH=. pytest tests/test_postgres_audit.py`.
 
 - **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
   - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.
