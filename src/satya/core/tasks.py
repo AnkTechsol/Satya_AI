@@ -42,6 +42,7 @@ class Tasks:
             "locked_at": None,
             "created_at": now,
             "updated_at": now,
+            "last_escalated_at": now,
             "completed_at": None,
             "comments": [],
             "audit_trail": [{

@@ -53,3 +53,9 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Dashboard Agent Status:** Streamlit UI dynamically displays real-time agent 'Online/Offline' statuses using the heartbeat freshness metrics.
 * **Agent Chat Control Panel:** Humans can interact directly with their agents in real-time. Manual overrides and instructions sent via the Dashboard are polled directly by SDK agents via `poll_chat()`.
 * **Enterprise Grade Billing & Analytics (ROI Dashboard):** Track per-agent token usage, task velocity, and calculate ROI of autonomous vs manual execution. Provide beautiful client-facing reports for AI agencies.
+
+## 8. Viral & Product-Led Growth (PLG) Strategy
+To make Satya AI a winning product with rapid public adoption, we will implement these PLG loops:
+* **Watermarked Public Dashboards:** "Powered by Satya AI" branding on all public dashboard views, turning every shared workspace into a lead generator.
+* **Referral Credits:** Free token or feature unlocks when agencies invite their clients or contractors to the platform.
+* **One-Click Swarm Clone:** Enable users to share their successful agent configurations as public templates that others can clone instantly via Replit, creating a viral "Missions" ecosystem.

@@ -86,20 +86,15 @@ class AIOrchestrator:
 
                 elapsed = (now - created_at).total_seconds()
 
-                # Check when it was last updated or escalated
-                # If there are comments by AI_Orchestrator about escalation, use that timestamp
+                # Check when it was last escalated
                 last_escalation_time = created_at
-                audit_trail = task.get("audit_trail", [])
-                for event in reversed(audit_trail):
-                    if event.get("action") == "priority_escalated":
-                        ts_str = event.get("timestamp")
-                        if ts_str:
-                            if ts_str.endswith("Z"):
-                                ts_str = ts_str[:-1] + "+00:00"
-                            last_escalation_time = datetime.fromisoformat(ts_str)
-                            if last_escalation_time.tzinfo is None:
-                                last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
-                        break
+                last_escalated_at_str = task.get("last_escalated_at")
+                if last_escalated_at_str:
+                    if last_escalated_at_str.endswith("Z"):
+                        last_escalated_at_str = last_escalated_at_str[:-1] + "+00:00"
+                    last_escalation_time = datetime.fromisoformat(last_escalated_at_str)
+                    if last_escalation_time.tzinfo is None:
+                        last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
 
                 time_since_last_action = (now - last_escalation_time).total_seconds()
 
@@ -110,9 +105,13 @@ class AIOrchestrator:
 
                         logger.info(f"Orchestrator: Escalating SLA for task {task['id']} ({current_priority} -> {new_priority})")
 
+                        now_iso = now.isoformat()
+                        if now_iso.endswith("+00:00"):
+                            now_iso = now_iso[:-6] + "Z"
+
                         self.tasks.update_task(
                             task["id"],
-                            {"priority": new_priority},
+                            {"priority": new_priority, "last_escalated_at": now_iso},
                             agent_name="AI_Orchestrator"
                         )
 
