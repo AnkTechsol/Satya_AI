@@ -87,19 +87,27 @@ class AIOrchestrator:
                 elapsed = (now - created_at).total_seconds()
 
                 # Check when it was last updated or escalated
-                # If there are comments by AI_Orchestrator about escalation, use that timestamp
+                # Use O(1) lookup of last_escalated_at if available, fallback to audit trail
                 last_escalation_time = created_at
-                audit_trail = task.get("audit_trail", [])
-                for event in reversed(audit_trail):
-                    if event.get("action") == "priority_escalated":
-                        ts_str = event.get("timestamp")
-                        if ts_str:
-                            if ts_str.endswith("Z"):
-                                ts_str = ts_str[:-1] + "+00:00"
-                            last_escalation_time = datetime.fromisoformat(ts_str)
-                            if last_escalation_time.tzinfo is None:
-                                last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
-                        break
+                if "last_escalated_at" in task:
+                    ts_str = task["last_escalated_at"]
+                    if ts_str.endswith("Z"):
+                        ts_str = ts_str[:-1] + "+00:00"
+                    last_escalation_time = datetime.fromisoformat(ts_str)
+                    if last_escalation_time.tzinfo is None:
+                        last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
+                else:
+                    audit_trail = task.get("audit_trail", [])
+                    for event in reversed(audit_trail):
+                        if event.get("action") == "priority_escalated":
+                            ts_str = event.get("timestamp")
+                            if ts_str:
+                                if ts_str.endswith("Z"):
+                                    ts_str = ts_str[:-1] + "+00:00"
+                                last_escalation_time = datetime.fromisoformat(ts_str)
+                                if last_escalation_time.tzinfo is None:
+                                    last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
+                            break
 
                 time_since_last_action = (now - last_escalation_time).total_seconds()
 
