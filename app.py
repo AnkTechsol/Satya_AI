@@ -1011,7 +1011,7 @@ if page == "Dashboard":
         # ⚡ Bolt Optimization: Batching markdown calls to reduce Streamlit rendering overhead
         batched_events_html = []
         for event in audit_events[:10]:
-            ts = format_date(event.get('timestamp', ''))
+            ts = format_time_ago(event.get('timestamp', ''))
             agent = event.get('agent', 'System')
             action = event.get('action', 'Unknown Action')
             details = event.get('details', '')
@@ -1102,7 +1102,7 @@ elif page == "Task Board":
                     <div class="task-meta">
                         <span title="Task ID" style="font-family: monospace; background: var(--border); padding: 1px 4px; border-radius: 4px; font-size: 0.7rem;">{html.escape(task.get('id', ''))}</span> &middot;
                         &#128100; {html.escape(task.get('assignee', 'Unassigned'))} &middot;
-                        &#128197; {format_date(task.get('created_at', ''))}
+                        &#128197; {format_time_ago(task.get('created_at', ''))}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
