@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 
 def hash_payload(payload_str: str) -> str:
     """Creates a SHA-256 hash of a stringified payload."""
@@ -6,6 +7,4 @@ def hash_payload(payload_str: str) -> str:
 
 def verify_api_key(provided_key: str, allowed_keys: list[str]) -> bool:
     """Verifies if the provided key is in the allowed list."""
-    # In a real system, you might use constant-time comparison or check against hashed keys
-    # For v0.1, simple exact match against the env var list
-    return provided_key in allowed_keys
+    return any(hmac.compare_digest(str(provided_key or ""), str(allowed_key or "")) for allowed_key in allowed_keys)
