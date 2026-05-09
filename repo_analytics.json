@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-05-01T03:51:35.546938+00:00Z",
+  "timestamp": "2026-05-09T07:03:42.071214+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Thu Apr 30 03:38:56 2026 +0000"
+    "last_commit_date": "Sat May 9 12:33:14 2026 +0530"
   },
   "issues": {
     "open": "Unknown",
@@ -18,8 +18,8 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.00048732757568359375,
-    "task_create_p95_s": 0.0008182764053344726
+    "task_create_median_s": 0.0005383491516113281,
+    "task_create_p95_s": 0.0008118391036987304
   },
   "code_health": {
     "top_largest_files": [
@@ -29,13 +29,13 @@
       "./docs/index.html",
       "./README.md",
       "./AGENTS.md",
-      "./src/satya/sdk/client.py",
       "./src/satya/core/project_manager.py",
+      "./src/satya/sdk/client.py",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
+      "./PRD.md",
       "./examples/basic_workflow/run_example.py",
       "./tests/test_completion_checker.py",
-      "./PRD.md",
       "./tests/test_project_manager.py",
       "./satya-ai/satya/core/audit_logger.py",
       "./CODE_OF_CONDUCT.md",

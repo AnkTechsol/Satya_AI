@@ -626,7 +626,7 @@ with st.sidebar:
     if is_public:
         nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs"]
     else:
-        nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard"]
+        nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard", "Template Galleries"]
 
     default_index = 0
     if "page" in query_params:
@@ -1008,19 +1008,22 @@ if page == "Dashboard":
         # Sort newest first
         audit_events.sort(key=lambda e: e.get("timestamp", ""), reverse=True)
         # Display top 10
+        # ⚡ Bolt Optimization: Batching markdown calls to reduce Streamlit rendering overhead
+        batched_events_html = []
         for event in audit_events[:10]:
-            ts = format_date(event.get('timestamp', ''))
+            ts = format_time_ago(event.get('timestamp', ''))
             agent = event.get('agent', 'System')
             action = event.get('action', 'Unknown Action')
             details = event.get('details', '')
             task_title = event.get('task_title', '')
 
-            st.markdown(f"""
+            batched_events_html.append(f"""
             <div style="font-size: 0.85rem; padding: 0.5rem; border-left: 3px solid var(--info); margin-bottom: 0.5rem; background: var(--bg-card); border-radius: 4px;">
                 <span style="color: var(--text-secondary); font-size: 0.75rem;">{ts}</span> &mdash;
                 <strong>{html.escape(agent)}</strong> <span style="color: var(--primary-light);">{html.escape(action)}</span> on <em>{html.escape(task_title)}</em>: {html.escape(details)}
             </div>
-            """, unsafe_allow_html=True)
+            """)
+        st.markdown("".join(batched_events_html), unsafe_allow_html=True)
     else:
         st.markdown("<p style='color: var(--text-secondary); font-size: 0.85rem;'>No audit events recorded yet.</p>", unsafe_allow_html=True)
 
@@ -1099,7 +1102,7 @@ elif page == "Task Board":
                     <div class="task-meta">
                         <span title="Task ID" style="font-family: monospace; background: var(--border); padding: 1px 4px; border-radius: 4px; font-size: 0.7rem;">{html.escape(task.get('id', ''))}</span> &middot;
                         &#128100; {html.escape(task.get('assignee', 'Unassigned'))} &middot;
-                        &#128197; {format_date(task.get('created_at', ''))}
+                        &#128197; {format_time_ago(task.get('created_at', ''))}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1135,6 +1138,8 @@ elif page == "Task Board":
                 with st.expander("Activity Log", expanded=False):
                     comments = task.get("comments", [])
                     if comments:
+                        # ⚡ Bolt Optimization: Batching markdown calls to reduce Streamlit rendering overhead
+                        batched_comments_html = []
                         for c in reversed(comments):
                             try:
                                 ts_obj = datetime.fromisoformat(c.get("timestamp", ""))
@@ -1142,7 +1147,8 @@ elif page == "Task Board":
                             except ValueError:
                                 ts_str = html.escape(str(c.get("timestamp", "")))
                             txt = html.escape(c.get("text", ""))
-                            st.markdown(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>", unsafe_allow_html=True)
+                            batched_comments_html.append(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>")
+                        st.markdown("".join(batched_comments_html), unsafe_allow_html=True)
                     else:
                         st.caption("No activity recorded yet.")
 
@@ -1391,6 +1397,42 @@ elif page == "Main Owner":
         </div>
         """, unsafe_allow_html=True)
 
+    # Webhooks Settings
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("### 🪝 Webhooks Configuration")
+    st.markdown("Register webhook URLs to be notified of task events.")
+
+    from satya.core.webhooks import load_webhooks, add_webhook, remove_webhook
+
+    col_wh1, col_wh2 = st.columns([3, 1])
+    with col_wh1:
+        new_webhook_url = st.text_input("Webhook URL", key="new_webhook_url")
+    with col_wh2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Add Webhook", key="add_webhook_btn"):
+            if is_admin:
+                if new_webhook_url:
+                    add_webhook(new_webhook_url)
+                    st.success("Webhook added successfully!")
+                    st.rerun()
+            else:
+                st.error("Admin Access Required: You must enter a valid Admin Key.")
+
+    webhooks = load_webhooks()
+    if webhooks:
+        for wh in webhooks:
+            col_list1, col_list2 = st.columns([4, 1])
+            col_list1.code(wh["url"])
+            if col_list2.button("Remove", key=f"rm_wh_{wh['url']}"):
+                if is_admin:
+                    remove_webhook(wh["url"])
+                    st.success("Webhook removed.")
+                    st.rerun()
+                else:
+                    st.error("Admin Access Required: You must enter a valid Admin Key.")
+    else:
+        st.info("No webhooks configured.")
+
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown("### 🤖 AI Orchestrator Control")
     st.markdown("Manually trigger the orchestrator to perform auto-triage, RCA spawning, and heartbeat checks.")
@@ -1408,6 +1450,49 @@ elif page == "Main Owner":
         else:
             st.error("Admin Access Required: You must enter a valid Admin Key to run the Orchestrator.")
 
+
+# ─── TEMPLATE GALLERIES ─────────────────────────────────────
+elif page == "Template Galleries":
+    st.markdown('<div class="hero-header">AI Template Galleries</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">1-click deployments of pre-configured AI task swarms</div>', unsafe_allow_html=True)
+
+    templates = [
+        {
+            "name": "Software Dev Swarm",
+            "description": "A set of tasks for developing a new feature, including coding, reviewing, and testing.",
+            "tasks": [
+                {"title": "Write Code", "description": "Implement the feature requirements.", "priority": "High", "required_skills": ["python", "coding"]},
+                {"title": "Code Review", "description": "Review the implemented code.", "priority": "Medium", "required_skills": ["python", "reviewing"]},
+                {"title": "Write Tests", "description": "Write unit and integration tests.", "priority": "Medium", "required_skills": ["python", "testing"]}
+            ]
+        },
+        {
+            "name": "SEO Content Swarm",
+            "description": "Tasks for generating SEO-optimized blog content.",
+            "tasks": [
+                {"title": "Keyword Research", "description": "Find top keywords for the topic.", "priority": "High", "required_skills": ["seo", "research"]},
+                {"title": "Write Article", "description": "Draft the article incorporating keywords.", "priority": "High", "required_skills": ["writing"]},
+                {"title": "SEO Optimization", "description": "Optimize the drafted article for search engines.", "priority": "Medium", "required_skills": ["seo", "editing"]}
+            ]
+        }
+    ]
+
+    for t in templates:
+        st.markdown(f"### {t['name']}")
+        st.write(t['description'])
+        if st.button(f"Deploy {t['name']}", key=f"deploy_{t['name']}"):
+            try:
+                for task_def in t['tasks']:
+                    tasks_manager.create_task(
+                        title=task_def["title"],
+                        description=task_def["description"],
+                        priority=task_def["priority"],
+                        required_skills=task_def["required_skills"]
+                    )
+                st.success(f"Successfully deployed {t['name']} tasks!")
+            except Exception as e:
+                st.error(f"Failed to deploy template: {e}")
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
 # ─── AGENT CHAT PAGE ───────────────────────────────────
 elif page == "Agent Chat":
@@ -1429,7 +1514,8 @@ elif page == "Agent Chat":
             # Chat History
             st.markdown("##### Chat History")
 
-            chat_dir = os.path.join(storage.SATYA_DIR, "chat", selected_agent)
+            safe_selected_agent = os.path.basename(selected_agent)
+            chat_dir = os.path.join(storage.SATYA_DIR, "chat", safe_selected_agent)
             chat_messages = []
 
             if os.path.exists(chat_dir):
@@ -1496,7 +1582,8 @@ elif page == "Agent Chat":
             if st.button("Send", use_container_width=True):
                 if chat_input:
                     # Append to agent's chat flat-file
-                    chat_dir = os.path.join(storage.SATYA_DIR, "chat", selected_agent)
+                    safe_selected_agent = os.path.basename(selected_agent)
+                    chat_dir = os.path.join(storage.SATYA_DIR, "chat", safe_selected_agent)
                     os.makedirs(chat_dir, exist_ok=True)
                     chat_file = os.path.join(chat_dir, f"msg_{datetime.now().timestamp()}.json")
                     msg_payload = {
@@ -1643,8 +1730,10 @@ client.flush_logs()</div>
         ("satya.scrape(url)", "Scrape a URL, convert to Markdown, and save to the Truth Source knowledge base."),
     ]
 
+    # ⚡ Bolt Optimization: Batching markdown calls to reduce Streamlit rendering overhead
+    batched_funcs_html = []
     for func_sig, func_desc in funcs:
-        st.markdown(f"""
+        batched_funcs_html.append(f"""
         <div class="truth-card">
             <div style="font-weight: 600; color: var(--primary-light); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
                 {func_sig}
@@ -1653,7 +1742,8 @@ client.flush_logs()</div>
                 {func_desc}
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
+    st.markdown("".join(batched_funcs_html), unsafe_allow_html=True)
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 

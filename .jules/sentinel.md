@@ -15,3 +15,8 @@
 **Vulnerability:** String comparison operators (==, !=, in) were used to check secrets and HMAC signatures in `is_agent_authorized`, `is_human_authorized`, and `verify_event_chain`. This allows timing attacks to guess secrets character by character.
 **Learning:** Basic string comparisons exit early as soon as a mismatch is found, creating observable timing differences based on the length of the matching prefix.
 **Prevention:** Always use `hmac.compare_digest` with explicit string casts (to handle `None`) when comparing secrets, API keys, or cryptographic signatures to ensure constant-time comparison.
+
+## 2024-05-25 - Prevent Path Traversal in Chat Directory
+**Vulnerability:** The application used unvalidated strings (`selected_agent` from the UI and `self.agent_name` in the SDK) to construct paths for reading and writing agent chat messages via `os.path.join()`. This created a path traversal vulnerability where a malicious agent could potentially access or overwrite files outside the intended chat directory by using path separators in their name.
+**Learning:** Even though agent names are typically safe, any unvalidated input used in file path construction, especially across both server (`app.py`) and client (`client.py`) boundaries, poses a path traversal risk.
+**Prevention:** Always sanitize agent names (and similar dynamic identifiers) using `os.path.basename()` before passing them to `os.path.join()`, ensuring the resulting path is constrained to the intended directory.
