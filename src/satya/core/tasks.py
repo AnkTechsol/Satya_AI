@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from . import storage
 from .git_handler import GitHandler
+from .webhooks import dispatch
 
 STATUS_QUEUED = "queued"
 STATUS_IN_PROGRESS = "in_progress"
@@ -42,6 +43,7 @@ class Tasks:
             "locked_at": None,
             "created_at": now,
             "updated_at": now,
+            "last_escalated_at": now,
             "completed_at": None,
             "comments": [],
             "audit_trail": [{
@@ -55,6 +57,7 @@ class Tasks:
         filepath = storage.get_task_path(task_id)
         if storage.save_json(filepath, task):
             self.git_handler.commit_and_push([filepath], f"Task created: {title} ({task_id})")
+            dispatch("task_created", task)
             return task
         return None
 
@@ -163,6 +166,8 @@ class Tasks:
                 old_val = task.get(key)
                 if old_val != value:
                     changed_fields.append(f"{key}: '{old_val}' -> '{value}'")
+                    if key == "priority":
+                        task["last_escalated_at"] = now
                 task[key] = value
 
         task["updated_at"] = now
@@ -180,6 +185,7 @@ class Tasks:
 
         if storage.save_json(filepath, task):
             self.git_handler.commit_and_push([filepath], f"Task {task_id} updated")
+            dispatch("task_updated", task)
             return True
         return False
 

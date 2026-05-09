@@ -87,19 +87,25 @@ class AIOrchestrator:
                 elapsed = (now - created_at).total_seconds()
 
                 # Check when it was last updated or escalated
-                # If there are comments by AI_Orchestrator about escalation, use that timestamp
+                # Use O(1) lookup of last_escalated_at if available, fallback to audit trail
                 last_escalation_time = created_at
-                audit_trail = task.get("audit_trail", [])
-                for event in reversed(audit_trail):
-                    if event.get("action") == "priority_escalated":
-                        ts_str = event.get("timestamp")
-                        if ts_str:
-                            if ts_str.endswith("Z"):
-                                ts_str = ts_str[:-1] + "+00:00"
-                            last_escalation_time = datetime.fromisoformat(ts_str)
-                            if last_escalation_time.tzinfo is None:
-                                last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
-                        break
+                ts_str_to_parse = None
+
+                if "last_escalated_at" in task:
+                    ts_str_to_parse = task["last_escalated_at"]
+                else:
+                    audit_trail = task.get("audit_trail", [])
+                    for event in reversed(audit_trail):
+                        if event.get("action") == "priority_escalated":
+                            ts_str_to_parse = event.get("timestamp")
+                            break
+
+                if ts_str_to_parse:
+                    if ts_str_to_parse.endswith("Z"):
+                        ts_str_to_parse = ts_str_to_parse[:-1] + "+00:00"
+                    last_escalation_time = datetime.fromisoformat(ts_str_to_parse)
+                    if last_escalation_time.tzinfo is None:
+                        last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
 
                 time_since_last_action = (now - last_escalation_time).total_seconds()
 
@@ -110,9 +116,13 @@ class AIOrchestrator:
 
                         logger.info(f"Orchestrator: Escalating SLA for task {task['id']} ({current_priority} -> {new_priority})")
 
+                        now_iso = now.isoformat()
+                        if now_iso.endswith("+00:00"):
+                            now_iso = now_iso[:-6] + "Z"
+
                         self.tasks.update_task(
                             task["id"],
-                            {"priority": new_priority},
+                            {"priority": new_priority, "last_escalated_at": now_iso},
                             agent_name="AI_Orchestrator"
                         )
 
@@ -134,6 +144,66 @@ class AIOrchestrator:
                         )
                     except ValueError:
                         pass # Should not happen if priority is in ladder
+
+            except ValueError:
+                pass
+
+    def _check_overdue_tasks(self, in_progress_tasks: list[dict], now: datetime):
+        """Identifies tasks that have been 'in_progress' for too long and warns/escalates."""
+        # Configurable: 2 hours in a real system, but we'll use a shorter time for the demo
+        overdue_threshold_seconds = 7200
+
+        for task in in_progress_tasks:
+            locked_at_str = task.get("locked_at")
+            if not locked_at_str:
+                continue
+
+            try:
+                if locked_at_str.endswith("Z"):
+                    locked_at_str = locked_at_str[:-1] + "+00:00"
+                locked_at = datetime.fromisoformat(locked_at_str)
+                if locked_at.tzinfo is None:
+                    locked_at = locked_at.replace(tzinfo=timezone.utc)
+
+                elapsed = (now - locked_at).total_seconds()
+
+                if elapsed > overdue_threshold_seconds:
+                    # Check if we already warned to avoid spamming
+                    already_warned = False
+                    comments = task.get("comments", [])
+                    for c in reversed(comments):
+                        if c.get("agent") == "AI_Orchestrator" and "Overdue WIP Alert" in c.get("text", ""):
+                            # We warned recently. (You could add logic to re-warn every X hours).
+                            already_warned = True
+                            break
+
+                    if not already_warned:
+                        logger.warning(f"Orchestrator: Task {task['id']} is overdue ({elapsed}s). Escalating.")
+
+                        self.tasks.add_comment(
+                            task["id"],
+                            f"⚠️ Overdue WIP Alert: This task has been in progress for more than {overdue_threshold_seconds // 3600} hours. Please provide an update or mark it blocked.",
+                            commit=False,
+                            agent_name="AI_Orchestrator"
+                        )
+
+                        # Optionally escalate priority
+                        current_priority = task.get("priority", "Medium")
+                        if current_priority in ["Low", "Medium"]:
+                            new_priority = "High" if current_priority == "Medium" else "Medium"
+                            self.tasks.update_task(
+                                task["id"],
+                                {"priority": new_priority},
+                                agent_name="AI_Orchestrator"
+                            )
+                            from satya.auth import append_audit_event
+                            append_audit_event(
+                                "AI_Orchestrator",
+                                task["id"],
+                                task.get("trace_id", "unknown"),
+                                "wip_overdue",
+                                f"Task overdue. Escalated to {new_priority}"
+                            )
 
             except ValueError:
                 pass
@@ -184,6 +254,9 @@ class AIOrchestrator:
 
         # Process SLA Escalation for Queued Tasks
         self._escalate_stale_tasks(queued_tasks, now)
+
+        # Check for Overdue WIP tasks
+        self._check_overdue_tasks(in_progress_tasks, now)
 
         # Handle failed tasks (Automated Issue Resolution Workflow)
         for task in failed_tasks:

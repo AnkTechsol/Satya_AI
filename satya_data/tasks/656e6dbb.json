@@ -1,0 +1,37 @@
+{
+    "id": "656e6dbb",
+    "trace_id": "b9a84d7a-45f1-402a-93f4-0cba2c4f6cc2",
+    "parent_trace_id": null,
+    "title": "Write Tests",
+    "description": "Write unit and integration tests.",
+    "status": "queued",
+    "priority": "Medium",
+    "assignee": "Unassigned",
+    "dependencies": [],
+    "required_skills": [
+        "python",
+        "testing"
+    ],
+    "allowed_actions": [],
+    "forbidden_actions": [],
+    "output_path": "",
+    "completion_criteria": {
+        "type": "manual"
+    },
+    "time_limit_minutes": 30,
+    "locked_by": null,
+    "locked_at": null,
+    "created_at": "2026-05-09T06:32:54.203886+00:00Z",
+    "updated_at": "2026-05-09T06:32:54.203886+00:00Z",
+    "last_escalated_at": "2026-05-09T06:32:54.203886+00:00Z",
+    "completed_at": null,
+    "comments": [],
+    "audit_trail": [
+        {
+            "timestamp": "2026-05-09T06:32:54.203886+00:00Z",
+            "agent": "System",
+            "action": "Task Created",
+            "details": "Created with status 'queued' and priority 'Medium'"
+        }
+    ]
+}
