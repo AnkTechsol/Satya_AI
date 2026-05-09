@@ -166,6 +166,8 @@ class Tasks:
                 old_val = task.get(key)
                 if old_val != value:
                     changed_fields.append(f"{key}: '{old_val}' -> '{value}'")
+                    if key == "priority":
+                        task["last_escalated_at"] = now
                 task[key] = value
 
         task["updated_at"] = now

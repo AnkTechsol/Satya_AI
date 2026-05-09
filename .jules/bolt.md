@@ -17,3 +17,6 @@ BOLT'S PHILOSOPHY:
 ## 2026-04-19 - Batching Streamlit markdown calls
 **Learning:** Rendering many lines individually via `st.markdown` causes heavy Streamlit communication overhead and blocks the UI thread.
 **Action:** Batch HTML/Markdown strings and render them using a single `st.markdown` call.
+## 2026-05-07 - O(N) Audit Trail traversal in orchestrator tasks
+**Learning:** During orchestrator heartbeat scans, finding a task's last escalated time by parsing the entire `audit_trail` (O(N) traversal per task per scan) causes significant lag when audit trails get long, creating a major orchestration bottleneck.
+**Action:** Lift high-read timestamps (like `last_escalated_at`) out of `audit_trail` log into O(1) object properties for quick reads, while allowing fallback to logs for legacy items.

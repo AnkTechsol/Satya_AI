@@ -86,13 +86,24 @@ class AIOrchestrator:
 
                 elapsed = (now - created_at).total_seconds()
 
-                # Check when it was last escalated
+                # Check when it was last updated or escalated
+                # Use O(1) lookup of last_escalated_at if available, fallback to audit trail
                 last_escalation_time = created_at
-                last_escalated_at_str = task.get("last_escalated_at")
-                if last_escalated_at_str:
-                    if last_escalated_at_str.endswith("Z"):
-                        last_escalated_at_str = last_escalated_at_str[:-1] + "+00:00"
-                    last_escalation_time = datetime.fromisoformat(last_escalated_at_str)
+                ts_str_to_parse = None
+
+                if "last_escalated_at" in task:
+                    ts_str_to_parse = task["last_escalated_at"]
+                else:
+                    audit_trail = task.get("audit_trail", [])
+                    for event in reversed(audit_trail):
+                        if event.get("action") == "priority_escalated":
+                            ts_str_to_parse = event.get("timestamp")
+                            break
+
+                if ts_str_to_parse:
+                    if ts_str_to_parse.endswith("Z"):
+                        ts_str_to_parse = ts_str_to_parse[:-1] + "+00:00"
+                    last_escalation_time = datetime.fromisoformat(ts_str_to_parse)
                     if last_escalation_time.tzinfo is None:
                         last_escalation_time = last_escalation_time.replace(tzinfo=timezone.utc)
 
