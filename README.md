@@ -376,10 +376,6 @@ CMD ["streamlit", "run", "app.py", "--server.port", "5000", "--server.address", 
 
 ---
 
-### Roadmap
-
-See our full project roadmap in [ROADMAP.md](ROADMAP.md).
-
 ## Contributing
 
 Contributions are welcome! Here's how:
