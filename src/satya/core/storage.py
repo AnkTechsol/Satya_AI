@@ -62,18 +62,12 @@ def load_json(filepath: str) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {}
 
-    lock_filepath = filepath + ".lock"
-
     try:
-        # We need to lock while reading to avoid reading an incomplete file
-        # Even with atomic rename, it's safer to acquire a shared lock
-        with open(lock_filepath, 'a+') as lock_f:
-            fcntl.flock(lock_f, fcntl.LOCK_SH)
-            try:
-                with open(filepath, 'r') as f:
-                    return json.load(f)
-            finally:
-                fcntl.flock(lock_f, fcntl.LOCK_UN)
+        # ⚡ Bolt Optimization:
+        # Removed fcntl read locks. Since save_json uses POSIX atomic os.rename,
+        # open() will safely read the complete old or new file without race conditions.
+        with open(filepath, 'r') as f:
+            return json.load(f)
     except Exception as e:
         logger.error(f"Error loading JSON from {filepath}: {e}")
         return {}
