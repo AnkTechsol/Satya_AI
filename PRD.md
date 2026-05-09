@@ -29,19 +29,21 @@ Our vision is to become the **"Jira for AI Agents"** — a standardized, multi-a
 * **Plugin Marketplace:** Create an extensible architecture where community developers can publish 'Truth Source Extractors' and 'Governance Validators' for public use.
 * **Mobile Companion App:** Develop a cross-platform mobile app (React Native) for product managers to monitor agent health and approve critical tasks on the go.
 * **B2B Multi-Tenant Workspaces:** Support different client profiles, isolated tasks, and branded dashboards within the same Satya installation.
+* **Active Capacity Management:** Real-time tracking of agent Work-In-Progress (WIP) limits and overdue task detection to prevent agent burnout and identify workflow bottlenecks early.
 * **Slack / MS Teams Integrations:** Bring agent heartbeats, chat overrides, and SLA escalations directly into the human communication layer for zero-friction PM oversight.
 
 ## 6. Business & Ecosystem Strategy
 To position Satya AI as a winning, widely-adopted platform and enterprise standard:
 * **Self-Serve Onboarding:** Offer a frictionless 1-click deployment system using tools like Replit to minimize time to value.
-* **Template Galleries:** Provide pre-configured "AI Missions" allowing non-technical users to launch curated agent workflows (e.g., "SEO Content Writer", "Code Reviewer Swarm") out-of-the-box.
 * **Ecosystem Integrations:** Build pre-configured integrations with popular AI frameworks (LangChain, AutoGen, CrewAI) and standard tools (Slack, GitHub, Notion, Jira) to drive organic growth.
-* **Webhooks & Event Triggers:** Enable external systems to react to task changes or agent failures instantly, supporting complex automation chains.
 * **Advanced Analytics Dashboard:** Provide executive-level metrics, such as agent efficiency, average task duration, ROI estimation per agent, and error rates.
 * **Enterprise Security & SSO:** Implement role-based access control (RBAC), Single Sign-On (SAML/OAuth), and automated compliance reporting (SOC2 readiness) to support large-scale organizational deployments.
+* **Proactive PM Observability:** Evolve the Orchestrator into an active participant that not only tracks tasks but anticipates delays through SLA deadline tracking and Overdue WIP alerts, proving immense value to Enterprise Operations.
 * **Community-Led Growth:** Sponsor hackathons and offer a generous free-tier for indie-hackers to build public agent swarms using Satya as the backbone.
 
 ## 7. Recently Completed Work
+* **Webhooks & Event Triggers:** Enabled external systems to react to task changes and agent failures instantly, supporting complex automation chains.
+* **Template Galleries:** Provided pre-configured "AI Missions" allowing non-technical users to launch curated agent workflows (e.g., "Software Dev Swarm", "SEO Content Swarm") out-of-the-box.
 * **Public Workspaces:** Users can now share read-only views of their dashboards by appending ?is_public=true to the URL.
 * **Manual Orchestrator UI:** Added a control panel in the Main Owner dashboard to manually trigger the AI Orchestrator.
 * **AI Project Manager & Agent Heartbeats:** Successfully implemented `project_manager.py` (Orchestrator Tool) to continuously monitor agent health via `satya.send_heartbeat()`. This ensures that tasks stuck with a dead agent are dynamically unlocked and re-queued.
@@ -53,3 +55,9 @@ To position Satya AI as a winning, widely-adopted platform and enterprise standa
 * **Dashboard Agent Status:** Streamlit UI dynamically displays real-time agent 'Online/Offline' statuses using the heartbeat freshness metrics.
 * **Agent Chat Control Panel:** Humans can interact directly with their agents in real-time. Manual overrides and instructions sent via the Dashboard are polled directly by SDK agents via `poll_chat()`.
 * **Enterprise Grade Billing & Analytics (ROI Dashboard):** Track per-agent token usage, task velocity, and calculate ROI of autonomous vs manual execution. Provide beautiful client-facing reports for AI agencies.
+
+## 8. Viral & Product-Led Growth (PLG) Strategy
+To make Satya AI a winning product with rapid public adoption, we will implement these PLG loops:
+* **Watermarked Public Dashboards:** "Powered by Satya AI" branding on all public dashboard views, turning every shared workspace into a lead generator.
+* **Referral Credits:** Free token or feature unlocks when agencies invite their clients or contractors to the platform.
+* **One-Click Swarm Clone:** Enable users to share their successful agent configurations as public templates that others can clone instantly via Replit, creating a viral "Missions" ecosystem.
