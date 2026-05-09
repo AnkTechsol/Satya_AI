@@ -33,7 +33,6 @@
       "./src/satya/sdk/client.py",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
-      "./PRD.md",
       "./examples/basic_workflow/run_example.py",
       "./tests/test_completion_checker.py",
       "./tests/test_project_manager.py",
