@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-04-24] **Added:** Runtime Policy Enforcement layer for real-time PII masking and zero-API, regex-based jailbreak/drift detection. (Risk: Low)
 - [2026-04-16] **Added:** Repository analytics generation script and CI mock for automated code health checks. (Risk: Low)
 - [2026-04-16] **Added:** Competitor analysis matrix (`COMPETITOR_MATRIX.md`). (Risk: Low)
 - [2026-04-16] **Added:** OTLP Export Adapter framework for OpenTelemetry support (`satya.sdk.adapters.otlp`). (Risk: Low)

@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timezone
 from ..core import storage, Tasks, Scraper, GitHandler
+from ..core.enforcer import RuntimeEnforcer
 from ..auth import require_agent, get_agent_key_from_env, append_audit_event
 
 class SatyaClient:
@@ -16,6 +17,7 @@ class SatyaClient:
         self.git = GitHandler(repo_path)
         self.adapters = adapters or []
         self.skills = skills or []
+        self.enforcer = RuntimeEnforcer()
 
         self.current_task = None
         storage.ensure_satya_dirs()
@@ -46,8 +48,25 @@ class SatyaClient:
         storage.save_heartbeat(self.agent_name, heartbeat_data)
 
     def log(self, message):
+        # Check for drift/jailbreaks
+        drift_violations = self.enforcer.check_drift(message)
+        if drift_violations:
+            task_id = self.current_task["id"] if self.current_task else "no_task"
+            trace_id = self.current_task.get("trace_id", "unknown") if self.current_task else "unknown"
+            append_audit_event(
+                self.agent_name,
+                task_id,
+                trace_id,
+                "drift_detected",
+                f"Drift/Jailbreak keywords detected in log: {drift_violations}"
+            )
+            # We will still process the log, but alert the observers via audit event.
+
+        # Mask PII
+        safe_message = self.enforcer.process_text(message)
+
         timestamp = datetime.now(timezone.utc).isoformat() + "Z"
-        entry = f"[{timestamp}] {message}\n"
+        entry = f"[{timestamp}] {safe_message}\n"
 
         # Log to file (always)
         try:
@@ -60,7 +79,7 @@ class SatyaClient:
         if self.current_task:
             try:
                 # Add comment to the task file
-                self.tasks.add_comment(self.current_task["id"], message, commit=False, agent_name=self.agent_name)
+                self.tasks.add_comment(self.current_task["id"], safe_message, commit=False, agent_name=self.agent_name)
             except Exception as e:
                 print(f"Failed to add comment to task: {e}")
 
@@ -68,7 +87,7 @@ class SatyaClient:
         task_id = self.current_task["id"] if self.current_task else None
         for adapter in self.adapters:
             try:
-                adapter.export_log(self.agent_name, message, task_id)
+                adapter.export_log(self.agent_name, safe_message, task_id)
             except Exception as e:
                 pass
 
@@ -98,13 +117,28 @@ class SatyaClient:
             print(err_msg)
             raise ValueError(err_msg)
 
-        self.log(f"Creating task: {title}")
-        task = self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id, dependencies=dependencies, required_skills=required_skills)
+        # Check for drift in the description/title
+        drift_violations = self.enforcer.check_drift(str(title) + " " + str(description))
+        if drift_violations:
+            append_audit_event(
+                self.agent_name,
+                "new_task",
+                parent_trace_id or "unknown",
+                "drift_detected",
+                f"Drift/Jailbreak keywords detected in task creation: {drift_violations}"
+            )
+
+        # Mask PII
+        safe_title = self.enforcer.process_text(title)
+        safe_description = self.enforcer.process_text(description)
+
+        self.log(f"Creating task: {safe_title}")
+        task = self.tasks.create_task(safe_title, safe_description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id, dependencies=dependencies, required_skills=required_skills)
         if task:
-            append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {title}")
+            append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {safe_title}")
             for adapter in self.adapters:
                 try:
-                    adapter.export_trace(task["trace_id"], self.agent_name, "task_created", {"task_id": task["id"], "title": title})
+                    adapter.export_trace(task["trace_id"], self.agent_name, "task_created", {"task_id": task["id"], "title": safe_title})
                 except Exception as e:
                     pass
         return task

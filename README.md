@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-04-24
+- **Last Analytics Run:** 2026-05-10T10:37:57.285596+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -128,6 +128,10 @@ Humans now have direct control over their AI workforce! The new **Agent Chat** c
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Runtime Policy Enforcement & PII Masking** (Added: 2026-04-24): A fast, lightweight heuristic-and-regex based layer that masks PII (SSN, credit cards, emails, phones) and detects drift/jailbreak patterns ("ignore previous instructions", "developer mode", "evil AI") before they reach the storage or telemetry layers. It uses zero LLM tokens and requires zero API calls.
+  - Runbook: Instantiated automatically within `SatyaClient`. All task creations and logs are routed through `RuntimeEnforcer`. If drift is detected, it triggers a real-time `audit_event`.
+  - Validation: `PYTHONPATH=. pytest tests/test_enforcement.py`
 
 - **Export Adapter Framework (OTLP)** (Added: 2026-04-16): Lightweight framework to export traces to Langfuse/LangSmith/OTLP. Keeps the core lightweight and supports enterprise telemetry integration.
   - Runbook: Add `OTLPAdapter` to the `adapters` list when calling `satya.init()`. Ensure your system allows egress to the OTLP endpoint.
