@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-05-10T10:37:57.285596+00:00Z
+- **Last Analytics Run:** 2026-05-10T14:56:58.644112+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -420,6 +420,11 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 ## SUSTAINABLE_FEATURES
+
+- **Durable Append-only Audit Store (Postgres + S3)**: Added on May 2026. Replaces fragile flat-files with a highly reliable Postgres schema and offloads raw event payloads to S3 pointers. Includes a zero-config fallback to SQLite if environment variables are not set.
+  - *Validation command:* `pytest tests/test_postgres_s3_audit.py`
+  - *Runbook:* Export `SATYA_POSTGRES_URI="postgresql://..."` and `SATYA_S3_BUCKET="my-bucket"` before starting the agent to enable durable auditing.
+  - *Migration Plan:* For existing SQLite users, the schema will automatically run an `ALTER TABLE` to add the `s3_uri` column upon initialization, ensuring zero downtime and backward compatibility. For flat-file users migrating to Postgres, use the `scripts/migrate_to_postgres.py` (coming soon) to batch upload historical logs to your S3 bucket.
 
 - **Export Adapter Framework (OTLP/Langfuse)**: Added on April 2026. A small, modular adapter system that enables Satya to export traces/events to Langfuse or OTLP. It keeps the core lightweight while letting enterprises reuse existing investments.
   - *Validation command:* `pytest tests/test_langfuse_adapter.py`
