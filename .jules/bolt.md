@@ -24,3 +24,7 @@ BOLT'S PHILOSOPHY:
 ## 2026-05-09 - Remove redundant read locks for POSIX atomic files
 **Learning:** When file writes use POSIX atomic rename (`os.rename`), acquiring a shared read lock during reads is redundant, causes massive I/O overhead, and creates unnecessary `.lock` files.
 **Action:** Rely on OS-level atomic rename to prevent partial reads, omitting manual file-level `fcntl` read locks.
+
+## 2026-05-11 - Lock-free atomic writes with dynamic tmp files
+**Learning:** Using a static `.tmp` file with an exclusive write lock creates bottlenecks and potential blocking during concurrent writes.
+**Action:** Replaced static tmp files with dynamic UUID-based tmp files (`filepath + uuid + .tmp`) before atomic rename. This removes the need for any file locks (including `fcntl.LOCK_EX`) completely, enabling massively parallel lock-free writes and reads.

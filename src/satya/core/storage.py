@@ -1,6 +1,6 @@
 import os
+import uuid
 import json
-import fcntl
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -29,28 +29,18 @@ def ensure_satya_dirs():
     os.makedirs(HEARTBEATS_DIR, exist_ok=True)
 
 def save_json(filepath: str, data: Any) -> bool:
-    tmp_filepath = filepath + ".tmp"
-    lock_filepath = filepath + ".lock"
+    # ⚡ Bolt Optimization: Lock-free atomic writes
+    tmp_filepath = f"{filepath}.{uuid.uuid4().hex}.tmp"
 
     try:
-        # Create a separate lock file
-        with open(lock_filepath, 'w') as lock_f:
-            # Acquire exclusive lock
-            fcntl.flock(lock_f, fcntl.LOCK_EX)
-            try:
-                # Write to temp file
-                with open(tmp_filepath, 'w') as tmp_f:
-                    json.dump(data, tmp_f, indent=4)
+        with open(tmp_filepath, 'w') as tmp_f:
+            json.dump(data, tmp_f, indent=4)
 
-                # Atomic rename
-                os.rename(tmp_filepath, filepath)
-                return True
-            finally:
-                # Release lock
-                fcntl.flock(lock_f, fcntl.LOCK_UN)
+        # Atomic rename
+        os.rename(tmp_filepath, filepath)
+        return True
     except Exception as e:
         logger.error(f"Error saving JSON to {filepath}: {e}")
-        # Clean up tmp file if rename failed
         if os.path.exists(tmp_filepath):
             try:
                 os.remove(tmp_filepath)
@@ -63,9 +53,7 @@ def load_json(filepath: str) -> Dict[str, Any]:
         return {}
 
     try:
-        # ⚡ Bolt Optimization:
-        # Removed fcntl read locks. Since save_json uses POSIX atomic os.rename,
-        # open() will safely read the complete old or new file without race conditions.
+        # ⚡ Bolt Optimization: Lock-free atomic reads
         with open(filepath, 'r') as f:
             return json.load(f)
     except Exception as e:
@@ -75,12 +63,20 @@ def load_json(filepath: str) -> Dict[str, Any]:
 def save_markdown(filename: str, content: str) -> Optional[str]:
     safe_filename = os.path.basename(filename)
     filepath = os.path.join(TRUTH_DIR, safe_filename)
+    # ⚡ Bolt Optimization: Lock-free atomic writes for markdown
+    tmp_filepath = f"{filepath}.{uuid.uuid4().hex}.tmp"
     try:
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(tmp_filepath, 'w', encoding='utf-8') as f:
             f.write(content)
+        os.rename(tmp_filepath, filepath)
         return filepath
     except Exception as e:
         logger.error(f"Error saving markdown to {filepath}: {e}")
+        if os.path.exists(tmp_filepath):
+            try:
+                os.remove(tmp_filepath)
+            except Exception:
+                pass
         return None
 
 def list_truth_files() -> List[str]:
