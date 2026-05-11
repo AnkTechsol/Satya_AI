@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-10T14:56:58.644112+00:00Z",
+  "timestamp": "2026-05-11T03:58:34.947027+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
@@ -18,8 +18,8 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.0015058517456054688,
-    "task_create_p95_s": 0.0018900632858276367
+    "task_create_median_s": 0.0005581378936767578,
+    "task_create_p95_s": 0.0008298635482788086
   },
   "code_health": {
     "top_largest_files": [
