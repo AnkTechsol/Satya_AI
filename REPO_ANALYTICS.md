@@ -1,14 +1,10 @@
 # Repo Analytics
 
-<<<<<<< jules/feature-postgres-audit-18109669714458298397
-**Last Run**: 2026-05-10T14:56:58.644112+00:00Z
-=======
-**Last Run**: 2026-05-11T03:58:34.947027+00:00Z
->>>>>>> main
+**Last Run**: 2026-05-11T09:53:47.308282+00:00Z
 
 ## Git Stats
 - **Commits (last 90d)**: 1
-- **Last Commit Date**: Sun May 10 12:54:08 2026 +0000
+- **Last Commit Date**: Mon May 11 15:23:16 2026 +0530
 
 ## Issues & PRs
 - **Open**: Unknown
@@ -20,13 +16,8 @@
 - **Failing Tests**: 0
 
 ## Runtime Simulation
-<<<<<<< jules/feature-postgres-audit-18109669714458298397
-- **Median Task Creation Latency**: 0.0015s
-- **P95 Task Creation Latency**: 0.0019s
-=======
-- **Median Task Creation Latency**: 0.0006s
-- **P95 Task Creation Latency**: 0.0008s
->>>>>>> main
+- **Median Task Creation Latency**: 0.0005s
+- **P95 Task Creation Latency**: 0.0010s
 
 ## Code Health
 **Top 20 Largest Files:**
@@ -39,16 +30,16 @@
 ./AGENTS.md
 ./src/satya/core/project_manager.py
 ./src/satya/sdk/client.py
+./test_audit.db
 ./satya-ai/satya/core/policy_engine.py
 ./src/satya/core/tasks.py
 ./examples/basic_workflow/run_example.py
 ./tests/test_completion_checker.py
+./src/satya/core/db.py
 ./tests/test_project_manager.py
 ./satya-ai/satya/core/audit_logger.py
 ./CODE_OF_CONDUCT.md
 ./satya-ai/alembic.ini
 ./src/satya/auth.py
 ./generate_analytics.py
-./tests/test_auth_and_audit.py
-./src/satya/core/storage.py
 ```
