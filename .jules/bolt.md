@@ -20,3 +20,11 @@ BOLT'S PHILOSOPHY:
 ## 2024-05-24 - Streamlit Page Routing Optimization
 **Learning:** In Streamlit applications where page navigation uses `if/elif` blocks on `st.radio` input, defining shared data variables like `all_tasks` at the root/module scope ensures they are fetched exactly once per rerun and are safely accessible to all subsequent page blocks. Redundant data fetches inside specific page blocks (like `ROI Dashboard`) bypass this cache and cause unnecessary file I/O operations.
 **Action:** When optimizing Streamlit apps for performance, always hoist shared database queries or file reads to the top-level script scope (or use `@st.cache_data`) before the page routing conditional logic.
+
+## 2026-05-09 - Remove redundant read locks for POSIX atomic files
+**Learning:** When file writes use POSIX atomic rename (`os.rename`), acquiring a shared read lock during reads is redundant, causes massive I/O overhead, and creates unnecessary `.lock` files.
+**Action:** Rely on OS-level atomic rename to prevent partial reads, omitting manual file-level `fcntl` read locks.
+
+## 2026-05-11 - Lock-free atomic writes with dynamic tmp files
+**Learning:** Using a static `.tmp` file with an exclusive write lock creates bottlenecks and potential blocking during concurrent writes.
+**Action:** Replaced static tmp files with dynamic UUID-based tmp files (`filepath + uuid + .tmp`) before atomic rename. This removes the need for any file locks (including `fcntl.LOCK_EX`) completely, enabling massively parallel lock-free writes and reads.
