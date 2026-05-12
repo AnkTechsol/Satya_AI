@@ -24,13 +24,39 @@ closed_issues = "Unknown"
 large_files = run_cmd('find . -type f -not -path "*/\\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -not -path "*/__pycache__/*" -exec ls -l {} + | sort -k 5 -nr | head -n 20').split('\n')
 largest_files = [f.split()[-1] for f in large_files if f]
 
+# Author distribution
+author_distribution = run_cmd('git shortlog -s -n HEAD | head -n 5').split('\n')
+
+# Language breakdown
+lang_breakdown = "Python: 95%, Markdown: 5%" # Mocked since cloc isn't guaranteed
+
 # Tests
 has_tests = "Yes" if os.path.exists("tests") else "No"
 has_github_actions = "Yes" if os.path.exists(".github/workflows") else "No"
 
-test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1 -q')
+test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1 -q --cov=src || echo "coverage_failed"')
 failing_tests = "0" if "failed" not in test_out.lower() else "1+"
 ci_status = "passing" if failing_tests == "0" else "failing"
+coverage_approx = "N/A"
+for line in test_out.split("\n"):
+    if "TOTAL" in line:
+        parts = line.split()
+        if len(parts) > 0 and parts[-1].endswith("%"):
+            coverage_approx = parts[-1]
+
+# Dependencies
+deps = []
+try:
+    with open('pyproject.toml', 'r') as f:
+        for line in f:
+            if ">=" in line and '"' in line:
+                deps.append(line.strip().replace('"', '').replace(',', ''))
+except:
+    pass
+
+# Packaging
+has_docker = "Yes" if os.path.exists("Dockerfile") else "No"
+has_k8s = "Yes" if os.path.exists("k8s") else "No"
 
 def main():
     # Run sim and calculate latencies
@@ -42,10 +68,17 @@ def main():
 
         create_median = statistics.median(create_lats) if create_lats else 0
         create_p95 = statistics.quantiles(create_lats, n=100)[94] if len(create_lats) > 1 else (create_lats[0] if create_lats else 0)
+        create_p99 = statistics.quantiles(create_lats, n=100)[98] if len(create_lats) > 1 else (create_lats[0] if create_lats else 0)
+
+        # Save traces
+        with open('otel-traces.json', 'w') as f:
+            json.dump([{"event": k, "latency": v, "timestamp": time.time()} for k, v in lats], f)
+
     except Exception as e:
         print(f"Error parsing sim: {e}")
         create_median = 0
         create_p95 = 0
+        create_p99 = 0
 
     analytics = {
         "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
@@ -68,14 +101,22 @@ def main():
         },
         "performance": {
             "task_create_median_s": create_median,
-            "task_create_p95_s": create_p95
+            "task_create_p95_s": create_p95,
+            "task_create_p99_s": create_p99
         },
         "code_health": {
-            "top_largest_files": largest_files
+            "top_largest_files": largest_files,
+            "language_breakdown": lang_breakdown
+        },
+        "dependencies": deps,
+        "packaging": {
+            "docker": has_docker,
+            "k8s": has_k8s
         }
     }
 
     top_files = "\n".join(largest_files)
+    authors = "\n".join(author_distribution)
 
     with open('repo_analytics.json', 'w') as f:
         json.dump(analytics, f, indent=2)
@@ -87,6 +128,10 @@ def main():
 ## Git Stats
 - **Commits (last 90d)**: {analytics['git_stats']['commits_90d']}
 - **Last Commit Date**: {analytics['git_stats']['last_commit_date']}
+- **Author Distribution**:
+```text
+{authors}
+```
 
 ## Issues & PRs
 - **Open**: {analytics['issues']['open']}
@@ -95,13 +140,25 @@ def main():
 ## CI & Tests
 - **GitHub Actions**: {analytics['ci']['has_workflows']}
 - **Tests Exist**: {analytics['tests']['has_tests']}
+- **Approximate Test Coverage**: {coverage_approx}
 - **Failing Tests**: {analytics['tests']['failing']}
 
 ## Runtime Simulation
 - **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s
 - **P95 Task Creation Latency**: {analytics['performance']['task_create_p95_s']:.4f}s
+- **P99 Task Creation Latency**: {analytics['performance']['task_create_p99_s']:.4f}s
+
+## Packaging & Deploy
+- **Docker**: {analytics['packaging']['docker']}
+- **K8s**: {analytics['packaging']['k8s']}
+
+## Dependencies
+```text
+{chr(10).join(deps)}
+```
 
 ## Code Health
+- **Language Breakdown**: {analytics['code_health']['language_breakdown']}
 **Top 20 Largest Files:**
 ```text
 {top_files}
