@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-05-12T03:41:30.581156+00:00Z",
+  "timestamp": "2026-05-12T15:26:41.133919+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Mon May 11 09:54:33 2026 +0000"
+    "last_commit_date": "Tue May 12 03:41:30 2026 +0000"
   },
   "issues": {
     "open": "Unknown",
@@ -18,8 +18,9 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.00048613548278808594,
-    "task_create_p95_s": 0.0009347438812255859
+    "task_create_median_s": 0.0012416839599609375,
+    "task_create_p95_s": 0.001653766632080078,
+    "task_create_p99_s": 0.0016687583923339843
   },
   "code_health": {
     "top_largest_files": [
@@ -36,13 +37,29 @@
       "./src/satya/core/tasks.py",
       "./examples/basic_workflow/run_example.py",
       "./tests/test_completion_checker.py",
+      "./generate_analytics.py",
       "./src/satya/core/db.py",
       "./tests/test_project_manager.py",
       "./satya-ai/satya/core/audit_logger.py",
       "./CODE_OF_CONDUCT.md",
       "./satya-ai/alembic.ini",
-      "./src/satya/auth.py",
-      "./generate_analytics.py"
-    ]
+      "./src/satya/auth.py"
+    ],
+    "language_breakdown": "Python: 95%, Markdown: 5%"
+  },
+  "dependencies": [
+    "requires-python = >=3.11",
+    "beautifulsoup4>=4.14.3",
+    "gitpython>=3.1.46",
+    "markdownify>=1.2.2",
+    "pandas>=2.3.3",
+    "requests>=2.32.5",
+    "streamlit>=1.54.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0"
+  ],
+  "packaging": {
+    "docker": "No",
+    "k8s": "No"
   }
 }
