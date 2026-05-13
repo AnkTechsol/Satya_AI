@@ -1,4 +1,5 @@
 from .base import ExportAdapter
+from ...core.schema import TraceEvent
 import datetime
 import requests
 import json
@@ -12,6 +13,7 @@ class OTLPAdapter(ExportAdapter):
         self.endpoint = endpoint or "http://localhost:4318/v1/traces"
 
     def export_trace(self, trace_id: str, agent_name: str, event_type: str, data: dict):
+        event = TraceEvent(trace_id=trace_id, agent_name=agent_name, event_type=event_type, data=data)
         payload = {
             "resourceSpans": [
                 {
@@ -25,11 +27,11 @@ class OTLPAdapter(ExportAdapter):
                         {
                             "spans": [
                                 {
-                                    "traceId": trace_id.ljust(32, '0')[:32] if trace_id else "0"*32,
-                                    "spanId": trace_id.ljust(16, '0')[:16] if trace_id else "0"*16,
-                                    "name": event_type,
+                                    "traceId": event.trace_id.ljust(32, '0')[:32] if event.trace_id else "0"*32,
+                                    "spanId": event.trace_id.ljust(16, '0')[:16] if event.trace_id else "0"*16,
+                                    "name": event.event_type,
                                     "kind": 1,
-                                    "attributes": [{"key": k, "value": {"stringValue": str(v)}} for k, v in data.items()]
+                                    "attributes": [{"key": k, "value": {"stringValue": str(v)}} for k, v in event.data.items()]
                                 }
                             ]
                         }

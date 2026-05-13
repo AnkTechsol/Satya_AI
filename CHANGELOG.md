@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-05-13] **Added:** Lightweight exportable trace format & schema (`src/satya/core/schema.py`) to standardize event logging for Export Adapters (OTLP/Langfuse). (Risk: Low, standardizes data structure)
+- [2026-05-13] **Updated:** Ran automated analytics generation, producing `repo_analytics.json` and `REPO_ANALYTICS.md`.
 - [2026-05-10] **Added:** Durable append-only audit store with Postgres and S3 support (falling back to SQLite). Allows high-reliability remote trace and audit storage for enterprise users. (Risk: Low, opt-in via env vars)
 - [2026-04-24] **Added:** Runtime Policy Enforcement layer for real-time PII masking and zero-API, regex-based jailbreak/drift detection. (Risk: Low)
 - [2026-04-16] **Added:** Repository analytics generation script and CI mock for automated code health checks. (Risk: Low)

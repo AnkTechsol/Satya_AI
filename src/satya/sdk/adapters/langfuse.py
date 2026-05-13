@@ -1,4 +1,5 @@
 from .base import ExportAdapter
+from ...core.schema import TraceEvent
 import requests
 from datetime import datetime, timezone
 
@@ -17,20 +18,20 @@ class LangfuseAdapter(ExportAdapter):
         if not self.public_key or not self.secret_key:
             return
 
-        now = datetime.now(timezone.utc).isoformat()
+        event = TraceEvent(trace_id=trace_id, agent_name=agent_name, event_type=event_type, data=data)
 
         payload = {
             "batch": [
                 {
-                    "id": trace_id or "satya-trace",
+                    "id": event.trace_id or "satya-trace",
                     "type": "trace-create",
-                    "timestamp": now,
+                    "timestamp": event.timestamp,
                     "body": {
-                        "id": trace_id,
-                        "name": event_type,
+                        "id": event.trace_id,
+                        "name": event.event_type,
                         "metadata": {
-                            "agent_name": agent_name,
-                            **data
+                            "agent_name": event.agent_name,
+                            **event.data
                         }
                     }
                 }

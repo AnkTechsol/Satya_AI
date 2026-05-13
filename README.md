@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-05-10T14:56:58.644112+00:00Z
+- **Last Analytics Run:** 2026-05-13T15:11:50.958022+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -429,6 +429,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 - **Export Adapter Framework (OTLP/Langfuse)**: Added on April 2026. A small, modular adapter system that enables Satya to export traces/events to Langfuse or OTLP. It keeps the core lightweight while letting enterprises reuse existing investments.
   - *Validation command:* `pytest tests/test_langfuse_adapter.py`
   - *Runbook:* Initialize `SatyaClient(adapters=[LangfuseAdapter(public_key="...", secret_key="...")])`.
+
+- **Lightweight Exportable Trace Format & Schema (Open Standard)**: Added on May 2026. A standardized JSON/dataclass schema for event and trace metadata (`src/satya/core/schema.py`) ensuring export adapters can map events reliably and uniformly.
+  - *Validation command:* `pytest tests/test_schema.py`
+  - *Runbook:* Trace schemas are automatically applied when using ExportAdapters (e.g., OTLPAdapter and LangfuseAdapter).
 
 - **Agent Self-Test Harness + CI Analytics Job**: Added on April 2026. A harness that runs demo agents against APIs in CI, generating latency traces and metrics to `repo_analytics.json` to monitor repository and agent health continuously.
   - *Validation command:* `python generate_analytics.py`
