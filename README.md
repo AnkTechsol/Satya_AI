@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-05-10T14:56:58.644112+00:00Z
+- **Last Analytics Run:** 2026-05-14T14:43:54.767009+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -420,6 +420,11 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 ## SUSTAINABLE_FEATURES
+
+- **Export Adapter Framework (Token-Level Observability)**: Added on 2026-05-14.
+  - Allows Satya to natively export highly-granular prompt & token-level traces to remote systems like LangSmith, Langfuse, and OTLP.
+  - Runbook: Add your destination credentials to the environment, and instantiate the desired adapter before initializing `SatyaClient`.
+  - Validation: Ensure `pytest tests/test_langsmith_adapter.py` passes and tokens are exported.
 
 - **Durable Append-only Audit Store (Postgres + S3)**: Added on May 2026. Replaces fragile flat-files with a highly reliable Postgres schema and offloads raw event payloads to S3 pointers. Includes a zero-config fallback to SQLite if environment variables are not set.
   - *Validation command:* `pytest tests/test_postgres_s3_audit.py`

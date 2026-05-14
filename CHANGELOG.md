@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-05-14] **Added:** Token-level and prompt-level observability via the `trace_prompt` method in `SatyaClient`. (Risk: Low, uses existing adapter framework)
+- [2026-05-14] **Added:** `LangSmithAdapter` to the Export Adapter framework, allowing seamless integration with LangSmith for prompt and trace tracking. (Risk: Low)
 - [2026-05-10] **Added:** Durable append-only audit store with Postgres and S3 support (falling back to SQLite). Allows high-reliability remote trace and audit storage for enterprise users. (Risk: Low, opt-in via env vars)
 - [2026-04-24] **Added:** Runtime Policy Enforcement layer for real-time PII masking and zero-API, regex-based jailbreak/drift detection. (Risk: Low)
 - [2026-04-16] **Added:** Repository analytics generation script and CI mock for automated code health checks. (Risk: Low)
