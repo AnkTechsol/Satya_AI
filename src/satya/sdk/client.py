@@ -310,6 +310,28 @@ class SatyaClient:
         unread_messages.sort(key=lambda m: m.get("timestamp", ""))
         return unread_messages
 
+    def trace_prompt(self, trace_id: str, prompt: str, response: str, tokens_used: int = None, model: str = None):
+        """
+        Logs a detailed prompt/response generation event for token-level observability.
+        """
+        require_agent(self.agent_key)
+        event_data = {
+            "prompt": prompt,
+            "response": response,
+            "tokens_used": tokens_used,
+            "model": model
+        }
+
+        # Log to adapters
+        for adapter in self.adapters:
+            try:
+                adapter.export_trace(trace_id, self.agent_name, "prompt_generation", event_data)
+            except Exception:
+                pass
+
+        # Optional: Append local audit event for extreme verbosity (usually skip for raw prompts to save space)
+        # append_audit_event(self.agent_name, "none", trace_id, "prompt_generation", f"Model: {model}, Tokens: {tokens_used}")
+
     def use_satya(self, nl_instruction: str, parent_trace_id: str, capabilities: list = None):
         """
         Agent-level helper: when an agent receives instruction 'Use Satya from <repo> to ...',
