@@ -3,9 +3,27 @@ import os
 import requests
 import threading
 import logging
+import socket
+import ipaddress
+from urllib.parse import urlparse, urljoin
 from . import storage
 
 logger = logging.getLogger(__name__)
+
+def _is_safe_url(url: str) -> bool:
+    """Validates if a URL is safe to fetch, preventing SSRF."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        return False
+    try:
+        addr_info = socket.getaddrinfo(parsed.hostname, None)
+        for info in addr_info:
+            ip_obj = ipaddress.ip_address(info[4][0])
+            if not ip_obj.is_global:
+                return False
+        return True
+    except Exception:
+        return False
 
 def get_webhooks_path():
     return os.path.join(storage.SATYA_DIR, "webhooks.json")
@@ -63,8 +81,33 @@ def dispatch(event_type, payload):
     def _send():
         for url in urls_to_notify:
             try:
-                requests.post(url, json=data, timeout=5)
-                logger.info(f"Webhook dispatched to {url} for event {event_type}")
+                current_url = url
+                redirect_limit = 5
+                response = None
+
+                for _ in range(redirect_limit):
+                    if not _is_safe_url(current_url):
+                        logger.error(f"Error dispatching webhook to {current_url}: URL resolved to unsafe IP or invalid scheme.")
+                        break
+
+                    try:
+                        response = requests.post(current_url, json=data, timeout=5, allow_redirects=False)
+                    except requests.exceptions.Timeout:
+                        logger.error(f"Error dispatching webhook to {current_url}: Request timed out.")
+                        break
+                    except requests.exceptions.RequestException as e:
+                        logger.error(f"Error dispatching webhook to {current_url}: Request failed: {e}")
+                        break
+
+                    if 300 <= response.status_code < 400 and 'location' in response.headers:
+                        next_url = response.headers['location']
+                        current_url = urljoin(current_url, next_url)
+                    else:
+                        break
+
+                if response is not None and not (300 <= response.status_code < 400):
+                    logger.info(f"Webhook dispatched to {url} for event {event_type}")
+
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")
 
