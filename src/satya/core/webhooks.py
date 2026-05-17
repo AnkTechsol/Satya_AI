@@ -3,6 +3,9 @@ import os
 import requests
 import threading
 import logging
+import socket
+import ipaddress
+from urllib.parse import urlparse
 from . import storage
 
 logger = logging.getLogger(__name__)
@@ -48,6 +51,20 @@ def remove_webhook(url):
     webhooks = [wh for wh in webhooks if wh["url"] != url]
     return save_webhooks(webhooks)
 
+def _is_safe_url(url: str) -> bool:
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        return False
+    try:
+        addr_info = socket.getaddrinfo(parsed.hostname, None)
+        for _, _, _, _, sockaddr in addr_info:
+            ip = sockaddr[0]
+            if not ipaddress.ip_address(ip).is_global:
+                return False
+        return True
+    except Exception:
+        return False
+
 def dispatch(event_type, payload):
     webhooks = load_webhooks()
     urls_to_notify = [wh["url"] for wh in webhooks if event_type in wh.get("events", [])]
@@ -62,8 +79,11 @@ def dispatch(event_type, payload):
 
     def _send():
         for url in urls_to_notify:
+            if not _is_safe_url(url):
+                logger.error(f"Webhook URL {url} resolved to unsafe IP or invalid scheme. Skipping.")
+                continue
             try:
-                requests.post(url, json=data, timeout=5)
+                requests.post(url, json=data, timeout=5, allow_redirects=False)
                 logger.info(f"Webhook dispatched to {url} for event {event_type}")
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")
