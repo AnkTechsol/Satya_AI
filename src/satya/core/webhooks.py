@@ -3,9 +3,33 @@ import os
 import requests
 import threading
 import logging
+import socket
+import ipaddress
+from urllib.parse import urlparse
 from . import storage
 
 logger = logging.getLogger(__name__)
+
+def _is_safe_url(url: str) -> bool:
+    """Validates if a URL is safe to fetch, preventing SSRF."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        # Resolve hostname to all IPs (IPv4 and IPv6)
+        addr_info = socket.getaddrinfo(hostname, None)
+        for _, _, _, _, sockaddr in addr_info:
+            ip_str = sockaddr[0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            # Check if any IP is not globally routable
+            if not ip_obj.is_global:
+                return False
+        return True
+    except Exception:
+        return False
 
 def get_webhooks_path():
     return os.path.join(storage.SATYA_DIR, "webhooks.json")
@@ -62,8 +86,11 @@ def dispatch(event_type, payload):
 
     def _send():
         for url in urls_to_notify:
+            if not _is_safe_url(url):
+                logger.error(f"Failed to dispatch webhook to {url}: Unsafe URL (SSRF prevention)")
+                continue
             try:
-                requests.post(url, json=data, timeout=5)
+                requests.post(url, json=data, timeout=5, allow_redirects=False)
                 logger.info(f"Webhook dispatched to {url} for event {event_type}")
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")
