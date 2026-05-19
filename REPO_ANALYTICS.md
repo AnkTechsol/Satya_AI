@@ -1,10 +1,10 @@
 # Repo Analytics
 
-**Last Run**: 2026-05-19T04:00:52.586467+00:00Z
+**Last Run**: 2026-05-19T15:11:59.766881+00:00Z
 
 ## Git Stats
 - **Commits (last 90d)**: 1
-- **Last Commit Date**: Mon May 18 04:07:24 2026 +0000
+- **Last Commit Date**: Tue May 19 04:00:52 2026 +0000
 
 ## Issues & PRs
 - **Open**: Unknown
@@ -16,8 +16,8 @@
 - **Failing Tests**: 0
 
 ## Runtime Simulation
-- **Median Task Creation Latency**: 0.0005s
-- **P95 Task Creation Latency**: 0.0009s
+- **Median Task Creation Latency**: 0.0010s
+- **P95 Task Creation Latency**: 0.0013s
 
 ## Code Health
 **Top 20 Largest Files:**
@@ -30,7 +30,6 @@
 ./AGENTS.md
 ./src/satya/core/project_manager.py
 ./src/satya/sdk/client.py
-./test_audit.db
 ./satya-ai/satya/core/policy_engine.py
 ./src/satya/core/tasks.py
 ./examples/basic_workflow/run_example.py
@@ -42,4 +41,5 @@
 ./satya-ai/alembic.ini
 ./src/satya/auth.py
 ./generate_analytics.py
+./tests/test_auth_and_audit.py
 ```
