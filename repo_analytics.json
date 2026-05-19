@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-05-19T04:00:52.586467+00:00Z",
+  "timestamp": "2026-05-19T15:11:59.766881+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Mon May 18 04:07:24 2026 +0000"
+    "last_commit_date": "Tue May 19 04:00:52 2026 +0000"
   },
   "issues": {
     "open": "Unknown",
@@ -18,8 +18,8 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.0005271434783935547,
-    "task_create_p95_s": 0.0008538961410522461
+    "task_create_median_s": 0.0010318756103515625,
+    "task_create_p95_s": 0.0013450860977172851
   },
   "code_health": {
     "top_largest_files": [
@@ -31,7 +31,6 @@
       "./AGENTS.md",
       "./src/satya/core/project_manager.py",
       "./src/satya/sdk/client.py",
-      "./test_audit.db",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
       "./examples/basic_workflow/run_example.py",
@@ -42,7 +41,8 @@
       "./CODE_OF_CONDUCT.md",
       "./satya-ai/alembic.ini",
       "./src/satya/auth.py",
-      "./generate_analytics.py"
+      "./generate_analytics.py",
+      "./tests/test_auth_and_audit.py"
     ]
   }
 }
