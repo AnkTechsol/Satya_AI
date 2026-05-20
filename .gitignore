@@ -32,3 +32,4 @@ venv/
 satya_data/
 verification/
 *.log
+test_audit.db
