@@ -12,13 +12,15 @@ from .core import storage, db
 # HUMAN_VIEW_TOKEN -> token for read-only view (optional)
 # AUDIT_SECRET -> secret for signing audit events
 
-_AGENT_KEYS = set(k.strip() for k in os.environ.get("SATYA_AGENT_KEYS", "DEMO_KEY").split(",") if k.strip())
+_AGENT_KEYS = set(k.strip() for k in os.environ.get("SATYA_AGENT_KEYS", "").split(",") if k.strip())
 _HUMAN_VIEW = os.environ.get("HUMAN_VIEW_TOKEN", "")
 _AUDIT_SECRET = os.environ.get("AUDIT_SECRET")
 
 
 def is_agent_authorized(key: str) -> bool:
     """Check if the provided key is in the allowed agent keys."""
+    if not _AGENT_KEYS:
+        return False
     return any(hmac.compare_digest(str(key or ""), str(allowed_key or "")) for allowed_key in _AGENT_KEYS)
 
 def is_human_authorized(token: str) -> bool:
@@ -27,7 +29,10 @@ def is_human_authorized(token: str) -> bool:
 
 def get_agent_key_from_env() -> str:
     """Helper to get the configured agent key from the environment."""
-    return os.environ.get("SATYA_AGENT_KEY", "DEMO_KEY")
+    key = os.environ.get("SATYA_AGENT_KEY")
+    if not key:
+        raise ValueError("SATYA_AGENT_KEY environment variable is not set")
+    return key
 
 def require_agent(key: str):
     """Raise an error if the agent is not authorized."""
