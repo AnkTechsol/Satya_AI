@@ -20,3 +20,8 @@
 **Vulnerability:** The application used unvalidated strings (`selected_agent` from the UI and `self.agent_name` in the SDK) to construct paths for reading and writing agent chat messages via `os.path.join()`. This created a path traversal vulnerability where a malicious agent could potentially access or overwrite files outside the intended chat directory by using path separators in their name.
 **Learning:** Even though agent names are typically safe, any unvalidated input used in file path construction, especially across both server (`app.py`) and client (`client.py`) boundaries, poses a path traversal risk.
 **Prevention:** Always sanitize agent names (and similar dynamic identifiers) using `os.path.basename()` before passing them to `os.path.join()`, ensuring the resulting path is constrained to the intended directory.
+
+## 2024-05-26 - Command Injection Denial of Service
+**Vulnerability:** The `src/satya/core/completion.py` file executed arbitrary test commands via `subprocess.run(..., shell=False)` correctly preventing shell operators but failed to specify a `timeout`. A malicious agent or user could submit a test command that naturally hangs (e.g., `sleep 1000` or blocking I/O) causing the application to halt and consume resources indefinitely leading to a Denial of Service.
+**Learning:** Even when avoiding `shell=True` to prevent arbitrary command execution, bounded resource consumption must be enforced. A lack of timeout guarantees that uncooperative external commands will cause the orchestrator to hang.
+**Prevention:** Always provide a `timeout` argument to `subprocess.run()` when executing untrusted or dynamically provided commands to ensure they fail securely rather than hanging indefinitely.
