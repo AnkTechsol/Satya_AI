@@ -32,11 +32,11 @@ jobs:
 
       - name: Run Tests
         run: |
-          PYTHONPATH=. pytest tests/
+          PYTHONPATH=. AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY pytest tests/
 
       - name: Run Runtime Simulation and Analytics
         run: |
-          python generate_analytics.py
+          AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python generate_analytics.py
 
       - name: Commit Updated Analytics
         if: github.event_name != 'pull_request'
