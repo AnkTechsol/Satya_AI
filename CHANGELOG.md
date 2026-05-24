@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-05-24] **Added:** LangSmith Export Adapter for exporting trace events directly to LangSmith from the agent runtime without core codebase rewrites. (Risk: Low)
 - [2026-05-10] **Added:** Durable append-only audit store with Postgres and S3 support (falling back to SQLite). Allows high-reliability remote trace and audit storage for enterprise users. (Risk: Low, opt-in via env vars)
 - [2026-04-24] **Added:** Runtime Policy Enforcement layer for real-time PII masking and zero-API, regex-based jailbreak/drift detection. (Risk: Low)
 - [2026-04-16] **Added:** Repository analytics generation script and CI mock for automated code health checks. (Risk: Low)
