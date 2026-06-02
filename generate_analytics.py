@@ -121,18 +121,17 @@ def main():
 - **Open Issues:** {analytics['issues']['open']}
 - **Recent CI Status:** {analytics['ci']['latest_run']}
 """
+        # Place it at the very top of the README, right under the main title if possible, or simply at the top
         if "## Repository Status" in readme_content:
             readme_content = re.sub(
-                r"## Repository Status.*?(?=## Human-Observer Policy|\Z)",
+                r"## Repository Status.*?\n\n",
                 status_block + "\n",
                 readme_content,
-                flags=re.DOTALL
+                flags=re.DOTALL,
+                count=1
             )
         else:
-            readme_content = readme_content.replace(
-                "## Human-Observer Policy",
-                status_block + "\n## Human-Observer Policy"
-            )
+            readme_content = status_block + "\n" + readme_content
 
         with open('README.md', 'w') as f:
             f.write(readme_content)
