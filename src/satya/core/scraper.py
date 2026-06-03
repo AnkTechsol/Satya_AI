@@ -10,15 +10,18 @@ from .git_handler import GitHandler
 def _is_safe_url(url: str) -> bool:
     """Validates if a URL is safe to fetch, preventing SSRF."""
     parsed = urlparse(url)
-    if parsed.scheme not in ('http', 'https'):
+    if parsed.scheme not in ('http', 'https') or not parsed.hostname:
         return False
     try:
-        # Resolve hostname to IP
-        ip_str = socket.gethostbyname(parsed.hostname)
-        ip_obj = ipaddress.ip_address(ip_str)
-        # Check if the IP is globally routable
-        # This prevents accessing loopback, private networks, and link-local (e.g., AWS metadata)
-        return ip_obj.is_global
+        # Resolve hostname to all IPs
+        addr_info = socket.getaddrinfo(parsed.hostname, None)
+        for result in addr_info:
+            ip_str = result[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            # Check if every IP is globally routable
+            if not ip_obj.is_global:
+                return False
+        return True
     except Exception:
         return False
 

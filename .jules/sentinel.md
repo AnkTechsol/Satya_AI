@@ -20,3 +20,8 @@
 **Vulnerability:** The application used unvalidated strings (`selected_agent` from the UI and `self.agent_name` in the SDK) to construct paths for reading and writing agent chat messages via `os.path.join()`. This created a path traversal vulnerability where a malicious agent could potentially access or overwrite files outside the intended chat directory by using path separators in their name.
 **Learning:** Even though agent names are typically safe, any unvalidated input used in file path construction, especially across both server (`app.py`) and client (`client.py`) boundaries, poses a path traversal risk.
 **Prevention:** Always sanitize agent names (and similar dynamic identifiers) using `os.path.basename()` before passing them to `os.path.join()`, ensuring the resulting path is constrained to the intended directory.
+
+## 2024-05-26 - Incomplete SSRF Protection via gethostbyname
+**Vulnerability:** The SSRF protection in the scraper used `socket.gethostbyname`, which only returns a single IPv4 address. Additionally, the webhooks implementation completely lacked URL validation and redirect restrictions. This allowed attackers to bypass SSRF filters using IPv6 link-local addresses or DNS records with multiple IPs.
+**Learning:** Checking only the primary IPv4 address with `gethostbyname` leaves applications vulnerable if the HTTP client falls back to secondary IPs or IPv6 addresses that point to private networks.
+**Prevention:** Always use `socket.getaddrinfo` to enumerate all underlying IP addresses for a given hostname, verifying that *every* returned IP is globally routable (`is_global`). Furthermore, enforce `allow_redirects=False` on all outbound HTTP requests (e.g., webhooks) to prevent redirection to internal endpoints.
