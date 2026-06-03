@@ -32,7 +32,11 @@ def test_add_and_remove_webhook():
     assert len(loaded) == 0
 
 @patch("satya.core.webhooks.requests.post")
-def test_dispatch(mock_post):
+@patch("socket.getaddrinfo")
+def test_dispatch(mock_getaddrinfo, mock_post):
+    # Mock getaddrinfo to return a globally routable IP address to pass SSRF check
+    # 93.184.216.34 is example.com's IP address
+    mock_getaddrinfo.return_value = [(2, 1, 6, '', ('93.184.216.34', 0))]
     url = "https://example.com/webhook"
     webhooks.add_webhook(url, events=["task_created"])
 

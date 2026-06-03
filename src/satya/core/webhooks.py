@@ -3,6 +3,9 @@ import os
 import requests
 import threading
 import logging
+import socket
+import ipaddress
+from urllib.parse import urlparse
 from . import storage
 
 logger = logging.getLogger(__name__)
@@ -63,7 +66,25 @@ def dispatch(event_type, payload):
     def _send():
         for url in urls_to_notify:
             try:
-                requests.post(url, json=data, timeout=5)
+                parsed = urlparse(url)
+                if not parsed.hostname or parsed.scheme not in ('http', 'https'):
+                    logger.error(f"Invalid webhook URL: {url}")
+                    continue
+
+                safe = True
+                try:
+                    for res in socket.getaddrinfo(parsed.hostname, None):
+                        if not ipaddress.ip_address(res[4][0]).is_global:
+                            safe = False
+                            break
+                except Exception:
+                    safe = False
+
+                if not safe:
+                    logger.error(f"Webhook URL resolved to unsafe IP: {url}")
+                    continue
+
+                requests.post(url, json=data, timeout=5, allow_redirects=False)
                 logger.info(f"Webhook dispatched to {url} for event {event_type}")
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")
