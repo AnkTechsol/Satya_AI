@@ -12,13 +12,21 @@ def _is_safe_url(url: str) -> bool:
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
         return False
+    if not parsed.hostname:
+        return False
     try:
         # Resolve hostname to IP
-        ip_str = socket.gethostbyname(parsed.hostname)
-        ip_obj = ipaddress.ip_address(ip_str)
-        # Check if the IP is globally routable
-        # This prevents accessing loopback, private networks, and link-local (e.g., AWS metadata)
-        return ip_obj.is_global
+        # To prevent Server-Side Request Forgery (SSRF) when fetching external URLs (e.g., in webhooks or scrapers),
+        # validate the URL by parsing it (ensuring parsed.hostname is not empty), then resolving its hostname
+        # via socket.getaddrinfo to ensure *every* underlying IP (IPv4 and IPv6) is globally routable (is_global),
+        # rejecting the URL if even a single private/internal IP is returned.
+        addr_info = socket.getaddrinfo(parsed.hostname, None)
+        for ai in addr_info:
+            ip_str = ai[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if not ip_obj.is_global:
+                return False
+        return True
     except Exception:
         return False
 
