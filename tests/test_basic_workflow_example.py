@@ -20,6 +20,10 @@ def test_basic_workflow_example_runs(monkeypatch, tmp_path, example_module):
     monkeypatch.setenv("SATYA_AGENT_KEY", "DEMO_KEY")
     monkeypatch.setenv("AUDIT_SECRET", "test_audit_secret")
 
+    import importlib
+    import satya.auth as auth
+    importlib.reload(auth)
+
     from satya.sdk.client import SatyaClient
 
     def fake_scrape_url(self, url):
