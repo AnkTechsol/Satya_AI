@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-05-10T14:56:58.644112+00:00Z
+- **Last Analytics Run:** 2026-06-08T15:52:20.817809+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -84,10 +84,10 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
 
-- **Export Adapter Framework (OTLP/Console)** (Added 2024-03)
+- **Export Adapter Framework (OTLP/LangSmith/Console)** (Added 2026-06)
   - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture.
-  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter()])`.
-  - Validation: `PYTHONPATH=. pytest tests/test_adapters.py`
+  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter(), LangSmithAdapter(api_key="...", project_name="...")])`.
+  - Validation: `PYTHONPATH=. pytest tests/test_langsmith_adapter.py`
 
 - **Repo Analytics & Competitor Matrix**
   - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
