@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-07T14:38:22.898440+00:00Z",
+  "timestamp": "2026-06-10T08:01:07.603527+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
@@ -18,8 +18,8 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.0009424686431884766,
-    "task_create_p95_s": 0.0012443780899047852
+    "task_create_median_s": 0.001634359359741211,
+    "task_create_p95_s": 0.002494025230407715
   },
   "code_health": {
     "top_largest_files": [
@@ -31,7 +31,6 @@
       "./AGENTS.md",
       "./src/satya/core/project_manager.py",
       "./src/satya/sdk/client.py",
-      "./test_audit.db",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
       "./examples/basic_workflow/run_example.py",
@@ -42,7 +41,8 @@
       "./CODE_OF_CONDUCT.md",
       "./satya-ai/alembic.ini",
       "./src/satya/auth.py",
-      "./generate_analytics.py"
+      "./generate_analytics.py",
+      "./tests/test_auth_and_audit.py"
     ]
   }
 }

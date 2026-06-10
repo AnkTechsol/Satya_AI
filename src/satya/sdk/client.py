@@ -47,6 +47,20 @@ class SatyaClient:
         }
         storage.save_heartbeat(self.agent_name, heartbeat_data)
 
+    def trace_prompt(self, prompt: str, response: str, metadata: dict = None):
+        """Emits a token-level or prompt-level trace event to all configured adapters."""
+        trace_id = self.current_task.get("trace_id", "unknown") if self.current_task else "unknown"
+        event_data = {
+            "prompt": prompt,
+            "response": response,
+            **(metadata or {})
+        }
+        for adapter in self.adapters:
+            try:
+                adapter.export_trace(trace_id, self.agent_name, "prompt_trace", event_data)
+            except Exception:
+                pass
+
     def log(self, message):
         # Check for drift/jailbreaks
         drift_violations = self.enforcer.check_drift(message)

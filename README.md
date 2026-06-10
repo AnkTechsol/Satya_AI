@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-06-07T14:38:22.898440+00:00Z
+- **Last Analytics Run:** 2026-06-10T08:01:07.603527+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -68,6 +68,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Prompt Trace Observability** (Added 2026-06)
+  - Implemented `trace_prompt` in `SatyaClient` to pipe prompt and completion pairs to configured export adapters (Langfuse, OTLP, etc.).
+  - Runbook: Instantiate `SatyaClient` with adapters and call `client.trace_prompt(prompt="...", response="...")`.
+  - Validation: Run `PYTHONPATH=. pytest tests/test_sdk_trace.py`.
 
 - **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
   - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.
