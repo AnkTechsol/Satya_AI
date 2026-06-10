@@ -48,10 +48,12 @@ class CompletionChecker:
                 # rely on shell features, but it is necessary for security in an environment
                 # where agents can programmatically set these commands.
                 args = shlex.split(test_command)
-                result = subprocess.run(args, shell=False, capture_output=True, text=True)
+                result = subprocess.run(args, shell=False, capture_output=True, text=True, timeout=10)
                 if result.returncode != required_code:
                     raise CompletionCriteriaNotMet(f"Test command failed with exit code {result.returncode} (expected {required_code}).\nOutput: {result.stdout}\nError: {result.stderr}")
                 return True
+            except subprocess.TimeoutExpired:
+                raise CompletionCriteriaNotMet("Test command timed out after 10 seconds.")
             except Exception as e:
                 raise CompletionCriteriaNotMet(f"Error running test command: {str(e)}")
 
