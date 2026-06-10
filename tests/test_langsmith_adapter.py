@@ -10,7 +10,7 @@ import json
 def test_langsmith_adapter_export_trace():
     adapter = LangSmithAdapter(api_key="test_api_key", project_name="test_project")
 
-    with patch("src.satya.sdk.adapters.langsmith.requests.post") as mock_post:
+    with patch("satya.sdk.adapters.langsmith.requests.post") as mock_post:
         adapter.export_trace("12345678-1234-5678-1234-567812345678", "test_agent", "test_event", {"key": "value"})
 
         mock_post.assert_called_once()
@@ -31,6 +31,6 @@ def test_langsmith_adapter_export_trace():
 def test_langsmith_adapter_timeout_handling():
     adapter = LangSmithAdapter("test_api_key")
 
-    with patch("src.satya.sdk.adapters.langsmith.requests.post", side_effect=Exception("Timeout")):
+    with patch("satya.sdk.adapters.langsmith.requests.post", side_effect=Exception("Timeout")):
         # Should not raise exception
         adapter.export_trace("trace123", "test_agent", "test_event", {"key": "value"})
