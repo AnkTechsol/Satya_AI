@@ -1,6 +1,10 @@
+import sys
+import os
 import pytest
 from unittest.mock import patch, MagicMock
-from src.satya.sdk.adapters.langsmith import LangSmithAdapter
+
+sys.path.insert(0, os.path.abspath("src"))
+from satya.sdk.adapters.langsmith import LangSmithAdapter
 import json
 
 def test_langsmith_adapter_export_trace():
