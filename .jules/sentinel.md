@@ -21,7 +21,7 @@
 **Learning:** Even though agent names are typically safe, any unvalidated input used in file path construction, especially across both server (`app.py`) and client (`client.py`) boundaries, poses a path traversal risk.
 **Prevention:** Always sanitize agent names (and similar dynamic identifiers) using `os.path.basename()` before passing them to `os.path.join()`, ensuring the resulting path is constrained to the intended directory.
 
-## 2024-05-26 - TOCTOU DNS Rebinding in SSRF Prevention
-**Vulnerability:** Initial SSRF prevention only checked the first resolved IP from `socket.getaddrinfo`. It also didn't prevent Time-of-Check to Time-of-Use (TOCTOU) DNS rebinding attacks, where the `requests` library resolves the hostname again and connects to a potentially different, internal IP.
-**Learning:** Checking only the first IP is insufficient because DNS can return multiple IPs, and the underlying HTTP client might connect to a different one than what was checked. Furthermore, mitigating TOCTOU DNS rebinding requires forcing the HTTP client to connect to the specific IP that was validated, rather than allowing it to resolve the hostname again.
-**Prevention:** Always iterate through all resolved IPs from `socket.getaddrinfo` to ensure none are internal. To prevent TOCTOU DNS rebinding, reconstruct the connection URL using the validated safe IP (e.g., `https://{safe_ip}/...`) and pass the original hostname via the `Host` HTTP header. Note that this approach may require `verify=False` in `requests` because TLS SNI typically validates against the hostname in the URL, which is now an IP.
+## 2026-06-08 - Hardcoded API Key Fallbacks Removed
+**Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
+**Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
+**Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
