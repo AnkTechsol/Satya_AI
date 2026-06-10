@@ -16,8 +16,8 @@
 - **Failing Tests**: 0
 
 ## Runtime Simulation
-- **Median Task Creation Latency**: 0.0005s
-- **P95 Task Creation Latency**: 0.0008s
+- **Median Task Creation Latency**: 0.0011s
+- **P95 Task Creation Latency**: 0.0025s
 
 ## Code Health
 **Top 20 Largest Files:**
@@ -30,7 +30,6 @@
 ./AGENTS.md
 ./src/satya/core/project_manager.py
 ./src/satya/sdk/client.py
-./test_audit.db
 ./satya-ai/satya/core/policy_engine.py
 ./src/satya/core/tasks.py
 ./tests/test_completion_checker.py
@@ -42,4 +41,5 @@
 ./satya-ai/alembic.ini
 ./src/satya/auth.py
 ./generate_analytics.py
+./tests/test_auth_and_audit.py
 ```

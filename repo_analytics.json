@@ -18,6 +18,8 @@
     "failing": "0"
   },
   "performance": {
+    "task_create_median_s": 0.0010704994201660156,
+    "task_create_p95_s": 0.002475333213806152
     "task_create_median_s": 0.0005083084106445312,
     "task_create_p95_s": 0.0007997989654541015
   },
@@ -31,7 +33,6 @@
       "./AGENTS.md",
       "./src/satya/core/project_manager.py",
       "./src/satya/sdk/client.py",
-      "./test_audit.db",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
       "./tests/test_completion_checker.py",
@@ -42,7 +43,8 @@
       "./CODE_OF_CONDUCT.md",
       "./satya-ai/alembic.ini",
       "./src/satya/auth.py",
-      "./generate_analytics.py"
+      "./generate_analytics.py",
+      "./tests/test_auth_and_audit.py"
     ]
   }
 }
