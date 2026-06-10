@@ -18,6 +18,8 @@
     "failing": "0"
   },
   "performance": {
+    "task_create_median_s": 0.0010347366333007812,
+    "task_create_p95_s": 0.0012898206710815429
     "task_create_median_s": 0.0003981590270996094,
     "task_create_p95_s": 0.0006881952285766602
   },
@@ -26,12 +28,12 @@
       "./attached_assets/Open-Source-Improvement_1770443530665.zip",
       "./uv.lock",
       "./app.py",
+      "./file:memdb1",
       "./docs/index.html",
       "./README.md",
       "./AGENTS.md",
       "./src/satya/core/project_manager.py",
       "./src/satya/sdk/client.py",
-      "./test_audit.db",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
       "./examples/basic_workflow/run_example.py",

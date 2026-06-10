@@ -16,6 +16,8 @@
 - **Failing Tests**: 0
 
 ## Runtime Simulation
+- **Median Task Creation Latency**: 0.0010s
+- **P95 Task Creation Latency**: 0.0013s
 - **Median Task Creation Latency**: 0.0004s
 - **P95 Task Creation Latency**: 0.0007s
 
@@ -25,12 +27,12 @@
 ./attached_assets/Open-Source-Improvement_1770443530665.zip
 ./uv.lock
 ./app.py
+./file:memdb1
 ./docs/index.html
 ./README.md
 ./AGENTS.md
 ./src/satya/core/project_manager.py
 ./src/satya/sdk/client.py
-./test_audit.db
 ./satya-ai/satya/core/policy_engine.py
 ./src/satya/core/tasks.py
 ./examples/basic_workflow/run_example.py
