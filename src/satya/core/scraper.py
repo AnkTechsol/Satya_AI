@@ -12,6 +12,8 @@ def _is_safe_url(url: str) -> bool:
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
         return False
+    if not parsed.hostname:
+        return False
     try:
         # Resolve hostname to all IPs
         addr_info = socket.getaddrinfo(parsed.hostname, None)
