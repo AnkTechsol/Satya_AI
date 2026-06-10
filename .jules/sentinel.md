@@ -20,3 +20,8 @@
 **Vulnerability:** The application used unvalidated strings (`selected_agent` from the UI and `self.agent_name` in the SDK) to construct paths for reading and writing agent chat messages via `os.path.join()`. This created a path traversal vulnerability where a malicious agent could potentially access or overwrite files outside the intended chat directory by using path separators in their name.
 **Learning:** Even though agent names are typically safe, any unvalidated input used in file path construction, especially across both server (`app.py`) and client (`client.py`) boundaries, poses a path traversal risk.
 **Prevention:** Always sanitize agent names (and similar dynamic identifiers) using `os.path.basename()` before passing them to `os.path.join()`, ensuring the resulting path is constrained to the intended directory.
+
+## 2026-06-08 - Hardcoded API Key Fallbacks Removed
+**Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
+**Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
+**Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
