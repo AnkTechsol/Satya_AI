@@ -1077,7 +1077,7 @@ elif page == "Task Board":
     for status, (css_class, label, col) in headers.items():
         count = len(tasks_by_status[status])
         with col:
-            st.markdown(f'<div class="column-header {css_class}">{label} ({count})</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="column-header {html.escape(css_class)}">{html.escape(label)} ({count})</div>', unsafe_allow_html=True)
 
             if not tasks_by_status[status]:
                 st.markdown("""
@@ -1145,9 +1145,9 @@ elif page == "Task Board":
                                 ts_obj = datetime.fromisoformat(c.get("timestamp", ""))
                                 ts_str = ts_obj.strftime("%H:%M:%S")
                             except ValueError:
-                                ts_str = html.escape(str(c.get("timestamp", "")))
+                                ts_str = str(c.get("timestamp", ""))
                             txt = html.escape(c.get("text", ""))
-                            batched_comments_html.append(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{ts_str}</span> {txt}</div>")
+                            batched_comments_html.append(f"<div style='font-size: 0.8rem; margin-bottom: 0.4rem; border-left: 2px solid var(--border); padding-left: 0.5rem;'><span style='color: var(--text-secondary);'>{html.escape(ts_str)}</span> {txt}</div>")
                         st.markdown("".join(batched_comments_html), unsafe_allow_html=True)
                     else:
                         st.caption("No activity recorded yet.")
