@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-06-10T04:10:14.348892+00:00Z",
+  "timestamp": "2026-06-10T07:28:50.507827+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Tue Jun 9 03:58:41 2026 +0000"
+    "last_commit_date": "Wed Jun 10 12:58:24 2026 +0530"
   },
   "issues": {
     "open": "Unknown",
@@ -18,22 +18,20 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.0010347366333007812,
-    "task_create_p95_s": 0.0012898206710815429
-    "task_create_median_s": 0.0003981590270996094,
-    "task_create_p95_s": 0.0006881952285766602
+    "task_create_median_s": 0.0005023479461669922,
+    "task_create_p95_s": 0.0008548736572265625
   },
   "code_health": {
     "top_largest_files": [
       "./attached_assets/Open-Source-Improvement_1770443530665.zip",
       "./uv.lock",
       "./app.py",
-      "./file:memdb1",
       "./docs/index.html",
       "./README.md",
       "./AGENTS.md",
       "./src/satya/core/project_manager.py",
       "./src/satya/sdk/client.py",
+      "./test_audit.db",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
       "./examples/basic_workflow/run_example.py",

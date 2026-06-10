@@ -1,10 +1,10 @@
 # Repo Analytics
 
-**Last Run**: 2026-06-10T04:10:14.348892+00:00Z
+**Last Run**: 2026-06-10T07:28:50.507827+00:00Z
 
 ## Git Stats
 - **Commits (last 90d)**: 1
-- **Last Commit Date**: Tue Jun 9 03:58:41 2026 +0000
+- **Last Commit Date**: Wed Jun 10 12:58:24 2026 +0530
 
 ## Issues & PRs
 - **Open**: Unknown
@@ -16,10 +16,8 @@
 - **Failing Tests**: 0
 
 ## Runtime Simulation
-- **Median Task Creation Latency**: 0.0010s
-- **P95 Task Creation Latency**: 0.0013s
-- **Median Task Creation Latency**: 0.0004s
-- **P95 Task Creation Latency**: 0.0007s
+- **Median Task Creation Latency**: 0.0005s
+- **P95 Task Creation Latency**: 0.0009s
 
 ## Code Health
 **Top 20 Largest Files:**
@@ -27,12 +25,12 @@
 ./attached_assets/Open-Source-Improvement_1770443530665.zip
 ./uv.lock
 ./app.py
-./file:memdb1
 ./docs/index.html
 ./README.md
 ./AGENTS.md
 ./src/satya/core/project_manager.py
 ./src/satya/sdk/client.py
+./test_audit.db
 ./satya-ai/satya/core/policy_engine.py
 ./src/satya/core/tasks.py
 ./examples/basic_workflow/run_example.py
