@@ -20,7 +20,8 @@
 **Vulnerability:** The application used unvalidated strings (`selected_agent` from the UI and `self.agent_name` in the SDK) to construct paths for reading and writing agent chat messages via `os.path.join()`. This created a path traversal vulnerability where a malicious agent could potentially access or overwrite files outside the intended chat directory by using path separators in their name.
 **Learning:** Even though agent names are typically safe, any unvalidated input used in file path construction, especially across both server (`app.py`) and client (`client.py`) boundaries, poses a path traversal risk.
 **Prevention:** Always sanitize agent names (and similar dynamic identifiers) using `os.path.basename()` before passing them to `os.path.join()`, ensuring the resulting path is constrained to the intended directory.
-## 2024-06-05 - SSRF Bypass via Multiple IP Resolution
-**Vulnerability:** The `_is_safe_url` function in `src/satya/core/scraper.py` used `socket.gethostbyname(parsed.hostname)` which resolves and checks only a single IP address. A hostname resolving to multiple IPs could allow an attacker to bypass the check.
-**Learning:** Validating only one resolved IP address is insufficient to prevent SSRF. The HTTP client may attempt to connect to any of the resolved addresses.
-**Prevention:** Always use `socket.getaddrinfo` to retrieve all resolved IP addresses for a hostname and ensure that every single resolved IP is globally routable (`is_global`).
+
+## 2026-06-08 - Hardcoded API Key Fallbacks Removed
+**Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
+**Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
+**Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
