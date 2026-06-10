@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-06-10T07:29:49.664233+00:00Z",
+  "timestamp": "2026-06-10T08:00:15.402291+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Wed Jun 10 12:59:22 2026 +0530"
+    "last_commit_date": "Wed Jun 10 13:29:27 2026 +0530"
   },
   "issues": {
     "open": "Unknown",
@@ -18,8 +18,8 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.00046896934509277344,
-    "task_create_p95_s": 0.0009269475936889649
+    "task_create_median_s": 0.0005083084106445312,
+    "task_create_p95_s": 0.0007997989654541015
   },
   "code_health": {
     "top_largest_files": [
@@ -34,8 +34,8 @@
       "./test_audit.db",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
-      "./examples/basic_workflow/run_example.py",
       "./tests/test_completion_checker.py",
+      "./examples/basic_workflow/run_example.py",
       "./src/satya/core/db.py",
       "./tests/test_project_manager.py",
       "./satya-ai/satya/core/audit_logger.py",
