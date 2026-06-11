@@ -426,6 +426,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
   - *Runbook:* Export `SATYA_POSTGRES_URI="postgresql://..."` and `SATYA_S3_BUCKET="my-bucket"` before starting the agent to enable durable auditing.
   - *Migration Plan:* For existing SQLite users, the schema will automatically run an `ALTER TABLE` to add the `s3_uri` column upon initialization, ensuring zero downtime and backward compatibility. For flat-file users migrating to Postgres, use the `scripts/migrate_to_postgres.py` (coming soon) to batch upload historical logs to your S3 bucket.
 
+- **Lightweight Exportable Trace Format (JSONL Adapter)**: Added on June 2026. Appends traces locally to a `.jsonl` file to enable easy offline analysis and ingestion by open standards log systems. Avoids O(N^2) memory scaling by using append-only flow.
+  - *Validation command:* `pytest tests/test_jsonl_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[JSONLAdapter(filepath="...")])`.
+
 - **Export Adapter Framework (OTLP/Langfuse)**: Added on April 2026. A small, modular adapter system that enables Satya to export traces/events to Langfuse or OTLP. It keeps the core lightweight while letting enterprises reuse existing investments.
   - *Validation command:* `pytest tests/test_langfuse_adapter.py`
   - *Runbook:* Initialize `SatyaClient(adapters=[LangfuseAdapter(public_key="...", secret_key="...")])`.
