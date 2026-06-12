@@ -19,8 +19,10 @@ from src.satya.sdk import init
 
 from unittest.mock import patch
 
+from src.satya.sdk.adapters.otel_file import OTLPFileAdapter
+
 def run():
-    client = init("sim_agent")
+    client = init("sim_agent", adapters=[OTLPFileAdapter()])
     latencies = []
 
     try:
