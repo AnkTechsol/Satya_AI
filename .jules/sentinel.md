@@ -25,3 +25,8 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+
+## 2025-02-14 - Authorization Bypass in UI Elements
+**Vulnerability:** The 'Deploy' button in the Template Galleries was rendered and functional without checking the `is_admin` authorization token. This allowed any unauthenticated user to spam the task database by bypassing the `is_public` query parameter.
+**Learning:** In Streamlit applications, all interactive widgets (like `st.button`) that trigger state-mutating actions must be explicitly wrapped in an authorization check. Just hiding the navigation link in the UI does not prevent direct access via URL parameters.
+**Prevention:** Always wrap state-mutating actions triggered by Streamlit buttons inside an explicit `if is_admin:` or equivalent authorization check.

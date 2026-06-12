@@ -1481,17 +1481,20 @@ elif page == "Template Galleries":
         st.markdown(f"### {t['name']}")
         st.write(t['description'])
         if st.button(f"Deploy {t['name']}", key=f"deploy_{t['name']}"):
-            try:
-                for task_def in t['tasks']:
-                    tasks_manager.create_task(
-                        title=task_def["title"],
-                        description=task_def["description"],
-                        priority=task_def["priority"],
-                        required_skills=task_def["required_skills"]
-                    )
-                st.success(f"Successfully deployed {t['name']} tasks!")
-            except Exception as e:
-                st.error(f"Failed to deploy template: {e}")
+            if is_admin:
+                try:
+                    for task_def in t['tasks']:
+                        tasks_manager.create_task(
+                            title=task_def["title"],
+                            description=task_def["description"],
+                            priority=task_def["priority"],
+                            required_skills=task_def["required_skills"]
+                        )
+                    st.success(f"Successfully deployed {t['name']} tasks!")
+                except Exception as e:
+                    st.error(f"Failed to deploy template: {e}")
+            else:
+                st.error("Admin Access Required: You must enter a valid Admin Key.")
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
 # ─── AGENT CHAT PAGE ───────────────────────────────────
