@@ -42,6 +42,7 @@ def main():
 
         create_median = statistics.median(create_lats) if create_lats else 0
         create_p95 = statistics.quantiles(create_lats, n=100)[94] if len(create_lats) > 1 else (create_lats[0] if create_lats else 0)
+        create_p99 = statistics.quantiles(create_lats, n=100)[98] if len(create_lats) > 1 else (create_lats[0] if create_lats else 0)
     except Exception as e:
         print(f"Error parsing sim: {e}")
         create_median = 0
@@ -68,7 +69,8 @@ def main():
         },
         "performance": {
             "task_create_median_s": create_median,
-            "task_create_p95_s": create_p95
+            "task_create_p95_s": create_p95,
+            "task_create_p99_s": create_p99
         },
         "code_health": {
             "top_largest_files": largest_files
@@ -100,6 +102,7 @@ def main():
 ## Runtime Simulation
 - **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s
 - **P95 Task Creation Latency**: {analytics['performance']['task_create_p95_s']:.4f}s
+- **P99 Task Creation Latency**: {analytics['performance']['task_create_p99_s']:.4f}s
 
 ## Code Health
 **Top 20 Largest Files:**

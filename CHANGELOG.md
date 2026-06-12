@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-06-12] **Added:** LangSmith Export Adapter framework (`satya.sdk.adapters.langsmith`). (Risk: Low)
+- [2026-06-12] **Added:** Local file-based OpenTelemetry trace export adapter (`otel_file.py`).
 - [2026-06-06] **Added:** Generated new analytics via jules/analytics snapshot. Updated `repo_analytics.json`, `REPO_ANALYTICS.md` and `README.md`. (Risk: Low)
 - [2026-05-10] **Added:** Durable append-only audit store with Postgres and S3 support (falling back to SQLite). Allows high-reliability remote trace and audit storage for enterprise users. (Risk: Low, opt-in via env vars)
 - [2026-04-24] **Added:** Runtime Policy Enforcement layer for real-time PII masking and zero-API, regex-based jailbreak/drift detection. (Risk: Low)
@@ -21,5 +23,7 @@
 - Evaluated impact of new framework: Low Risk. Opt-in only via environment variables.
 
 ## [Unreleased]
+- [2026-06-12] **Added:** LangSmith Export Adapter framework (`satya.sdk.adapters.langsmith`). (Risk: Low)
+- [2026-06-12] **Added:** Local file-based OpenTelemetry trace export adapter (`otel_file.py`).
 - **Added** `repo_analytics.json` and `REPO_ANALYTICS.md` to run runtime analytics in CI. Risk: Low (reads data and executes minimal simulation).
 - **Added** `LangfuseAdapter` export adapter to support telemetry streaming to Langfuse. Risk: Low (plugs into existing Adapter framework, isolates failures via timeouts).
