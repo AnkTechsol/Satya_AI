@@ -2,11 +2,11 @@
 
 | Feature | Satya | LangSmith | Langfuse |
 |---|---|---|---|
-| Observability Depth | High (Log/Task level) | High (Token/Prompt level) | High (Token/Prompt level) |
+| Observability Depth | High (Log/Task level, via trace_prompt) | High (Token/Prompt level) | High (Token/Prompt level) |
 | Agent Runtime Support | Native (Task Board/Chat) | API only | API only |
 | Self-host Friendliness | Excellent (Zero infra, flat-file) | Complex (Docker/K8s) | Good (Docker) |
 | Enterprise Features | **NEW: Durable Postgres/S3 Audit** | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
-| Export Adapters | **NEW: OTLP/Langfuse support** | N/A | N/A |
+| Export Adapters | **NEW: OTLP/Langfuse/LangSmith support** | N/A | N/A |
 | Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
 
 ## Strategic Gaps & Differentiators
