@@ -23,3 +23,8 @@
 ## [Unreleased]
 - **Added** `repo_analytics.json` and `REPO_ANALYTICS.md` to run runtime analytics in CI. Risk: Low (reads data and executes minimal simulation).
 - **Added** `LangfuseAdapter` export adapter to support telemetry streaming to Langfuse. Risk: Low (plugs into existing Adapter framework, isolates failures via timeouts).
+
+## 2026-06-17 - Add Agent Self-Test Harness
+- **Risk Level**: Low
+- Added `tests/agent_self_test_harness.py` to continuously validate agent end-to-end functionality and collect trace metrics.
+- Added GitHub Actions workflow to run the test harness on pushes and periodically.

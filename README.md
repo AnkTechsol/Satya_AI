@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-06-09T14:35:50.039422+00:00Z
+- **Last Analytics Run:** 2026-06-17T15:05:13.305358+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -68,6 +68,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Agent Self-Test Harness + CI Analytics Job** (Added 2026-06)
+  - Small harness that runs demo agents against APIs in CI and writes latency/trace metrics to `repo_analytics.json`. This makes ongoing health visible and cheap to maintain.
+  - Runbook: The harness runs automatically in GitHub Actions on every push to `main` and via a cron job. It can also be triggered manually by executing `python3 tests/agent_self_test_harness.py`.
+  - Validation: Run `python3 tests/agent_self_test_harness.py` locally and ensure it completes without errors and logs a success message.
 
 - **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
   - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.

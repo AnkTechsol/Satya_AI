@@ -1,0 +1,31 @@
+name: Agent Self-Test Harness
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  run-agent-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt || true
+          pip install pytest pytest-cov
+
+      - name: Run Auto-Test Harness
+        run: |
+          python3 tests/agent_self_test_harness.py

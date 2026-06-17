@@ -8,7 +8,8 @@
 | Enterprise Features | **NEW: Durable Postgres/S3 Audit** | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
 | Export Adapters | **NEW: OTLP/Langfuse support** | N/A | N/A |
 | Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
+| Agent Self-Testing | **Native (Harness/CI Integration)** | Custom via tests | Custom via tests |
 
 ## Strategic Gaps & Differentiators
-*   **Where Satya wins:** Zero-infrastructure setup, native task tracking, flat-file architecture, human-observer paradigm.
+*   **Where Satya wins:** Zero-infrastructure setup, native task tracking, flat-file architecture, human-observer paradigm, baked-in agent self-testing.
 *   **Where Satya must catch up:** Deep trace analytics and robust enterprise identity. (Long-term durable storage gap closed via Postgres/S3).
