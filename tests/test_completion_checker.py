@@ -189,3 +189,22 @@ def test_tests_pass_prevents_command_injection(temp_tasks_and_checker):
         pass
 
     assert not os.path.exists(exploit_file), "Vulnerability: exploit file was created!"
+
+def test_tests_pass_timeout(temp_tasks_and_checker):
+    tasks, checker, repo_path = temp_tasks_and_checker
+
+    task = tasks.create_task("Timeout Task", "Testing timeout")
+    task_id = task["id"]
+
+    tasks.update_task(task_id, {
+        "completion_criteria": {
+            "type": "tests_pass",
+            "test_command": "sleep 15",
+            "required_exit_code": 0
+        }
+    })
+
+    tasks.update_task_status(task_id, STATUS_IN_PROGRESS)
+
+    with pytest.raises(Exception, match="Test command timed out after 10 seconds."):
+        tasks.update_task_status(task_id, STATUS_DONE)
