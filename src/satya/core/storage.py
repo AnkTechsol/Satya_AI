@@ -12,14 +12,18 @@ TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
 TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
 AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
 HEARTBEATS_DIR = os.path.join(SATYA_DIR, "heartbeats")
+PULSE_DIR = os.path.join(SATYA_DIR, "pulse")
+GOALS_DIR = os.path.join(SATYA_DIR, "goals")
 
 def set_root(path):
-    global ROOT_DIR, SATYA_DIR, TASKS_DIR, TRUTH_DIR, AGENTS_DIR
+    global ROOT_DIR, SATYA_DIR, TASKS_DIR, TRUTH_DIR, AGENTS_DIR, PULSE_DIR, GOALS_DIR
     ROOT_DIR = path
     SATYA_DIR = os.path.join(ROOT_DIR, "satya_data")
     TASKS_DIR = os.path.join(SATYA_DIR, "tasks")
     TRUTH_DIR = os.path.join(SATYA_DIR, "truth")
     AGENTS_DIR = os.path.join(SATYA_DIR, "agents")
+    PULSE_DIR = os.path.join(SATYA_DIR, "pulse")
+    GOALS_DIR = os.path.join(SATYA_DIR, "goals")
     ensure_satya_dirs()
 
 def ensure_satya_dirs():
@@ -27,6 +31,8 @@ def ensure_satya_dirs():
     os.makedirs(TRUTH_DIR, exist_ok=True)
     os.makedirs(AGENTS_DIR, exist_ok=True)
     os.makedirs(HEARTBEATS_DIR, exist_ok=True)
+    os.makedirs(PULSE_DIR, exist_ok=True)
+    os.makedirs(GOALS_DIR, exist_ok=True)
 
 def save_json(filepath: str, data: Any) -> bool:
     # ⚡ Bolt Optimization: Lock-free atomic writes
@@ -126,3 +132,34 @@ def delete_truth_file(filename: str) -> bool:
         os.remove(filepath)
         return True
     return False
+
+def save_pulse_snapshot(data: Dict[str, Any]) -> bool:
+    ensure_satya_dirs()
+    # Save latest
+    latest_path = os.path.join(PULSE_DIR, "latest.json")
+    save_json(latest_path, data)
+    
+    # Save historical snapshot
+    timestamp = data.get("generated_at", "").replace(":", "-").replace(".", "-")
+    if not timestamp:
+        import datetime
+        timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+    snapshot_path = os.path.join(PULSE_DIR, f"snapshot_{timestamp}.json")
+    return save_json(snapshot_path, data)
+
+def get_pulse_latest() -> Dict[str, Any]:
+    latest_path = os.path.join(PULSE_DIR, "latest.json")
+    return load_json(latest_path)
+
+def get_pulse_history(n: int = 24) -> List[Dict[str, Any]]:
+    if not os.path.exists(PULSE_DIR):
+        return []
+    files = sorted([
+        f for f in os.listdir(PULSE_DIR)
+        if f.startswith("snapshot_") and f.endswith(".json")
+    ])
+    history = []
+    for f in files[-n:]:
+        history.append(load_json(os.path.join(PULSE_DIR, f)))
+    return history
+

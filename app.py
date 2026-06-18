@@ -624,9 +624,9 @@ with st.sidebar:
     is_public = query_params.get("is_public", "").lower() == "true"
 
     if is_public:
-        nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs"]
+        nav_options = ["Dashboard", "Agent Pulse", "Task Board", "Truth Source", "Agent Logs"]
     else:
-        nav_options = ["Dashboard", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard", "Template Galleries"]
+        nav_options = ["Dashboard", "Agent Pulse", "Task Board", "Truth Source", "Agent Logs", "Main Owner", "SDK Docs", "Agent Chat", "ROI Dashboard", "Template Galleries"]
 
     default_index = 0
     if "page" in query_params:
@@ -1026,6 +1026,207 @@ if page == "Dashboard":
         st.markdown("".join(batched_events_html), unsafe_allow_html=True)
     else:
         st.markdown("<p style='color: var(--text-secondary); font-size: 0.85rem;'>No audit events recorded yet.</p>", unsafe_allow_html=True)
+
+# ─── AGENT PULSE PAGE ───────────────────────────────────
+elif page == "Agent Pulse":
+    log_analytics("page_view", {"page": "Agent Pulse"})
+    st.markdown('<div class="hero-header">Agent Pulse</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Real-time semantic health metrics, agent velocity, and goal alignment monitoring</div>', unsafe_allow_html=True)
+
+    # Compute latest pulse snapshot
+    from src.satya.core.pulse import snapshot_pulse
+    from src.satya.core.storage import get_pulse_latest, get_pulse_history
+    from src.satya.core.goal_guardian import load_goal, load_goal_alerts
+    
+    pulse_data = snapshot_pulse(all_tasks, heartbeats)
+    
+    # 1. Summary Metrics cards
+    summary = pulse_data.get("summary", {})
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Agents", summary.get("total_agents", 0))
+    with col2:
+        st.metric("Live Agents", summary.get("live_agents", 0))
+    with col3:
+        st.metric("Average Health", f"{summary.get('avg_health', 0)}%")
+    with col4:
+        st.metric("Goal Alerts", len(load_goal_alerts()))
+
+    # 2. Agent Health Scores section
+    st.markdown("### Agent Health Scores")
+    health_scores = pulse_data.get("health_scores", {})
+    if not health_scores:
+        st.info("No agent telemetry data available yet.")
+    else:
+        # Create columns of cards for agents
+        cols = st.columns(min(len(health_scores), 4))
+        for idx, (agent_name, hs) in enumerate(health_scores.items()):
+            col_target = cols[idx % len(cols)]
+            score = hs.get("score", 0)
+            grade = hs.get("grade", "N/A")
+            trend = hs.get("trend", "stable")
+            trend_icon = "📈" if trend == "up" else "📉" if trend == "down" else "➡️"
+            
+            # Determine card style based on score
+            if score >= 85:
+                border_color = "#00B894"
+                text_color = "#00B894"
+            elif score >= 70:
+                border_color = "#0984E3"
+                text_color = "#0984E3"
+            elif score >= 55:
+                border_color = "#F1C40F"
+                text_color = "#F1C40F"
+            else:
+                border_color = "#D63031"
+                text_color = "#D63031"
+
+            with col_target:
+                # Retrieve goal if set
+                g_data = load_goal(agent_name)
+                goal_str = g_data.get("goal") if g_data else "No project goal set."
+                st.markdown(f"""
+                <div style="border: 2px solid {border_color}; border-radius: 12px; padding: 1.2rem; background: var(--bg-card); margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                        {agent_name}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                        <span style="font-size: 2.2rem; font-weight: 800; color: {text_color};">{score}%</span>
+                        <span style="font-size: 1.2rem; font-weight: 800; background: {border_color}22; padding: 0.2rem 0.6rem; border-radius: 6px; color: {text_color};">{grade}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        Trend: <b>{trend.upper()} {trend_icon}</b>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                        Throughput: {hs.get('throughput', 0.0)} tasks/hr
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                        Rework Rate: {hs.get('rework_rate', 0.0)}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                        Log Density: {hs.get('log_density', 0.0)} logs/task
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        Time Overrun: {hs.get('overrun_rate', 0.0)}
+                    </div>
+                    <div style="font-size: 0.8rem; border-top: 1px solid var(--border-color); padding-top: 0.5rem; color: var(--text-muted); font-style: italic;">
+                        Goal: {goal_str}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # 3. Cross-Agent Velocity Heatmap & Goals section
+    st.markdown("### Cross-Agent Velocity & Task Metrics")
+    velocity = pulse_data.get("velocity", {})
+    if not velocity or not velocity.get("agents"):
+        st.info("No velocity metrics available.")
+    else:
+        # Render Heatmap Table
+        agents = velocity.get("agents", [])
+        priority_buckets = velocity.get("priority_buckets", {})
+        
+        # Build Heatmap HTML
+        table_html = """
+        <table style="width:100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; background: var(--bg-card);">
+            <thead>
+                <tr style="background: var(--bg-sidebar); border-bottom: 2px solid var(--border-color);">
+                    <th style="padding: 12px; text-align: left; color: var(--text-primary);">Agent</th>
+                    <th style="padding: 12px; text-align: center; color: var(--text-primary);">Critical</th>
+                    <th style="padding: 12px; text-align: center; color: var(--text-primary);">High</th>
+                    <th style="padding: 12px; text-align: center; color: var(--text-primary);">Medium</th>
+                    <th style="padding: 12px; text-align: center; color: var(--text-primary);">Low</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        for agent in agents:
+            buckets = priority_buckets.get(agent, {})
+            table_html += f'<tr style="border-bottom: 1px solid var(--border-color);">'
+            table_html += f'<td style="padding: 12px; font-weight: 600; color: var(--text-primary);">{agent}</td>'
+            for prio in ["Critical", "High", "Medium", "Low"]:
+                val = buckets.get(prio)
+                if val is None:
+                    table_html += f'<td style="padding: 12px; text-align: center; color: var(--text-muted); background: rgba(0,0,0,0.02);">N/A</td>'
+                else:
+                    # Color based on value
+                    bg = "rgba(46, 204, 113, 0.2)" if val < 15 else "rgba(241, 196, 15, 0.2)" if val < 45 else "rgba(231, 76, 60, 0.2)"
+                    color = "#27ae60" if val < 15 else "#d35400" if val < 45 else "#c0392b"
+                    table_html += f'<td style="padding: 12px; text-align: center; background: {bg}; color: {color}; font-weight: 700;">{val:.1f} m</td>'
+            table_html += "</tr>"
+        table_html += "</tbody></table>"
+        
+        st.markdown(table_html, unsafe_allow_html=True)
+
+    # 4. Alerts & Goal Guardian Audit Log
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("### Semantic & Cascade Alerts")
+        alerts = pulse_data.get("alerts", [])
+        if not alerts:
+            st.success("✅ No health anomalies or cascade failures detected.")
+        else:
+            for alert in alerts:
+                severity = alert.get("severity", "warning").upper()
+                bg_color = "rgba(231, 76, 60, 0.15)" if severity == "CRITICAL" else "rgba(241, 196, 15, 0.15)"
+                border_color = "#e74c3c" if severity == "CRITICAL" else "#f1c40f"
+                text_color = "#e74c3c" if severity == "CRITICAL" else "#d35400"
+                
+                st.markdown(f"""
+                <div style="border-left: 5px solid {border_color}; background: {bg_color}; padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem; color: var(--text-primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                        <span style="font-weight: 800; color: {text_color}; font-size: 0.85rem;">{severity} ALERT</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">{alert.get('type')}</span>
+                    </div>
+                    <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem;">{alert.get('message')}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Agent: {alert.get('agent')}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+    with col_b:
+        st.markdown("### Goal Guardian Auditor")
+        if not is_public and is_admin:
+            with st.expander("Update Agent Project Goal"):
+                with st.form("set_goal_form"):
+                    selected_agent = st.selectbox("Select Agent", list(health_scores.keys()) if health_scores else ["default_agent"])
+                    new_goal = st.text_area("Target Goal / Scope", placeholder="Describe the strict alignment goal for this agent.")
+                    t_val = st.slider("Drift Threshold", 0.05, 0.50, 0.20, step=0.01)
+                    h_val = st.slider("Halt Threshold", 0.01, 0.30, 0.10, step=0.01)
+                    submitted = st.form_submit_button("Deploy Goal")
+                    if submitted:
+                        from src.satya.core.goal_guardian import save_goal
+                        save_goal(selected_agent, new_goal, t_val, h_val)
+                        st.success(f"Goal deployed for {selected_agent}.")
+                        st.rerun()
+
+        # Display Goal Alerts
+        goal_alerts = load_goal_alerts()
+        if not goal_alerts:
+            st.success("✅ Goal Guardian reports zero agent drifts.")
+        else:
+            for alert in reversed(goal_alerts[-10:]):
+                action = alert.get("action", "warn").upper()
+                bg_color = "rgba(231, 76, 60, 0.15)" if action == "HALT" else "rgba(241, 196, 15, 0.15)"
+                border_color = "#e74c3c" if action == "HALT" else "#f1c40f"
+                text_color = "#e74c3c" if action == "HALT" else "#d35400"
+                
+                st.markdown(f"""
+                <div style="border-left: 5px solid {border_color}; background: {bg_color}; padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem; color: var(--text-primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                        <span style="font-weight: 800; color: {text_color}; font-size: 0.85rem;">GOAL DRIFT {action}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">{alert.get('timestamp')[:19].replace('T', ' ')}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem;">
+                        Drift Score: {alert.get('score')}
+                    </div>
+                    <div style="font-size: 0.8rem; font-style: italic; color: var(--text-secondary); margin-bottom: 0.2rem;">
+                        "{alert.get('message_excerpt')}"
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                        Goal: {alert.get('goal')}
+                    </div>
+                    {f'<div style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">Snapshot: {alert.get("snapshot_path")}</div>' if alert.get("snapshot_path") else ''}
+                </div>
+                """, unsafe_allow_html=True)
 
 # ─── TASK BOARD PAGE ────────────────────────────────────
 elif page == "Task Board":

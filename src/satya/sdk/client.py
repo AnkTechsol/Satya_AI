@@ -3,6 +3,16 @@ from datetime import datetime, timezone
 from ..core import storage, Tasks, Scraper, GitHandler
 from ..core.enforcer import RuntimeEnforcer
 from ..auth import require_agent, get_agent_key_from_env, append_audit_event
+from ..core.goal_guardian import load_goal, save_goal, GoalGuardian
+from ..core.pulse import compute_agent_health
+
+class GoalDriftError(ValueError):
+    """Raised when the agent deviates from the declared project goal."""
+    def __init__(self, message, score, goal, snapshot_path=None):
+        super().__init__(message)
+        self.score = score
+        self.goal = goal
+        self.snapshot_path = snapshot_path
 
 class SatyaClient:
     def __init__(self, agent_name="default_agent", repo_path=".", adapters=None, skills=None):
@@ -21,6 +31,19 @@ class SatyaClient:
 
         self.current_task = None
         storage.ensure_satya_dirs()
+        
+        # Load persisted goal if it exists
+        goal_data = load_goal(self.agent_name)
+        if goal_data:
+            self.goal_guardian = GoalGuardian(
+                agent_name=self.agent_name,
+                goal=goal_data["goal"],
+                threshold=goal_data.get("threshold", 0.20),
+                halt_threshold=goal_data.get("halt_threshold", 0.10)
+            )
+        else:
+            self.goal_guardian = None
+
         # use daily log file format: agent_name_YYYYMMDD.log
         today_str = datetime.now().strftime("%Y%m%d")
         safe_agent_name = os.path.basename(self.agent_name)
@@ -48,6 +71,21 @@ class SatyaClient:
         storage.save_heartbeat(self.agent_name, heartbeat_data)
 
     def log(self, message):
+        # Check goal alignment if Guardian is active
+        if hasattr(self, "goal_guardian") and self.goal_guardian:
+            alignment = self.goal_guardian.check(
+                message, current_task=self.current_task, log_path=self.log_path
+            )
+            if alignment["action"] == "halt":
+                err_msg = f"⛔ GOAL GUARDIAN HALT: Agent drift detected! Score: {alignment['score']}. Goal: {self.goal_guardian.goal}"
+                print(err_msg)
+                raise GoalDriftError(
+                    err_msg,
+                    score=alignment["score"],
+                    goal=self.goal_guardian.goal,
+                    snapshot_path=alignment["snapshot_path"]
+                )
+
         # Check for drift/jailbreaks
         drift_violations = self.enforcer.check_drift(message)
         if drift_violations:
@@ -331,3 +369,58 @@ class SatyaClient:
                 str({"child_id": task.get("id"), "child_trace": task.get("trace_id")})
             )
         return task
+
+    def set_goal(self, goal: str, threshold: float = 0.20, halt_threshold: float = 0.10):
+        """Sets the project goal and initializes/resets the GoalGuardian."""
+        require_agent(self.agent_key)
+        save_goal(self.agent_name, goal, threshold, halt_threshold)
+        self.goal_guardian = GoalGuardian(
+            agent_name=self.agent_name,
+            goal=goal,
+            threshold=threshold,
+            halt_threshold=halt_threshold
+        )
+        self.log(f"Project goal updated: \"{goal}\"")
+        self.goal_guardian.reset_context()
+
+    def check_alignment(self, message: str) -> dict:
+        """Manually checks a message against the project goal."""
+        if not hasattr(self, "goal_guardian") or not self.goal_guardian:
+            return {"aligned": True, "score": 1.0, "action": "ok"}
+        
+        alignment = self.goal_guardian.check(
+            message, current_task=self.current_task, log_path=self.log_path
+        )
+        if alignment["action"] == "halt":
+            err_msg = f"⛔ GOAL GUARDIAN HALT: Agent drift detected! Score: {alignment['score']}. Goal: {self.goal_guardian.goal}"
+            print(err_msg)
+            raise GoalDriftError(
+                err_msg,
+                score=alignment["score"],
+                goal=self.goal_guardian.goal,
+                snapshot_path=alignment["snapshot_path"]
+            )
+        return alignment
+
+    def report_quality(self, task_id: str, score: float, notes: str) -> bool:
+        """Allows agents to self-report output quality. Updates task metadata."""
+        require_agent(self.agent_key)
+        task = self.tasks.get_task(task_id)
+        if not task:
+            self.log(f"report_quality: Task {task_id} not found.")
+            return False
+        
+        task["quality_score"] = score
+        task["quality_notes"] = notes
+        task["updated_at"] = datetime.now(timezone.utc).isoformat() + "Z"
+        
+        filepath = storage.get_task_path(task_id)
+        storage.save_json(filepath, task)
+        self.log(f"Self-reported task {task_id} quality: {score} ({notes})")
+        return True
+
+    def get_pulse(self) -> dict:
+        """Computes and returns the agent's current health score."""
+        tasks = self.tasks.list_all()
+        return compute_agent_health(self.agent_name, tasks)
+

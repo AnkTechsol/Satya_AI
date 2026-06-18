@@ -1,4 +1,4 @@
-from .client import SatyaClient
+from .client import SatyaClient, GoalDriftError
 
 _client = None
 
@@ -56,3 +56,27 @@ def can_do(action: str, task_id: str) -> bool:
     if _client:
         return _client.can_do(action, task_id)
     return False
+
+def set_goal(goal: str, threshold: float = 0.20, halt_threshold: float = 0.10):
+    """Set the project goal and activate the GoalGuardian."""
+    if _client:
+        _client.set_goal(goal, threshold, halt_threshold)
+
+def check_alignment(message: str) -> dict:
+    """Check if a log message aligns with the project goal."""
+    if _client:
+        return _client.check_alignment(message)
+    return {"aligned": True, "score": 1.0, "action": "ok"}
+
+def report_quality(task_id: str, score: float, notes: str) -> bool:
+    """Report the quality score for a task."""
+    if _client:
+        return _client.report_quality(task_id, score, notes)
+    return False
+
+def get_pulse() -> dict:
+    """Get the current agent health pulse."""
+    if _client:
+        return _client.get_pulse()
+    return {}
+
