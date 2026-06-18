@@ -12,3 +12,5 @@ sys.modules['streamlit'] = MagicMock()
 
 import os
 os.environ["AUDIT_SECRET"] = "dummy_secret"
+os.environ["SATYA_AGENT_KEY"] = "DEMO_KEY"
+os.environ["SATYA_AGENT_KEYS"] = "DEMO_KEY"
