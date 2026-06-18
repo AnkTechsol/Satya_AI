@@ -207,6 +207,34 @@ class SatyaClient:
                     pass
         return result
 
+    def trace_prompt(self, trace_id: str, prompt: str, response: str, tokens_used: int, metadata: dict = None):
+        """
+        Emits token-level observability and trace data to configured export adapters.
+        """
+        require_agent(self.agent_key)
+
+        drift_violations = self.enforcer.check_drift(prompt + " " + response)
+        if drift_violations:
+            append_audit_event(
+                self.agent_name,
+                self.current_task["id"] if self.current_task else "no_task",
+                trace_id,
+                "drift_detected_in_prompt",
+                str(drift_violations)
+            )
+
+        data = {
+            "prompt": prompt,
+            "response": response,
+            "tokens_used": tokens_used,
+            **(metadata or {})
+        }
+        for adapter in self.adapters:
+            try:
+                adapter.export_trace(trace_id, self.agent_name, "prompt_completion", data)
+            except Exception:
+                pass
+
     def scrape_url(self, url):
         require_agent(self.agent_key)
         self.log(f"Scraping URL: {url}")
