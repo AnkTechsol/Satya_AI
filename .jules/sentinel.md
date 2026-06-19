@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2024-06-19 - TOCTOU Mitigation in Python
+**Vulnerability:** Scraper was vulnerable to Time-of-Check to Time-of-Use (TOCTOU) DNS Rebinding attacks.
+**Learning:** Checking an IP and then connecting to the hostname leaves a gap where DNS can be re-resolved to a malicious IP.
+**Prevention:** Mitigate TOCTOU effectively without disabling TLS verification by creating a custom `requests.adapters.HTTPAdapter`. Override `get_connection` to set `conn.host` to the securely resolved `target_ip` while keeping `server_hostname` for valid SNI routing.
