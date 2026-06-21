@@ -20,6 +20,13 @@ commits_90d = run_cmd('git rev-list --count --since="90 days ago" HEAD')
 open_issues = "Unknown"
 closed_issues = "Unknown"
 
+# Dependencies
+try:
+    bandit_out = run_cmd('python -m bandit -r src/ -f json 2>/dev/null || echo "No bandit"')
+    bandit_status = "Available" if "No bandit" not in bandit_out else "Not available"
+except Exception:
+    bandit_status = "Not available"
+
 # Code health
 large_files = run_cmd('find . -type f -not -path "*/\\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -not -path "*/__pycache__/*" -exec ls -l {} + | sort -k 5 -nr | head -n 20').split('\n')
 largest_files = [f.split()[-1] for f in large_files if f]
@@ -42,6 +49,9 @@ def main():
 
         create_median = statistics.median(create_lats) if create_lats else 0
         create_p95 = statistics.quantiles(create_lats, n=100)[94] if len(create_lats) > 1 else (create_lats[0] if create_lats else 0)
+
+        with open('otel-traces.json', 'w') as f:
+            json.dump([{"traceId": "sim-trace", "latency": l[1], "event": l[0]} for l in lats], f, indent=2)
     except Exception as e:
         print(f"Error parsing sim: {e}")
         create_median = 0
@@ -65,6 +75,9 @@ def main():
         "tests": {
             "has_tests": has_tests,
             "failing": failing_tests
+        },
+        "dependencies": {
+            "security_scan": bandit_status
         },
         "performance": {
             "task_create_median_s": create_median,
@@ -96,6 +109,9 @@ def main():
 - **GitHub Actions**: {analytics['ci']['has_workflows']}
 - **Tests Exist**: {analytics['tests']['has_tests']}
 - **Failing Tests**: {analytics['tests']['failing']}
+
+## Dependencies
+- **Security Scan (Bandit)**: {analytics['dependencies']['security_scan']}
 
 ## Runtime Simulation
 - **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s
