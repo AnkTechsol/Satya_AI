@@ -1,10 +1,10 @@
 # Repo Analytics
 
-**Last Run**: 2026-06-18T04:25:42.238495+00:00Z
+**Last Run**: 2026-06-22T14:36:51.830540+00:00Z
 
 ## Git Stats
 - **Commits (last 90d)**: 1
-- **Last Commit Date**: Wed Jun 17 04:42:29 2026 +0000
+- **Last Commit Date**: Thu Jun 18 12:21:22 2026 +0530
 
 ## Issues & PRs
 - **Open**: Unknown
@@ -16,8 +16,8 @@
 - **Failing Tests**: 0
 
 ## Runtime Simulation
-- **Median Task Creation Latency**: 0.0005s
-- **P95 Task Creation Latency**: 0.0009s
+- **Median Task Creation Latency**: 0.0011s
+- **P95 Task Creation Latency**: 0.0022s
 
 ## Code Health
 **Top 20 Largest Files:**
@@ -27,19 +27,19 @@
 ./app.py
 ./docs/index.html
 ./README.md
-./AGENTS.md
-./src/satya/core/project_manager.py
+./src/satya/core/pulse.py
 ./src/satya/sdk/client.py
+./AGENTS.md
+./src/satya/core/goal_guardian.py
+./src/satya/core/project_manager.py
 ./test_audit.db
 ./satya-ai/satya/core/policy_engine.py
 ./src/satya/core/tasks.py
 ./tests/test_completion_checker.py
 ./examples/basic_workflow/run_example.py
 ./src/satya/core/db.py
+./src/satya/core/storage.py
 ./tests/test_project_manager.py
 ./satya-ai/satya/core/audit_logger.py
 ./CODE_OF_CONDUCT.md
-./satya-ai/alembic.ini
-./src/satya/auth.py
-./generate_analytics.py
 ```
