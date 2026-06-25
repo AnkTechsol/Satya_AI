@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-06-18T04:25:42.238495+00:00Z",
+  "timestamp": "2026-06-25T14:39:56.427645+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Wed Jun 17 04:42:29 2026 +0000"
+    "last_commit_date": "Thu Jun 18 12:21:22 2026 +0530"
   },
   "issues": {
     "open": "Unknown",
@@ -18,8 +18,8 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.0005323886871337891,
-    "task_create_p95_s": 0.0008934497833251953
+    "task_create_median_s": 0.0011823177337646484,
+    "task_create_p95_s": 0.0034247636795043945
   },
   "code_health": {
     "top_largest_files": [
@@ -28,21 +28,21 @@
       "./app.py",
       "./docs/index.html",
       "./README.md",
-      "./AGENTS.md",
-      "./src/satya/core/project_manager.py",
+      "./src/satya/core/pulse.py",
       "./src/satya/sdk/client.py",
+      "./AGENTS.md",
+      "./src/satya/core/goal_guardian.py",
+      "./src/satya/core/project_manager.py",
       "./test_audit.db",
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
       "./tests/test_completion_checker.py",
       "./examples/basic_workflow/run_example.py",
       "./src/satya/core/db.py",
+      "./src/satya/core/storage.py",
       "./tests/test_project_manager.py",
       "./satya-ai/satya/core/audit_logger.py",
-      "./CODE_OF_CONDUCT.md",
-      "./satya-ai/alembic.ini",
-      "./src/satya/auth.py",
-      "./generate_analytics.py"
+      "./CODE_OF_CONDUCT.md"
     ]
   }
 }
