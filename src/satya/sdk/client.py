@@ -424,3 +424,19 @@ class SatyaClient:
         tasks = self.tasks.list_all()
         return compute_agent_health(self.agent_name, tasks)
 
+    def trace_prompt(self, prompt: str, response: str, tokens: int = 0, metadata: dict = None):
+        """Emit a token-level observability trace for a prompt and its response."""
+        require_agent(self.agent_key)
+        trace_data = {
+            "prompt": prompt,
+            "response": response,
+            "tokens": tokens,
+            "metadata": metadata or {}
+        }
+        trace_id = self.current_task.get("trace_id", "unknown") if self.current_task else "unknown"
+        for adapter in self.adapters:
+            try:
+                adapter.export_trace(trace_id, self.agent_name, "trace_prompt", trace_data)
+            except Exception:
+                pass
+        self.log(f"Traced prompt with {tokens} tokens")
