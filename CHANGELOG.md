@@ -23,3 +23,4 @@
 ## [Unreleased]
 - **Added** `repo_analytics.json` and `REPO_ANALYTICS.md` to run runtime analytics in CI. Risk: Low (reads data and executes minimal simulation).
 - **Added** `LangfuseAdapter` export adapter to support telemetry streaming to Langfuse. Risk: Low (plugs into existing Adapter framework, isolates failures via timeouts).
+- [2026-06-29] **Added:** Generated new analytics via jules/analytics snapshot. Updated `repo_analytics.json`, `REPO_ANALYTICS.md`. (Risk: Low)
