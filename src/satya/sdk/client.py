@@ -348,6 +348,26 @@ class SatyaClient:
         unread_messages.sort(key=lambda m: m.get("timestamp", ""))
         return unread_messages
 
+    def trace_prompt(self, prompt: str, response: str, trace_id: str = None):
+        """
+        Records an LLM prompt and response pair and routes it to observability adapters.
+        """
+        require_agent(self.agent_key)
+        if not trace_id and self.current_task:
+            trace_id = self.current_task.get("trace_id", "unknown")
+
+        data = {
+            "prompt": prompt,
+            "response": response,
+            "task_id": self.current_task["id"] if self.current_task else None
+        }
+
+        for adapter in self.adapters:
+            try:
+                adapter.export_trace(trace_id, self.agent_name, "prompt_trace", data)
+            except Exception:
+                pass
+
     def use_satya(self, nl_instruction: str, parent_trace_id: str, capabilities: list = None):
         """
         Agent-level helper: when an agent receives instruction 'Use Satya from <repo> to ...',
