@@ -32,7 +32,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          PYTHONPATH=. pytest tests/
+          PYTHONPATH=. AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY pytest tests/
 
       - name: Run Runtime Simulation and Analytics
         run: |
