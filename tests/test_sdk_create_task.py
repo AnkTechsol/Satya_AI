@@ -8,6 +8,7 @@ import src.satya.auth as auth
 
 @pytest.fixture
 def temp_client(monkeypatch, tmp_path):
+    monkeypatch.setenv("SATYA_AGENT_KEY", "DEMO_KEY")
     monkeypatch.setenv("SATYA_AGENT_KEYS", "DEMO_KEY")
     reload(auth)
 
