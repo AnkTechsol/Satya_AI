@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-06-09T14:35:50.039422+00:00Z
+- **Last Analytics Run:** 2026-07-06T14:43:23.315317+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -68,6 +68,10 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Auto-README Updater Action**: Added on June 2026. A GitHub Action that runs the analytics script on push to `main` and updates `REPO_ANALYTICS.md` + README summary automatically, preventing doc rot.
+  - *Validation command:* `pytest tests/test_auto_readme_action.py`
+  - *Runbook:* Just push to `main` or let the midnight cron run. It will automatically commit the updated telemetry.
 
 - **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
   - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.
