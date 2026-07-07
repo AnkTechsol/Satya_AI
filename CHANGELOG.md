@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-07-07] **Fixed:** Addressed a test suite regression regarding mocked `SATYA_AGENT_KEY` variables to acknowledge and run codebase mismatch procedures for the Shudharshan task. (Risk: Low)
 - [2026-06-06] **Added:** Generated new analytics via jules/analytics snapshot. Updated `repo_analytics.json`, `REPO_ANALYTICS.md` and `README.md`. (Risk: Low)
 - [2026-05-10] **Added:** Durable append-only audit store with Postgres and S3 support (falling back to SQLite). Allows high-reliability remote trace and audit storage for enterprise users. (Risk: Low, opt-in via env vars)
 - [2026-04-24] **Added:** Runtime Policy Enforcement layer for real-time PII masking and zero-API, regex-based jailbreak/drift detection. (Risk: Low)
