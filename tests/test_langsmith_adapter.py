@@ -1,16 +1,16 @@
 import uuid
+from unittest.mock import patch
 from src.satya.sdk.adapters.langsmith import LangSmithAdapter
-import requests_mock
 
 def test_langsmith_adapter():
     adapter = LangSmithAdapter(api_key="test_key")
-    with requests_mock.Mocker() as m:
-        m.post("https://api.smith.langchain.com/runs", text='{"id": "test"}')
+    with patch("src.satya.sdk.adapters.langsmith.requests.post") as mock_post:
         adapter.export_trace("unknown", "agent1", "prompt", {"prompt": "hello", "response": "world"})
 
-        assert m.called
-        request = m.last_request
-        payload = request.json()
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+
+        payload = kwargs["json"]
         assert "id" in payload
         assert uuid.UUID(payload["id"])
         assert payload["name"] == "prompt"
