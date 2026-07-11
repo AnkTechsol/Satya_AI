@@ -1,7 +1,7 @@
 import pytest
 import os
 from unittest.mock import patch, MagicMock
-from src.satya.sdk.adapters import ConsoleAdapter, OTLPAdapter
+from src.satya.sdk.adapters import ConsoleAdapter, OTLPAdapter, LangSmithAdapter
 from src.satya.sdk.client import SatyaClient
 
 @patch('src.satya.sdk.client.require_agent')
@@ -12,12 +12,13 @@ def test_adapters_initialization(mock_get_key, mock_require_agent):
 
     console_adapter = ConsoleAdapter()
     otlp_adapter = OTLPAdapter()
+    langsmith_adapter = LangSmithAdapter(api_key="mock", project_name="mock")
 
     # Use a dummy client to avoid directory access issues
     with patch('src.satya.sdk.client.storage.ensure_satya_dirs'):
         with patch('src.satya.sdk.client.GitHandler'):
-            client = SatyaClient(agent_name="test_agent", repo_path="/tmp", adapters=[console_adapter, otlp_adapter])
-            assert len(client.adapters) == 2
+            client = SatyaClient(agent_name="test_agent", repo_path="/tmp", adapters=[console_adapter, otlp_adapter, langsmith_adapter])
+            assert len(client.adapters) == 3
 
 def test_console_adapter_methods(capsys):
     adapter = ConsoleAdapter()

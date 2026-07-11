@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-06-09T14:35:50.039422+00:00Z
+- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -84,10 +84,10 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
 
-- **Export Adapter Framework (OTLP/Console)** (Added 2024-03)
-  - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture.
-  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter()])`.
-  - Validation: `PYTHONPATH=. pytest tests/test_adapters.py`
+- **Export Adapter Framework (OTLP/Console/LangSmith)** (Added 2024-03, updated 2024-04)
+  - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture. Added LangSmith support for enterprise observability.
+  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter(), LangSmithAdapter(api_key="...", project_name="...")])`.
+  - Validation: `PYTHONPATH=. pytest tests/test_adapters.py tests/test_langsmith_adapter.py`
 
 - **Repo Analytics & Competitor Matrix**
   - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
@@ -426,9 +426,9 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
   - *Runbook:* Export `SATYA_POSTGRES_URI="postgresql://..."` and `SATYA_S3_BUCKET="my-bucket"` before starting the agent to enable durable auditing.
   - *Migration Plan:* For existing SQLite users, the schema will automatically run an `ALTER TABLE` to add the `s3_uri` column upon initialization, ensuring zero downtime and backward compatibility. For flat-file users migrating to Postgres, use the `scripts/migrate_to_postgres.py` (coming soon) to batch upload historical logs to your S3 bucket.
 
-- **Export Adapter Framework (OTLP/Langfuse)**: Added on April 2026. A small, modular adapter system that enables Satya to export traces/events to Langfuse or OTLP. It keeps the core lightweight while letting enterprises reuse existing investments.
-  - *Validation command:* `pytest tests/test_langfuse_adapter.py`
-  - *Runbook:* Initialize `SatyaClient(adapters=[LangfuseAdapter(public_key="...", secret_key="...")])`.
+- **Export Adapter Framework (OTLP/Langfuse/LangSmith)**: Added on April 2026. A small, modular adapter system that enables Satya to export traces/events to Langfuse, LangSmith, or OTLP. It keeps the core lightweight while letting enterprises reuse existing investments.
+  - *Validation command:* `pytest tests/test_langfuse_adapter.py` and `pytest tests/test_langsmith_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[LangfuseAdapter(...)])` or `SatyaClient(adapters=[LangSmithAdapter(api_key="...", project_name="...")])`.
 
 - **Agent Self-Test Harness + CI Analytics Job**: Added on April 2026. A harness that runs demo agents against APIs in CI, generating latency traces and metrics to `repo_analytics.json` to monitor repository and agent health continuously.
   - *Validation command:* `python generate_analytics.py`
