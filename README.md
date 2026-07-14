@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
+- **Last Analytics Run:** 2026-07-14T14:47:02.640801+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -433,3 +433,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 - **Agent Self-Test Harness + CI Analytics Job**: Added on April 2026. A harness that runs demo agents against APIs in CI, generating latency traces and metrics to `repo_analytics.json` to monitor repository and agent health continuously.
   - *Validation command:* `python generate_analytics.py`
   - *Runbook:* Automatically executes on GitHub Actions. Checks performance and auto-updates README stats.
+
+- **File Export Adapter**: Added on July 2026. Streams telemetry and traces locally to a JSONL file.
+  - *Validation command:* `pytest tests/test_file_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[FileExportAdapter("traces.jsonl")])`.
