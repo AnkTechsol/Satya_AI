@@ -24,3 +24,7 @@
 - **Added** `repo_analytics.json` and `REPO_ANALYTICS.md` to run runtime analytics in CI. Risk: Low (reads data and executes minimal simulation).
 - **Added** `LangfuseAdapter` export adapter to support telemetry streaming to Langfuse. Risk: Low (plugs into existing Adapter framework, isolates failures via timeouts).
 - **2024-04-XX** - Implemented LangSmith export adapter to enable enterprise observability integrations. (Risk: Low)
+
+## 2024-07-18 15:00:00 UTC
+- Added Task Export API (CSV/JSONL Exporter) to core modules (Risk: Low).
+- Updated Repository Analytics and Competitor Matrix (Risk: Low).
