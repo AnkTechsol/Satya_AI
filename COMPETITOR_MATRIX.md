@@ -7,6 +7,7 @@
 | Self-host Friendliness | Excellent (Zero infra, flat-file) | Complex (Docker/K8s) | Good (Docker) |
 | Enterprise Features | **NEW: Durable Postgres/S3 Audit** | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
 | Export Adapters | **NEW: OTLP/Langfuse/LangSmith support** | N/A | N/A |
+| Security Review | Completed | Pending | Pending |
 | Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
 
 ## Strategic Gaps & Differentiators
