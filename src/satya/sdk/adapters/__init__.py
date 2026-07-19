@@ -5,3 +5,4 @@ from .langfuse import LangfuseAdapter
 from .langsmith import LangSmithAdapter
 
 __all__ = ["ExportAdapter", "ConsoleAdapter", "OTLPAdapter", "LangfuseAdapter", "LangSmithAdapter"]
+from .file_exporter import FileExportAdapter
