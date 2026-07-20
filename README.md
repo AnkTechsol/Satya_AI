@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
+- **Last Analytics Run:** 2026-07-20T15:09:11.107442+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -84,10 +84,10 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
 
-- **Export Adapter Framework (OTLP/Console/LangSmith)** (Added 2024-03, updated 2024-04)
-  - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture. Added LangSmith support for enterprise observability.
-  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter(), LangSmithAdapter(api_key="...", project_name="...")])`.
-  - Validation: `PYTHONPATH=. pytest tests/test_adapters.py tests/test_langsmith_adapter.py`
+- **Export Adapter Framework (OTLP/Console/LangSmith/CSV/JSONL)** (Added 2024-03, updated 2026-07)
+  - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture. Added LangSmith support for enterprise observability and CSV/JSONL Exporter for local flat-file analytics.
+  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter(), LangSmithAdapter(api_key="...", project_name="..."), CSVJSONLExporter(export_dir="...")])`.
+  - Validation: `PYTHONPATH=. pytest tests/test_adapters.py tests/test_langsmith_adapter.py tests/test_csv_jsonl_adapter.py`
 
 - **Repo Analytics & Competitor Matrix**
   - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
