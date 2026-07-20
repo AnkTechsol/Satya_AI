@@ -1,7 +1,7 @@
 import os
 import json
 import csv
-from satya.sdk.adapters.csv_jsonl import CSVJSONLExporter
+from src.satya.sdk.adapters.csv_jsonl import CSVJSONLExporter
 
 def test_csv_jsonl_export(tmp_path):
     export_dir = str(tmp_path / "exports")
