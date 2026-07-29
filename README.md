@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
+- **Last Analytics Run:** 2026-07-29T15:07:40.723232+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -433,3 +433,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 - **Agent Self-Test Harness + CI Analytics Job**: Added on April 2026. A harness that runs demo agents against APIs in CI, generating latency traces and metrics to `repo_analytics.json` to monitor repository and agent health continuously.
   - *Validation command:* `python generate_analytics.py`
   - *Runbook:* Automatically executes on GitHub Actions. Checks performance and auto-updates README stats.
+
+- **CSV/JSONL Exporter**: Added on July 2026. A small, modular adapter system that enables Satya to export traces/events to flat files in dual CSV and JSONL formats. Supports zero-infrastructure logging.
+  - *Validation command:* `pytest tests/test_csv_jsonl_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[CsvJsonlAdapter(export_dir="/path/to/logs")])`.
