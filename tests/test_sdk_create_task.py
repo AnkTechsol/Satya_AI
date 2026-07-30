@@ -1,10 +1,10 @@
 import pytest
 import os
 import os
-import src.satya.core.storage as storage
-from src.satya.sdk.client import SatyaClient
+import satya.core.storage as storage
+from satya.sdk.client import SatyaClient
 from importlib import reload
-import src.satya.auth as auth
+import satya.auth as auth
 
 @pytest.fixture
 def temp_client(monkeypatch, tmp_path):
