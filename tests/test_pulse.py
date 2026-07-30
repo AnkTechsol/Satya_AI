@@ -19,8 +19,8 @@ sys.modules['streamlit'] = ModuleType('streamlit')
 # Ensure src is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from satya.core.pulse import compute_agent_health, compute_velocity_matrix, detect_cascade_failures, snapshot_pulse
-from satya.core import storage
+from src.satya.core.pulse import compute_agent_health, compute_velocity_matrix, detect_cascade_failures, snapshot_pulse
+from src.satya.core import storage
 
 class TestPulse(unittest.TestCase):
     def setUp(self):

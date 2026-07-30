@@ -1,8 +1,8 @@
 import pytest
 import os
 from unittest.mock import patch, MagicMock
-from satya.sdk.adapters import ConsoleAdapter, OTLPAdapter, LangSmithAdapter
-from satya.sdk.client import SatyaClient
+from src.satya.sdk.adapters import ConsoleAdapter, OTLPAdapter, LangSmithAdapter
+from src.satya.sdk.client import SatyaClient
 
 @patch('satya.sdk.client.require_agent')
 @patch('satya.sdk.client.get_agent_key_from_env')

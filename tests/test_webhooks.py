@@ -5,13 +5,13 @@ import sys
 sys.path.insert(0, os.path.abspath("src"))
 
 from unittest.mock import patch
-from satya.core import webhooks
-from satya.core.storage import SATYA_DIR
+from src.satya.core import webhooks
+from src.satya.core.storage import SATYA_DIR
 
 
 @pytest.fixture(autouse=True)
 def cleanup_webhooks():
-    from satya.core import storage
+    from src.satya.core import storage
     storage.SATYA_DIR = "test_webhook_data"
     os.makedirs(storage.SATYA_DIR, exist_ok=True)
     path = webhooks.get_webhooks_path()
@@ -24,7 +24,7 @@ def cleanup_webhooks():
         import shutil
         shutil.rmtree(storage.SATYA_DIR)
 
-@patch("satya.core.webhooks.socket.getaddrinfo")
+@patch("src.satya.core.webhooks.socket.getaddrinfo")
 def test_add_and_remove_webhook(mock_getaddrinfo):
     mock_getaddrinfo.return_value = [(2, 1, 6, '', ('93.184.216.34', 0))]
     url = "https://example.com/webhook"
@@ -40,8 +40,8 @@ def test_add_and_remove_webhook(mock_getaddrinfo):
     loaded = webhooks.load_webhooks()
     assert len(loaded) == 0
 
-@patch("satya.core.webhooks.socket.getaddrinfo")
-@patch("satya.core.webhooks.requests.Session")
+@patch("src.satya.core.webhooks.socket.getaddrinfo")
+@patch("src.satya.core.webhooks.requests.Session")
 def test_dispatch(mock_session_cls, mock_getaddrinfo):
     mock_getaddrinfo.return_value = [(2, 1, 6, '', ('93.184.216.34', 0))]
     url = "https://example.com/webhook"

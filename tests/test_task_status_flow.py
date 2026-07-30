@@ -1,7 +1,7 @@
 import os
 import shutil
 import pytest
-from satya.core.tasks import Tasks, STATUS_QUEUED, STATUS_IN_PROGRESS, STATUS_DONE, STATUS_FAILED
+from src.satya.core.tasks import Tasks, STATUS_QUEUED, STATUS_IN_PROGRESS, STATUS_DONE, STATUS_FAILED
 
 @pytest.fixture
 def temp_tasks():
@@ -9,7 +9,7 @@ def temp_tasks():
     os.makedirs(repo_path, exist_ok=True)
 
     # Also set the SATYA_DIR globally for tests to mock storage
-    import satya.core.storage as storage
+    import src.satya.core.storage as storage
     old_dir = storage.SATYA_DIR
     storage.SATYA_DIR = os.path.join(repo_path, "satya_data")
     storage.TASKS_DIR = os.path.join(storage.SATYA_DIR, "tasks")

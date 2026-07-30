@@ -1,15 +1,15 @@
 import os
 import shutil
 import pytest
-from satya.core.tasks import Tasks, STATUS_IN_PROGRESS, STATUS_DONE
-from satya.core.completion import CompletionChecker
+from src.satya.core.tasks import Tasks, STATUS_IN_PROGRESS, STATUS_DONE
+from src.satya.core.completion import CompletionChecker
 
 @pytest.fixture
 def temp_tasks_and_checker():
     repo_path = "test_repo"
     os.makedirs(repo_path, exist_ok=True)
 
-    import satya.core.storage as storage
+    import src.satya.core.storage as storage
     old_dir = storage.SATYA_DIR
     storage.SATYA_DIR = os.path.join(repo_path, "satya_data")
     storage.TASKS_DIR = os.path.join(storage.SATYA_DIR, "tasks")

@@ -2,12 +2,12 @@ import os
 import json
 import pytest
 import shutil
-from satya.auth import is_agent_authorized, is_human_authorized, sign_event, verify_event_chain, append_audit_event
-from satya.sdk.client import SatyaClient
-from satya.core import storage
+from src.satya.auth import is_agent_authorized, is_human_authorized, sign_event, verify_event_chain, append_audit_event
+from src.satya.sdk.client import SatyaClient
+from src.satya.core import storage
 
 from importlib import reload
-import satya.auth as auth
+import src.satya.auth as auth
 
 @pytest.fixture(autouse=True)
 def setup_teardown(monkeypatch, tmp_path):
@@ -100,7 +100,7 @@ def test_sqlite_audit_store(monkeypatch, tmp_path):
     monkeypatch.setenv("SATYA_SQLITE_DB", db_path)
 
     # Need to reset the initialized flag because tests might re-use it
-    from satya.core import db
+    from src.satya.core import db
     db._DB_INITIALIZED = False
 
     sig = auth.append_audit_event("agent_sqlite", "task_db", "trace_db", "sqlite_test", "demo details")

@@ -4,7 +4,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath("src"))
 
-from satya.core.enforcer import RuntimeEnforcer
+from src.satya.core.enforcer import RuntimeEnforcer
 
 def test_pii_masking():
     enforcer = RuntimeEnforcer()

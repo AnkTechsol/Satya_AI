@@ -19,7 +19,7 @@ sys.modules['streamlit'] = ModuleType('streamlit')
 # Ensure src is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from satya.core.storage import save_json, load_json, ensure_satya_dirs
+from src.satya.core.storage import save_json, load_json, ensure_satya_dirs
 
 class TestStorage(unittest.TestCase):
     def setUp(self):
@@ -61,7 +61,7 @@ class TestStorage(unittest.TestCase):
         self.assertEqual(load_json(filepath), {})
 
     def test_ensure_satya_dirs(self):
-        import satya.core.storage as storage
+        import src.satya.core.storage as storage
         with patch.multiple(storage,
                           TASKS_DIR=os.path.join(self.test_dir, "tasks"),
                           TRUTH_DIR=os.path.join(self.test_dir, "truth"),

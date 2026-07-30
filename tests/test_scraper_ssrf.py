@@ -1,6 +1,6 @@
 import pytest
 import socket
-from satya.core.scraper import _is_safe_url
+from src.satya.core.scraper import _is_safe_url
 
 def test_safe_url_global_ip(monkeypatch):
     # Mock socket.getaddrinfo to return a globally routable IP structure

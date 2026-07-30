@@ -2,15 +2,15 @@ import os
 import shutil
 import pytest
 from datetime import datetime, timedelta
-from satya.core.tasks import Tasks, STATUS_IN_PROGRESS, STATUS_DONE
-from satya.core.watchdog import WatchdogChecker
+from src.satya.core.tasks import Tasks, STATUS_IN_PROGRESS, STATUS_DONE
+from src.satya.core.watchdog import WatchdogChecker
 
 @pytest.fixture
 def temp_watchdog():
     repo_path = "test_repo_watchdog"
     os.makedirs(repo_path, exist_ok=True)
 
-    import satya.core.storage as storage
+    import src.satya.core.storage as storage
     old_dir = storage.SATYA_DIR
     storage.SATYA_DIR = os.path.join(repo_path, "satya_data")
     storage.TASKS_DIR = os.path.join(storage.SATYA_DIR, "tasks")
@@ -74,7 +74,7 @@ def test_completed_task_not_flagged(temp_watchdog):
     # since we want to avoid file creation overhead if possible, or just create it:
 
     # bypassing completion check by manually writing JSON
-    import satya.core.storage as storage
+    import src.satya.core.storage as storage
     task_data = storage.load_json(storage.get_task_path(task["id"]))
     task_data["status"] = STATUS_DONE
     storage.save_json(storage.get_task_path(task["id"]), task_data)

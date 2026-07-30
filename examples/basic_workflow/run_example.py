@@ -17,7 +17,7 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-import satya.sdk as satya
+import src.satya.sdk as satya
 
 DEFAULT_REFERENCE_URL = "https://example.com"
 

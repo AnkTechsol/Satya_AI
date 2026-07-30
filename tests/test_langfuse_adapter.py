@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from satya.sdk.adapters.langfuse import LangfuseAdapter
+from src.satya.sdk.adapters.langfuse import LangfuseAdapter
 
 def test_langfuse_adapter_export_trace():
     adapter = LangfuseAdapter("public", "secret")
 
-    with patch("satya.sdk.adapters.langfuse.requests.post") as mock_post:
+    with patch("src.satya.sdk.adapters.langfuse.requests.post") as mock_post:
         adapter.export_trace("trace123", "test_agent", "test_event", {"key": "value"})
 
         mock_post.assert_called_once()
@@ -25,6 +25,6 @@ def test_langfuse_adapter_export_trace():
 def test_langfuse_adapter_timeout_handling():
     adapter = LangfuseAdapter("public", "secret")
 
-    with patch("satya.sdk.adapters.langfuse.requests.post", side_effect=Exception("Timeout")):
+    with patch("src.satya.sdk.adapters.langfuse.requests.post", side_effect=Exception("Timeout")):
         # Should not raise exception
         adapter.export_trace("trace123", "test_agent", "test_event", {"key": "value"})
