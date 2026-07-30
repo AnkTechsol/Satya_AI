@@ -8,9 +8,9 @@ import sys
 # Ensure src is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from src.satya.core.project_manager import AIOrchestrator
-from src.satya.core.tasks import Tasks, STATUS_QUEUED, STATUS_IN_PROGRESS
-from src.satya.core import storage
+from satya.core.project_manager import AIOrchestrator
+from satya.core.tasks import Tasks, STATUS_QUEUED, STATUS_IN_PROGRESS
+from satya.core import storage
 
 class TestProjectManager(unittest.TestCase):
     def setUp(self):

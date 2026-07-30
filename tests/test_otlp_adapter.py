@@ -4,9 +4,9 @@ from unittest.mock import patch, MagicMock
 
 # The conftest mocks are handled before this file
 sys.path.insert(0, "src")
-from src.satya.sdk.adapters.otlp import OTLPAdapter
+from satya.sdk.adapters.otlp import OTLPAdapter
 
-@patch("src.satya.sdk.adapters.otlp.requests.post")
+@patch("satya.sdk.adapters.otlp.requests.post")
 def test_export_trace(mock_post):
     adapter = OTLPAdapter()
     adapter.export_trace("test_trace_id", "test_agent", "test_event", {"key": "value"})

@@ -25,9 +25,9 @@ if 'streamlit' not in sys.modules:
 # Ensure src is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from src.satya.core.goal_guardian import GoalGuardian, save_goal, load_goal, load_goal_alerts
-from src.satya.sdk.client import SatyaClient, GoalDriftError
-from src.satya.core import storage
+from satya.core.goal_guardian import GoalGuardian, save_goal, load_goal, load_goal_alerts
+from satya.sdk.client import SatyaClient, GoalDriftError
+from satya.core import storage
 
 class TestGoalGuardian(unittest.TestCase):
     def setUp(self):
@@ -38,7 +38,7 @@ class TestGoalGuardian(unittest.TestCase):
         # set up mock agent key env var
         os.environ["SATYA_AGENT_KEY"] = "DEMO_KEY"
         # Mock auth verification to keep it simple
-        self.auth_patcher = patch("src.satya.auth.require_agent")
+        self.auth_patcher = patch("satya.auth.require_agent")
         self.mock_require_agent = self.auth_patcher.start()
 
     def tearDown(self):
