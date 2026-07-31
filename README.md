@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
+- **Last Analytics Run:** 2026-07-31T14:50:02.044373+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -67,7 +67,14 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 ---
 
 
+**Important Links:** [Repo Analytics](REPO_ANALYTICS.md) | [Competitor Matrix](COMPETITOR_MATRIX.md) | [Changelog](CHANGELOG.md)
+
 ## SUSTAINABLE_FEATURES
+
+- **File Export Adapters (CSV/JSONL)** (Added 2026-07)
+  - Added CSV and JSONL file export adapters to provide zero-infrastructure, human-readable trace exporting for self-hosted environments.
+  - Runbook: Instantiate `CSVExportAdapter` or `JSONLExportAdapter` and pass to `satya.init(adapters=[CSVExportAdapter()])`.
+  - Validation: Run `PYTHONPATH=. pytest tests/test_file_adapters.py`
 
 - **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
   - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.

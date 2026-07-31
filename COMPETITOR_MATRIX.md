@@ -1,14 +1,16 @@
-# Competitor Matrix
+# Competitor Analysis
 
 | Feature | Satya | LangSmith | Langfuse |
-|---|---|---|---|
-| Observability Depth | High (Log/Task level) | High (Token/Prompt level) | High (Token/Prompt level) |
-| Agent Runtime Support | Native (Task Board/Chat) | API only | API only |
-| Self-host Friendliness | Excellent (Zero infra, flat-file) | Complex (Docker/K8s) | Good (Docker) |
-| Enterprise Features | **NEW: Durable Postgres/S3 Audit** | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
-| Export Adapters | **NEW: OTLP/Langfuse/LangSmith support** | N/A | N/A |
-| Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
+| --- | --- | --- | --- |
+| Observability Depth | Medium (Events) | High (Token/Prompt) | High (Token/Prompt) |
+| Agent Runtime Support | High (Agent-first) | Low | Low |
+| Self-Host Friendliness | High (Zero-infra) | Low (Complex) | Medium (Docker) |
+| Enterprise Features | High (Audit/RBAC) | High (SSO/RBAC) | Medium |
+| Export Adapters | High (OTLP/File/etc) | Low | Medium |
+| Pricing Model | OSS | Managed/Enterprise | Managed/OSS Core |
 
-## Strategic Gaps & Differentiators
-*   **Where Satya wins:** Zero-infrastructure setup, native task tracking, flat-file architecture, human-observer paradigm.
-*   **Where Satya must catch up:** Deep trace analytics and robust enterprise identity. (Long-term durable storage gap closed via Postgres/S3).
+**Where Satya Wins:**
+Satya's defensible differentiator is its agent-first runtime support combined with zero-infrastructure self-host friendliness. It is built for autonomous agents to deploy themselves and provides out-of-the-box durable auditing suitable for enterprise compliance.
+
+**Where Satya Must Catch Up:**
+Satya needs to deepen its observability depth to include token-level and prompt-snapshot tracking to match the granular tracing provided by LangSmith and Langfuse.
