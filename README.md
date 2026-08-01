@@ -51,9 +51,37 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
+- **Last Analytics Run:** 2026-08-01T15:03:49.509846+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
+
+## SUSTAINABLE_FEATURES
+
+- **Export Adapter Framework (OTLP/Langfuse/LangSmith)** (Added: 2026-04)
+  - A modular adapter system that enables Satya to export traces/events to Langfuse, LangSmith, or OTLP. Keeps core lightweight and lets enterprises reuse existing investments.
+  - *Runbook:* Initialize `SatyaClient(adapters=[OTLPAdapter()])` or LangSmith/Langfuse equivalents.
+  - *Validation:* `PYTHONPATH=src pytest tests/test_sdk_adapters.py`
+
+- **Agent Self-Test Harness + CI Analytics Job** (Added: 2026-04)
+  - A harness that runs demo agents in CI, generating latency traces to monitor repository and agent health continuously.
+  - *Runbook:* Pushes to main branch trigger `.github/workflows/analytics_and_test.yml`.
+  - *Validation:* `python generate_analytics.py` and view generated `REPO_ANALYTICS.md`.
+
+- **Auto-README Updater Action** (Added: 2026-04)
+  - Extends `generate_analytics.py` to continuously parse and rewrite the `README.md` file's "Repository Status" header. Ensures humans always see the latest telemetry natively.
+  - *Runbook:* Included out-of-the-box in `python generate_analytics.py`.
+  - *Validation:* Run script and observe `README.md` modifications.
+
+- **Durable Append-only Audit Store (Postgres + S3 + SQLite Fallback)** (Added: 2026-05)
+  - Replaces fragile flat-files with a highly reliable Postgres schema and offloads raw event payloads to S3 pointers. Includes a zero-config fallback to SQLite if environment variables are not set.
+  - *Runbook:* Export `SATYA_POSTGRES_URI="postgresql://..."` and `SATYA_S3_BUCKET="my-bucket"`, or `SATYA_SQLITE_DB="test.db"` to enable.
+  - *Validation:* `PYTHONPATH=src SATYA_SQLITE_DB=test.db pytest tests/test_postgres_s3_audit.py`
+
+- **Runtime Policy Enforcement & PII Masking** (Added: 2026-04-24)
+  - A fast, lightweight heuristic-and-regex based layer that masks PII and detects drift/jailbreak patterns before they reach storage.
+  - *Runbook:* Instantiated automatically within `SatyaClient`.
+  - *Validation:* `PYTHONPATH=src pytest tests/test_enforcement.py`
+
 
 ## Human-Observer Policy (Agent-First)
 
@@ -67,53 +95,7 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 ---
 
 
-## SUSTAINABLE_FEATURES
 
-- **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
-  - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.
-  - Runbook: Set the `SATYA_SQLITE_DB` environment variable (e.g., `SATYA_SQLITE_DB=satya_data/audit.db`) before starting the runtime or testing to enable the durable store. Fallbacks to file system automatically if not set.
-  - Validation: Run `PYTHONPATH=. SATYA_SQLITE_DB=test.db pytest tests/test_auth_and_audit.py`.
-
-- **Auto-README Updater Action** (Added 2026-04)
-  - Extends `generate_analytics.py` to continuously parse and rewrite the `README.md` file's "Repository Status" header. Ensures humans always see the latest telemetry natively without clicking away.
-  - Runbook: Included out-of-the-box in `python generate_analytics.py` (which runs in `.github/workflows/analytics_and_test.yml`).
-  - Validation: Run `python generate_analytics.py` and observe `README.md` modifications.
-
-- **Agent Self-Test Harness + CI Analytics Job** (Added 2026-03)
-  - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
-  - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
-  - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
-
-- **Export Adapter Framework (OTLP/Console/LangSmith)** (Added 2024-03, updated 2024-04)
-  - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture. Added LangSmith support for enterprise observability.
-  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[OTLPAdapter(), LangSmithAdapter(api_key="...", project_name="...")])`.
-  - Validation: `PYTHONPATH=. pytest tests/test_adapters.py tests/test_langsmith_adapter.py`
-
-- **Repo Analytics & Competitor Matrix**
-  - View [Repo Analytics](REPO_ANALYTICS.md) and [Competitor Matrix](COMPETITOR_MATRIX.md).
-
-For more details on changes, see our [CHANGELOG](CHANGELOG.md).
-## How It Works
-
-Satya separates **who does the work** from **who watches the work**:
-
-```
-┌──────────────────────────────────┐       ┌──────────────────────────────────┐
-│         AI AGENT (Operator)      │       │        HUMAN (Observer)          │
-│                                  │       │                                  │
-│  - Deploys Satya                 │       │  - Opens the dashboard URL       │
-│  - Creates & updates tasks       │ ───── │  - Monitors tasks & progress     │
-│  - Logs progress via SDK         │ writes│  - Reads agent session logs      │
-│  - Scrapes knowledge base        │  to   │  - Reviews scraped knowledge     │
-│  - Manages the full lifecycle    │ disk  │  - Optionally creates tasks      │
-│                                  │       │                                  │
-│  Uses: Python SDK or flat files  │       │  Uses: Web browser only          │
-└──────────────────────────────────┘       └──────────────────────────────────┘
-```
-
-**The AI agent is the deployer and operator.** It installs dependencies, starts the dashboard, creates tasks, logs its activity, and scrapes reference material — all programmatically.
-
-**The human is the observer.** They open a browser, navigate to the dashboard URL, and monitor the agent's progress in real time. No terminal. No code. Just a web page.
 
 ---
 
@@ -127,17 +109,7 @@ Humans now have direct control over their AI workforce! The new **Agent Chat** c
 ---
 
 
-## SUSTAINABLE_FEATURES
 
-- **Runtime Policy Enforcement & PII Masking** (Added: 2026-04-24): A fast, lightweight heuristic-and-regex based layer that masks PII (SSN, credit cards, emails, phones) and detects drift/jailbreak patterns ("ignore previous instructions", "developer mode", "evil AI") before they reach the storage or telemetry layers. It uses zero LLM tokens and requires zero API calls.
-  - Runbook: Instantiated automatically within `SatyaClient`. All task creations and logs are routed through `RuntimeEnforcer`. If drift is detected, it triggers a real-time `audit_event`.
-  - Validation: `PYTHONPATH=. pytest tests/test_enforcement.py`
-
-- **Export Adapter Framework (OTLP)** (Added: 2026-04-16): Lightweight framework to export traces to Langfuse/LangSmith/OTLP. Keeps the core lightweight and supports enterprise telemetry integration.
-  - Runbook: Add `OTLPAdapter` to the `adapters` list when calling `satya.init()`. Ensure your system allows egress to the OTLP endpoint.
-  - Validation: Ensure traces are received on the target tracing backend. Can be validated by running `pytest tests/test_otlp_adapter.py`.
-
-See [REPO_ANALYTICS.md](REPO_ANALYTICS.md), [COMPETITOR_MATRIX.md](COMPETITOR_MATRIX.md), and [CHANGELOG.md](CHANGELOG.md) for more details.
 
 ## Why Satya?
 
@@ -419,17 +391,3 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
   <sub>If Satya helps your AI agents stay on track, give it a star on GitHub!</sub>
 </p>
 
-## SUSTAINABLE_FEATURES
-
-- **Durable Append-only Audit Store (Postgres + S3)**: Added on May 2026. Replaces fragile flat-files with a highly reliable Postgres schema and offloads raw event payloads to S3 pointers. Includes a zero-config fallback to SQLite if environment variables are not set.
-  - *Validation command:* `pytest tests/test_postgres_s3_audit.py`
-  - *Runbook:* Export `SATYA_POSTGRES_URI="postgresql://..."` and `SATYA_S3_BUCKET="my-bucket"` before starting the agent to enable durable auditing.
-  - *Migration Plan:* For existing SQLite users, the schema will automatically run an `ALTER TABLE` to add the `s3_uri` column upon initialization, ensuring zero downtime and backward compatibility. For flat-file users migrating to Postgres, use the `scripts/migrate_to_postgres.py` (coming soon) to batch upload historical logs to your S3 bucket.
-
-- **Export Adapter Framework (OTLP/Langfuse/LangSmith)**: Added on April 2026. A small, modular adapter system that enables Satya to export traces/events to Langfuse, LangSmith, or OTLP. It keeps the core lightweight while letting enterprises reuse existing investments.
-  - *Validation command:* `pytest tests/test_langfuse_adapter.py` and `pytest tests/test_langsmith_adapter.py`
-  - *Runbook:* Initialize `SatyaClient(adapters=[LangfuseAdapter(...)])` or `SatyaClient(adapters=[LangSmithAdapter(api_key="...", project_name="...")])`.
-
-- **Agent Self-Test Harness + CI Analytics Job**: Added on April 2026. A harness that runs demo agents against APIs in CI, generating latency traces and metrics to `repo_analytics.json` to monitor repository and agent health continuously.
-  - *Validation command:* `python generate_analytics.py`
-  - *Runbook:* Automatically executes on GitHub Actions. Checks performance and auto-updates README stats.
