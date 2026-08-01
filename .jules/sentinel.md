@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2025-02-09 - XSS Vulnerability in Streamlit Alert Rendering
+**Vulnerability:** Similar to previous timestamp rendering XSS bugs, several alert attributes (`alert.get('type')`, `alert.get('message')`, `alert.get('agent')`, etc.) were dynamically injected into `st.markdown(..., unsafe_allow_html=True)` blocks without being escaped. An attacker manipulating task or agent data could inject arbitrary HTML/JavaScript that would run in an administrator's browser.
+**Learning:** Any user-controlled dictionary value or variable rendered within a `st.markdown` block configured with `unsafe_allow_html=True` is an XSS vector. You cannot rely on Streamlit's default escaping if `unsafe_allow_html=True` is enabled.
+**Prevention:** Systematically search the codebase for `st.markdown(..., unsafe_allow_html=True)` and ensure every dynamically injected `{variable}` uses `html.escape(str(variable))`.
