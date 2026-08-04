@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
+- **Last Analytics Run:** 2026-08-04T15:17:59.604017+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -83,6 +83,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
+
+- **Local File Exporter (CSV/JSONL)** (Added 2026-08-04)
+  - Provides a self-host friendly out-of-the-box local observability with zero external dependencies. Exports traces and logs to CSV and JSONL formats.
+  - Runbook: Instantiate the adapter `from satya.sdk.adapters.file import FileAdapter` and pass it to `satya.init(adapters=[FileAdapter()])`.
+  - Validation: Run `PYTHONPATH=src pytest tests/test_file_adapter.py`.
 
 - **Export Adapter Framework (OTLP/Console/LangSmith)** (Added 2024-03, updated 2024-04)
   - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture. Added LangSmith support for enterprise observability.
