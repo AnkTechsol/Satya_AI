@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2025-05-24 - SSRF vs MitM in Webhooks
+**Vulnerability:** The webhook dispatch logic used `verify=False` when making `requests.post` calls to dynamically constructed IP-based URLs. This bypassed SSL certificate verification, making all HTTPS webhooks vulnerable to Man-in-the-Middle (MitM) attacks.
+**Learning:** The `verify=False` was originally added to work around TLS SNI routing issues when trying to prevent DNS rebinding SSRF by manually replacing the URL hostname with the resolved safe IP address and passing a `Host` header. This breaks TLS verification in `urllib3` because the certificate matches the hostname but the connection was initialized to the IP.
+**Prevention:** Instead of manipulating the URL string and passing `verify=False`, implement a custom `requests.adapters.HTTPAdapter` overriding `get_connection` to manually assign the resolved target IP to the connection (`conn.host = target_ip`), while strictly preserving the original URL hostname, `conn.assert_hostname`, and `conn.conn_kw['server_hostname']` for TLS SNI validation.
