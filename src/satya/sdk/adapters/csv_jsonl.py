@@ -2,6 +2,8 @@ from .base import ExportAdapter
 import json
 import csv
 import os
+import sys
+import fcntl
 from datetime import datetime, timezone
 
 class CsvJsonlAdapter(ExportAdapter):
@@ -22,10 +24,14 @@ class CsvJsonlAdapter(ExportAdapter):
         now = datetime.now(timezone.utc).isoformat()
         try:
             with open(self.trace_file, mode='a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow([now, trace_id, agent_name, event_type, json.dumps(data)])
-        except Exception:
-            pass
+                fcntl.flock(f, fcntl.LOCK_EX)
+                try:
+                    writer = csv.writer(f)
+                    writer.writerow([now, trace_id, agent_name, event_type, json.dumps(data)])
+                finally:
+                    fcntl.flock(f, fcntl.LOCK_UN)
+        except Exception as e:
+            sys.stderr.write(f"CsvJsonlAdapter failed to export trace: {e}\n")
 
     def export_log(self, agent_name: str, message: str, task_id: str = None):
         now = datetime.now(timezone.utc).isoformat()
@@ -37,6 +43,10 @@ class CsvJsonlAdapter(ExportAdapter):
         }
         try:
             with open(self.log_file, mode='a') as f:
-                f.write(json.dumps(payload) + "\n")
-        except Exception:
-            pass
+                fcntl.flock(f, fcntl.LOCK_EX)
+                try:
+                    f.write(json.dumps(payload) + "\n")
+                finally:
+                    fcntl.flock(f, fcntl.LOCK_UN)
+        except Exception as e:
+            sys.stderr.write(f"CsvJsonlAdapter failed to export log: {e}\n")
