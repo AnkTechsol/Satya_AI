@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
+- **Last Analytics Run:** 2026-08-06T15:40:46.948251+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -68,6 +68,11 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **CSV/JSONL Export Adapter** (Added 2026-08-06)
+  - Enables streaming trace and log events to flat files (CSV for traces, JSONL for unstructured logs) that can be easily ingested by SIEMs (Splunk/ELK) or basic data science workflows. It acts as a zero-DB fallback for telemetry.
+  - Runbook: Pass a list of instantiated adapters to `satya.init(adapters=[CsvJsonlAdapter(trace_file="traces.csv", log_file="logs.jsonl")])`.
+  - Validation: `PYTHONPATH=. pytest tests/test_csv_jsonl_adapter.py`
 
 - **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
   - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.
