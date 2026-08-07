@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-07-11T15:08:35.634298+00:00Z
+- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -420,6 +420,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 ## SUSTAINABLE_FEATURES
+
+- **CSV/JSONL Export Adapter**: Added on August 2026. A durable, flat-file based adapter that exports traces and logs to CSV and JSONL formats for offline analytics. Designed as a zero-infrastructure fallback.
+  - *Validation command:* `pytest tests/test_csv_jsonl_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[CSVJSONLExportAdapter(...)])`.
 
 - **Durable Append-only Audit Store (Postgres + S3)**: Added on May 2026. Replaces fragile flat-files with a highly reliable Postgres schema and offloads raw event payloads to S3 pointers. Includes a zero-config fallback to SQLite if environment variables are not set.
   - *Validation command:* `pytest tests/test_postgres_s3_audit.py`
