@@ -8,6 +8,7 @@
 | Enterprise Features | **NEW: Durable Postgres/S3 Audit** | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
 | Export Adapters | **NEW: OTLP/Langfuse/LangSmith/CSV/JSONL support** | N/A | N/A |
 | Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
+| Storage Manageability | **NEW: Automated Data Retention (Prunes old flat files)** | Managed / DB setup required | DB setup required |
 
 ## Strategic Gaps & Differentiators
 *   **Where Satya wins:** Zero-infrastructure setup, native task tracking, flat-file architecture, human-observer paradigm.

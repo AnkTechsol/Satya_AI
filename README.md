@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-08-08T15:01:13.503947+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -420,6 +420,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 ## SUSTAINABLE_FEATURES
+
+- **Data Retention Module**: Added on 2026-08-08. A durable flat-file archiver that automatically prunes tasks and agent logs older than a configurable number of days, moving them to an archive folder to ensure unbounded storage growth does not impact repository size.
+  - *Validation command:* `pytest tests/test_retention.py`
+  - *Runbook:* Call `archive_old_data(days_old=30)` periodically via CRON or GitHub Actions to prune old data.
 
 - **CSV/JSONL Export Adapter**: Added on August 2026. A durable, flat-file based adapter that exports traces and logs to CSV and JSONL formats for offline analytics. Designed as a zero-infrastructure fallback.
   - *Validation command:* `pytest tests/test_csv_jsonl_adapter.py`
