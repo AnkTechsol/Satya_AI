@@ -25,3 +25,5 @@
 - **Added** `repo_analytics.json` and `REPO_ANALYTICS.md` to run runtime analytics in CI. Risk: Low (reads data and executes minimal simulation).
 - **Added** `LangfuseAdapter` export adapter to support telemetry streaming to Langfuse. Risk: Low (plugs into existing Adapter framework, isolates failures via timeouts).
 - **2024-04-XX** - Implemented LangSmith export adapter to enable enterprise observability integrations. (Risk: Low)
+- [2026-08-09] **Added:** WebhookAdapter for pushing traces and logs to arbitrary HTTP endpoints. (Risk: Low)
+- [2026-08-09] **Updated:** Ran generate_analytics.py to update repo_analytics.json and REPO_ANALYTICS.md.
