@@ -5,4 +5,6 @@ from .langfuse import LangfuseAdapter
 from .langsmith import LangSmithAdapter
 from .csv_jsonl import CSVJSONLExportAdapter
 
-__all__ = ["ExportAdapter", "ConsoleAdapter", "OTLPAdapter", "LangfuseAdapter", "LangSmithAdapter", "CSVJSONLExportAdapter"]
+from .datadog import DatadogAdapter
+
+__all__ = ["ExportAdapter", "ConsoleAdapter", "OTLPAdapter", "LangfuseAdapter", "LangSmithAdapter", "CSVJSONLExportAdapter", "DatadogAdapter"]
