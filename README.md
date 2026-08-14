@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-08-14T14:45:06.932913+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -420,6 +420,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 ## SUSTAINABLE_FEATURES
+
+- **Webhook Export Adapter**: Added on August 2026. Exports traces and logs via HTTP webhooks, ensuring SSRF mitigations for enterprise security environments.
+  - *Validation command:* `pytest tests/test_webhook_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[WebhookExportAdapter(url="...", auth_token="...")])`.
 
 - **CSV/JSONL Export Adapter**: Added on August 2026. A durable, flat-file based adapter that exports traces and logs to CSV and JSONL formats for offline analytics. Designed as a zero-infrastructure fallback.
   - *Validation command:* `pytest tests/test_csv_jsonl_adapter.py`
