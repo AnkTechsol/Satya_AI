@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-08-15T15:11:46.387431+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -421,6 +421,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ## SUSTAINABLE_FEATURES
 
+- **Webhook Export Adapter**: Added on August 2026. A lightweight adapter that streams telemetry traces and logs to any generic HTTP webhook endpoint. Reason for choice: Easily integrates Satya with external alerting platforms with zero infra requirements.
+  - *Validation command:* `pytest tests/test_webhook_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[WebhookExportAdapter("https://your-webhook.com/endpoint")])`.
+
 - **CSV/JSONL Export Adapter**: Added on August 2026. A durable, flat-file based adapter that exports traces and logs to CSV and JSONL formats for offline analytics. Designed as a zero-infrastructure fallback.
   - *Validation command:* `pytest tests/test_csv_jsonl_adapter.py`
   - *Runbook:* Initialize `SatyaClient(adapters=[CSVJSONLExportAdapter(...)])`.
@@ -437,3 +441,4 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 - **Agent Self-Test Harness + CI Analytics Job**: Added on April 2026. A harness that runs demo agents against APIs in CI, generating latency traces and metrics to `repo_analytics.json` to monitor repository and agent health continuously.
   - *Validation command:* `python generate_analytics.py`
   - *Runbook:* Automatically executes on GitHub Actions. Checks performance and auto-updates README stats.
+See [REPO_ANALYTICS.md](REPO_ANALYTICS.md), [COMPETITOR_MATRIX.md](COMPETITOR_MATRIX.md), and [CHANGELOG.md](CHANGELOG.md) for more details.
