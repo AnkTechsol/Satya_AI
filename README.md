@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-08-16T14:59:08.338559+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -68,6 +68,14 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Webhook Export Adapter**: Added on August 2026. A modular adapter that sends traces and logs via HTTP POST to any configured webhook URL, operating in a background thread to prevent blocking. Designed for easy integration with custom SIEMs or alerting systems.
+  - *Validation command:* `pytest tests/test_webhook_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[WebhookExportAdapter(webhook_url="https://...")])`.
+
+- **Webhook Export Adapter**: Added on August 2026. A modular adapter that sends traces and logs via HTTP POST to any configured webhook URL, operating in a background thread to prevent blocking. Designed for easy integration with custom SIEMs or alerting systems.
+  - *Validation command:* `pytest tests/test_webhook_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[WebhookExportAdapter(webhook_url="https://...")])`.
 
 - **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
   - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.
@@ -128,6 +136,10 @@ Humans now have direct control over their AI workforce! The new **Agent Chat** c
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Webhook Export Adapter**: Added on August 2026. A modular adapter that sends traces and logs via HTTP POST to any configured webhook URL, operating in a background thread to prevent blocking. Designed for easy integration with custom SIEMs or alerting systems.
+  - *Validation command:* `pytest tests/test_webhook_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[WebhookExportAdapter(webhook_url="https://...")])`.
 
 - **Runtime Policy Enforcement & PII Masking** (Added: 2026-04-24): A fast, lightweight heuristic-and-regex based layer that masks PII (SSN, credit cards, emails, phones) and detects drift/jailbreak patterns ("ignore previous instructions", "developer mode", "evil AI") before they reach the storage or telemetry layers. It uses zero LLM tokens and requires zero API calls.
   - Runbook: Instantiated automatically within `SatyaClient`. All task creations and logs are routed through `RuntimeEnforcer`. If drift is detected, it triggers a real-time `audit_event`.
@@ -420,6 +432,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 ## SUSTAINABLE_FEATURES
+
+- **Webhook Export Adapter**: Added on August 2026. A modular adapter that sends traces and logs via HTTP POST to any configured webhook URL, operating in a background thread to prevent blocking. Designed for easy integration with custom SIEMs or alerting systems.
+  - *Validation command:* `pytest tests/test_webhook_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[WebhookExportAdapter(webhook_url="https://...")])`.
 
 - **CSV/JSONL Export Adapter**: Added on August 2026. A durable, flat-file based adapter that exports traces and logs to CSV and JSONL formats for offline analytics. Designed as a zero-infrastructure fallback.
   - *Validation command:* `pytest tests/test_csv_jsonl_adapter.py`
