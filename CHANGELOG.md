@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-08-16] **Added:** WebhookExportAdapter to broadcast traces and logs via HTTP POST to arbitrary URLs. (Risk: Low)
+- [2026-08-16] **Added:** WebhookExportAdapter to broadcast traces and logs via HTTP POST to arbitrary URLs. (Risk: Low)
 - [2026-08-07] **Added:** CSVJSONLExportAdapter for durable flat-file local exports. (Risk: Low)
 - [2026-06-06] **Added:** Generated new analytics via jules/analytics snapshot. Updated `repo_analytics.json`, `REPO_ANALYTICS.md` and `README.md`. (Risk: Low)
 - [2026-05-10] **Added:** Durable append-only audit store with Postgres and S3 support (falling back to SQLite). Allows high-reliability remote trace and audit storage for enterprise users. (Risk: Low, opt-in via env vars)
@@ -22,6 +24,7 @@
 - Evaluated impact of new framework: Low Risk. Opt-in only via environment variables.
 
 ## [Unreleased]
+- [2026-08-16] **Added:** WebhookExportAdapter to broadcast traces and logs via HTTP POST to arbitrary URLs. (Risk: Low)
 - **Added** `repo_analytics.json` and `REPO_ANALYTICS.md` to run runtime analytics in CI. Risk: Low (reads data and executes minimal simulation).
 - **Added** `LangfuseAdapter` export adapter to support telemetry streaming to Langfuse. Risk: Low (plugs into existing Adapter framework, isolates failures via timeouts).
 - **2024-04-XX** - Implemented LangSmith export adapter to enable enterprise observability integrations. (Risk: Low)
