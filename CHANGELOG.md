@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-08-17] **Added:** WebhookExportAdapter for sending traces and logs to a webhook URL in a background thread. (Risk: Low)
 - [2026-08-07] **Added:** CSVJSONLExportAdapter for durable flat-file local exports. (Risk: Low)
 - [2026-06-06] **Added:** Generated new analytics via jules/analytics snapshot. Updated `repo_analytics.json`, `REPO_ANALYTICS.md` and `README.md`. (Risk: Low)
 - [2026-05-10] **Added:** Durable append-only audit store with Postgres and S3 support (falling back to SQLite). Allows high-reliability remote trace and audit storage for enterprise users. (Risk: Low, opt-in via env vars)
@@ -10,6 +11,7 @@
 - [2026-04-16] **Added:** OTLP Export Adapter framework for OpenTelemetry support (`satya.sdk.adapters.otlp`). (Risk: Low)
 
 ### Added
+- Implemented **Webhook Export Adapter** to stream traces and events via HTTP webhooks asynchronously.
 - Implemented **Durable Append-only Audit Store** providing an opt-in SQLite backend (`SATYA_SQLITE_DB`) for atomic and compliant audit trail storage.
 - Expanded `generate_analytics.py` with an **Auto-README Updater Action** that injects real-time telemetry back into the main `README.md`.
 - Implemented **Agent Self-Test Harness + CI Analytics Job** to continuously test agent workflows, mock the simulation environment for CI, and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md` automatically on push.
