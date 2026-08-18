@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- [2026-08-18] **Added:** Webhook Export Adapter for securely exporting telemetry events to arbitrary HTTP endpoints in a background thread. (Risk: Low)
 - [2026-08-07] **Added:** CSVJSONLExportAdapter for durable flat-file local exports. (Risk: Low)
 - [2026-06-06] **Added:** Generated new analytics via jules/analytics snapshot. Updated `repo_analytics.json`, `REPO_ANALYTICS.md` and `README.md`. (Risk: Low)
 - [2026-05-10] **Added:** Durable append-only audit store with Postgres and S3 support (falling back to SQLite). Allows high-reliability remote trace and audit storage for enterprise users. (Risk: Low, opt-in via env vars)
