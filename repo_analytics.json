@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-08-26T01:38:37.555667+00:00Z",
+  "timestamp": "2026-08-26T14:38:06.909853+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Tue Aug 25 01:28:25 2026 +0000"
+    "last_commit_date": "Wed Aug 26 01:38:37 2026 +0000"
   },
   "issues": {
     "open": "Unknown",
@@ -18,8 +18,8 @@
     "failing": "0"
   },
   "performance": {
-    "task_create_median_s": 0.0002903938293457031,
-    "task_create_p95_s": 0.0004956245422363282
+    "task_create_median_s": 0.0011782646179199219,
+    "task_create_p95_s": 0.0012603044509887696
   },
   "code_health": {
     "top_largest_files": [
