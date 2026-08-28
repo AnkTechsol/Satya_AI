@@ -28,13 +28,29 @@ largest_files = [f.split()[-1] for f in large_files if f]
 has_tests = "Yes" if os.path.exists("tests") else "No"
 has_github_actions = "Yes" if os.path.exists(".github/workflows") else "No"
 
-test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1 -q')
+test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1 -q --cov=src')
 failing_tests = "0" if "failed" not in test_out.lower() else "1+"
 ci_status = "passing" if failing_tests == "0" else "failing"
+
+test_coverage = "Unknown"
+if "TOTAL" in test_out:
+    try:
+        lines = test_out.split('\n')
+        for line in lines:
+            if line.startswith('TOTAL'):
+                test_coverage = line.split()[-1]
+                break
+    except Exception:
+        pass
 
 def main():
     # Run sim and calculate latencies
     sim_out = run_cmd('python run_sim.py')
+    try:
+        with open('otel-traces.json', 'w') as f:
+            f.write(sim_out)
+    except Exception:
+        pass
     try:
         lats = json.loads(sim_out)
         create_lats = [lat[1] for lat in lats if lat[0] == "create"]
@@ -64,7 +80,8 @@ def main():
         },
         "tests": {
             "has_tests": has_tests,
-            "failing": failing_tests
+            "failing": failing_tests,
+            "coverage": test_coverage
         },
         "performance": {
             "task_create_median_s": create_median,
@@ -96,6 +113,7 @@ def main():
 - **GitHub Actions**: {analytics['ci']['has_workflows']}
 - **Tests Exist**: {analytics['tests']['has_tests']}
 - **Failing Tests**: {analytics['tests']['failing']}
+- **Approx Test Coverage**: {test_coverage}
 
 ## Runtime Simulation
 - **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s
