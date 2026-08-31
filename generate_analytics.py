@@ -25,10 +25,29 @@ large_files = run_cmd('find . -type f -not -path "*/\\.*" -not -path "*/venv/*" 
 largest_files = [f.split()[-1] for f in large_files if f]
 
 # Tests
+# Authors
+author_dist = run_cmd('git shortlog -s -n --since="90 days ago"').split('\n')
+author_dist = [a.strip() for a in author_dist if a.strip()]
+
+# Dependencies
+reqs = run_cmd('cat pyproject.toml | grep -v "^#" | grep -i "dependencies" -A 10').split('\n')
+has_safety_scan = "Unknown"
+
+# Packaging
+has_docker = "Yes" if os.path.exists("Dockerfile") else "No"
+
+# Language
+python_files = int(run_cmd('find . -name "*.py" | wc -l'))
+md_files = int(run_cmd('find . -name "*.md" | wc -l'))
+
+# Tests
 has_tests = "Yes" if os.path.exists("tests") else "No"
 has_github_actions = "Yes" if os.path.exists(".github/workflows") else "No"
 
-test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1 -q')
+test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --cov=src --maxfail=1 -q')
+cov_match = __import__('re').search(r'TOTAL\s+\d+\s+\d+\s+(\d+)%', test_out)
+test_coverage = f"{cov_match.group(1)}%" if cov_match else "Unknown"
+
 failing_tests = "0" if "failed" not in test_out.lower() else "1+"
 ci_status = "passing" if failing_tests == "0" else "failing"
 
@@ -64,14 +83,25 @@ def main():
         },
         "tests": {
             "has_tests": has_tests,
-            "failing": failing_tests
+            "failing": failing_tests,
+            "coverage": test_coverage
+        },
+        "dependencies": {
+            "pyproject_lines": len(reqs),
+            "security_scan": has_safety_scan
+        },
+        "packaging": {
+            "dockerfile": has_docker
         },
         "performance": {
             "task_create_median_s": create_median,
             "task_create_p95_s": create_p95
         },
         "code_health": {
-            "top_largest_files": largest_files
+            "top_largest_files": largest_files,
+            "python_files": python_files,
+            "md_files": md_files,
+            "author_distribution": author_dist
         }
     }
 
@@ -96,6 +126,17 @@ def main():
 - **GitHub Actions**: {analytics['ci']['has_workflows']}
 - **Tests Exist**: {analytics['tests']['has_tests']}
 - **Failing Tests**: {analytics['tests']['failing']}
+- **Approx Coverage**: {analytics['tests']['coverage']}
+
+## Packaging & Dependencies
+- **Dockerfile**: {analytics['packaging']['dockerfile']}
+
+## Authors
+- **Top Authors**: {", ".join(author_dist)}
+
+## Code Health
+- **Python Files**: {python_files}
+- **Markdown Files**: {md_files}
 
 ## Runtime Simulation
 - **Median Task Creation Latency**: {analytics['performance']['task_create_median_s']:.4f}s

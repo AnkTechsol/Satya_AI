@@ -1,10 +1,10 @@
 # Repo Analytics
 
-**Last Run**: 2026-08-31T04:45:19.883996+00:00Z
+**Last Run**: 2026-08-31T15:17:07.271332+00:00Z
 
 ## Git Stats
 - **Commits (last 90d)**: 1
-- **Last Commit Date**: Sun Aug 30 04:41:37 2026 +0000
+- **Last Commit Date**: Mon Aug 31 04:45:19 2026 +0000
 
 ## Issues & PRs
 - **Open**: Unknown
@@ -14,10 +14,21 @@
 - **GitHub Actions**: Yes
 - **Tests Exist**: Yes
 - **Failing Tests**: 0
+- **Approx Coverage**: 69%
+
+## Packaging & Dependencies
+- **Dockerfile**: No
+
+## Authors
+- **Top Authors**:
+
+## Code Health
+- **Python Files**: 3735
+- **Markdown Files**: 35
 
 ## Runtime Simulation
-- **Median Task Creation Latency**: 0.0003s
-- **P95 Task Creation Latency**: 0.0005s
+- **Median Task Creation Latency**: 0.0011s
+- **P95 Task Creation Latency**: 0.0013s
 
 ## Code Health
 **Top 20 Largest Files:**
@@ -37,9 +48,9 @@
 ./src/satya/core/tasks.py
 ./tests/test_completion_checker.py
 ./examples/basic_workflow/run_example.py
+./generate_analytics.py
 ./src/satya/core/db.py
 ./src/satya/core/storage.py
 ./tests/test_project_manager.py
 ./satya-ai/satya/core/audit_logger.py
-./CODE_OF_CONDUCT.md
 ```
