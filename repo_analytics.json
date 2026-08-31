@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-08-31T04:45:19.883996+00:00Z",
+  "timestamp": "2026-08-31T15:17:07.271332+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Sun Aug 30 04:41:37 2026 +0000"
+    "last_commit_date": "Mon Aug 31 04:45:19 2026 +0000"
   },
   "issues": {
     "open": "Unknown",
@@ -15,11 +15,19 @@
   },
   "tests": {
     "has_tests": "Yes",
-    "failing": "0"
+    "failing": "0",
+    "coverage": "69%"
+  },
+  "dependencies": {
+    "pyproject_lines": 15,
+    "security_scan": "Unknown"
+  },
+  "packaging": {
+    "dockerfile": "No"
   },
   "performance": {
-    "task_create_median_s": 0.00033783912658691406,
-    "task_create_p95_s": 0.0005204200744628907
+    "task_create_median_s": 0.0010528564453125,
+    "task_create_p95_s": 0.0012715816497802734
   },
   "code_health": {
     "top_largest_files": [
@@ -38,11 +46,14 @@
       "./src/satya/core/tasks.py",
       "./tests/test_completion_checker.py",
       "./examples/basic_workflow/run_example.py",
+      "./generate_analytics.py",
       "./src/satya/core/db.py",
       "./src/satya/core/storage.py",
       "./tests/test_project_manager.py",
-      "./satya-ai/satya/core/audit_logger.py",
-      "./CODE_OF_CONDUCT.md"
-    ]
+      "./satya-ai/satya/core/audit_logger.py"
+    ],
+    "python_files": 3735,
+    "md_files": 35,
+    "author_distribution": []
   }
 }
