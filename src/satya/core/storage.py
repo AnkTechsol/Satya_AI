@@ -144,7 +144,8 @@ def save_pulse_snapshot(data: Dict[str, Any]) -> bool:
     if not timestamp:
         import datetime
         timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
-    snapshot_path = os.path.join(PULSE_DIR, f"snapshot_{timestamp}.json")
+    safe_timestamp = os.path.basename(str(timestamp))
+    snapshot_path = os.path.join(PULSE_DIR, f"snapshot_{safe_timestamp}.json")
     return save_json(snapshot_path, data)
 
 def get_pulse_latest() -> Dict[str, Any]:
