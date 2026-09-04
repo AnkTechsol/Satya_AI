@@ -10,6 +10,8 @@ import src.satya.auth as auth
 def temp_client(monkeypatch, tmp_path):
     monkeypatch.setenv("SATYA_AGENT_KEY", "DEMO_KEY")
     monkeypatch.setenv("SATYA_AGENT_KEYS", "DEMO_KEY")
+    monkeypatch.setenv("SATYA_AGENT_KEY", "DEMO_KEY")
+    monkeypatch.setenv("AUDIT_SECRET", "dummy_secret")
     reload(auth)
 
     repo_path = str(tmp_path)
