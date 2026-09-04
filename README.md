@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-09-04T15:03:17.345212+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -68,6 +68,10 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
 
 
 ## SUSTAINABLE_FEATURES
+
+- **Webhook Export Adapter**: Added on September 2026. Background-threaded webhook adapter to export logs and traces gracefully.
+  - *Validation command:* `pytest tests/test_webhook_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[WebhookExportAdapter(endpoint_url="...")])`.
 
 - **Durable Append-only Audit Store (with SQLite Fallback)** (Added 2026-04)
   - Implements an opt-in SQLite backend (`satya/core/db.py`) to store signed audit events. This replaces fragile flat-file append flows for enterprises requiring robust compliance logs while retaining the flat-file default.

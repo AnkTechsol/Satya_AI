@@ -1,14 +1,16 @@
 # Competitor Matrix
 
-| Feature | Satya | LangSmith | Langfuse |
-|---|---|---|---|
-| Observability Depth | High (Log/Task level) | High (Token/Prompt level) | High (Token/Prompt level) |
-| Agent Runtime Support | Native (Task Board/Chat) | API only | API only |
-| Self-host Friendliness | Excellent (Zero infra, flat-file) | Complex (Docker/K8s) | Good (Docker) |
-| Enterprise Features | **NEW: Durable Postgres/S3 Audit** | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
-| Export Adapters | **NEW: OTLP/Langfuse/LangSmith/CSV/JSONL support** | N/A | N/A |
-| Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
+| Feature | Satya | Langfuse | LangSmith |
+|---------|-------|----------|-----------|
+| Observability Depth | Medium (Task/Log) | High (Token/Prompt) | High (Token/Prompt) |
+| Agent Runtime Support | High | Low | Medium |
+| Self-host Friendliness | High (Zero-infra default) | Medium (Docker) | Low |
+| Enterprise Features (SSO/RBAC) | Partial (Admin tokens) | Yes | Yes |
+| Export Adapters | Yes (OTLP, CSV/JSONL, Webhook, Langfuse, LangSmith) | N/A | N/A |
+| Pricing Model | OSS | Open Core / SaaS | SaaS / Enterprise |
 
-## Strategic Gaps & Differentiators
-*   **Where Satya wins:** Zero-infrastructure setup, native task tracking, flat-file architecture, human-observer paradigm.
-*   **Where Satya must catch up:** Deep trace analytics and robust enterprise identity. (Long-term durable storage gap closed via Postgres/S3).
+### Differentiator (Where Satya Wins)
+Satya excels in **Self-host Friendliness** and **Agent Runtime Support**. With zero-infrastructure defaults and a lightweight footprint, it enables agent monitoring securely out-of-the-box. The export adapter system also bridges the gap by allowing integration into existing enterprise stacks.
+
+### Gaps (Where Satya Must Catch Up)
+Satya lags in **Observability Depth**. It doesn't capture token-level analytics or prompt snapshots yet, which are core features of Langfuse and LangSmith.
