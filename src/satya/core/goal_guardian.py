@@ -401,6 +401,22 @@ def load_goal(agent_name: str) -> Optional[dict]:
     return storage.load_json(filepath)
 
 
+def load_all_goals() -> dict[str, dict]:
+    """Loads all persisted goals for all agents into a dictionary."""
+    from . import storage
+    goals = {}
+    goals_dir = os.path.join(storage.SATYA_DIR, "goals")
+    if not os.path.exists(goals_dir):
+        return goals
+    for filename in os.listdir(goals_dir):
+        if filename.endswith(".json"):
+            filepath = os.path.join(goals_dir, filename)
+            goal_data = storage.load_json(filepath)
+            if goal_data and "agent" in goal_data:
+                goals[goal_data["agent"]] = goal_data
+    return goals
+
+
 def load_goal_alerts(limit: int = 100) -> list[dict]:
     """Returns the most recent goal alignment alerts."""
     from . import storage
