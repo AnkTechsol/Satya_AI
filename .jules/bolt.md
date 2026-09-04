@@ -28,3 +28,6 @@ BOLT'S PHILOSOPHY:
 ## 2026-05-11 - Lock-free atomic writes with dynamic tmp files
 **Learning:** Using a static `.tmp` file with an exclusive write lock creates bottlenecks and potential blocking during concurrent writes.
 **Action:** Replaced static tmp files with dynamic UUID-based tmp files (`filepath + uuid + .tmp`) before atomic rename. This removes the need for any file locks (including `fcntl.LOCK_EX`) completely, enabling massively parallel lock-free writes and reads.
+## 2026-05-18 - Batching Streamlit markdown calls in Dashboard
+**Learning:** Rendering many lines individually via `st.markdown` inside a loop (like the Recent Tasks dashboard) causes heavy Streamlit communication overhead and blocks the UI thread, creating a bottleneck as each call serializes data over the WebSocket.
+**Action:** Always batch HTML/Markdown strings inside loops into a single list and render them using a single `st.markdown` call outside the loop, especially for read-only displays.
