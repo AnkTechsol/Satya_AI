@@ -11,6 +11,7 @@ import src.satya.auth as auth
 
 @pytest.fixture(autouse=True)
 def setup_teardown(monkeypatch, tmp_path):
+    monkeypatch.setenv("SATYA_AGENT_KEY", "test_key1")
     monkeypatch.setenv("SATYA_AGENT_KEYS", "test_key1,test_key2")
     monkeypatch.setenv("HUMAN_VIEW_TOKEN", "admin_secret")
     monkeypatch.setenv("AUDIT_SECRET", "test_audit_secret")
