@@ -7,26 +7,44 @@ from urllib.parse import urlparse, urljoin
 from . import storage
 from .git_handler import GitHandler
 
-def _is_safe_url(url: str) -> bool:
-    """Validates if a URL is safe to fetch, preventing SSRF."""
+def _get_safe_ip_and_validate(url: str):
+    """Validates if a URL is safe to fetch, preventing SSRF and returning the IP."""
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
-        return False
+        return None
     if not parsed.hostname:
-        return False
+        return None
     try:
         # Resolve hostname to all IPs
         addr_info = socket.getaddrinfo(parsed.hostname, None)
+        target_ip = None
         for result in addr_info:
             ip_str = result[4][0]
             ip_obj = ipaddress.ip_address(ip_str)
             # Check if the IP is globally routable
             # This prevents accessing loopback, private networks, and link-local (e.g., AWS metadata)
             if not ip_obj.is_global:
-                return False
-        return True
+                return None
+            if not target_ip:
+                target_ip = ip_str
+        return target_ip
     except Exception:
-        return False
+        return None
+
+class SSRFMitigationAdapter(requests.adapters.HTTPAdapter):
+    def __init__(self, target_ip, *args, **kwargs):
+        self.target_ip = target_ip
+        super().__init__(*args, **kwargs)
+
+    def get_connection(self, url, proxies=None):
+        conn = super().get_connection(url, proxies)
+        parsed = urlparse(url)
+        conn.host = self.target_ip
+        if parsed.scheme == "https":
+            conn.assert_hostname = parsed.hostname
+            if 'server_hostname' not in conn.conn_kw:
+                conn.conn_kw['server_hostname'] = parsed.hostname
+        return conn
 
 class Scraper:
     def __init__(self, repo_path="."):
@@ -41,12 +59,17 @@ class Scraper:
             response = None
 
             for _ in range(redirect_limit):
-                if not _is_safe_url(current_url):
+                target_ip = _get_safe_ip_and_validate(current_url)
+                if not target_ip:
                     print(f"Error scraping {current_url}: URL resolved to unsafe IP or invalid scheme.")
                     return None
 
                 try:
-                    response = requests.get(current_url, timeout=10, allow_redirects=False)
+                    session = requests.Session()
+                    adapter = SSRFMitigationAdapter(target_ip=target_ip)
+                    session.mount("http://", adapter)
+                    session.mount("https://", adapter)
+                    response = session.get(current_url, timeout=10, allow_redirects=False)
                 except requests.exceptions.Timeout:
                     print(f"Error scraping {current_url}: Request timed out.")
                     return None
