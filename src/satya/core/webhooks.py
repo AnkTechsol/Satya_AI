@@ -109,13 +109,12 @@ def dispatch(event_type, payload):
                 # Note: This might break SNI if the server strictly requires it, but in webhooks
                 # where security vs reliability trade-offs are made, SSRF prevention is critical.
                 port = parsed.port if parsed.port else (443 if parsed.scheme == 'https' else 80)
-                safe_url = f"{parsed.scheme}://{safe_ip}:{port}{parsed.path}"
-                if parsed.query:
-                    safe_url += f"?{parsed.query}"
+
+
 
                 headers = {"Host": parsed.hostname}
 
-                requests.post(safe_url, json=data, timeout=5, allow_redirects=False, headers=headers, verify=False)
+                requests.post(url, json=data, timeout=5, allow_redirects=False, headers=headers, verify=True)
                 logger.info(f"Webhook dispatched to {url} for event {event_type}")
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")
