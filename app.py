@@ -1142,7 +1142,7 @@ elif page == "Agent Pulse":
         for agent in agents:
             buckets = priority_buckets.get(agent, {})
             table_html += f'<tr style="border-bottom: 1px solid var(--border-color);">'
-            table_html += f'<td style="padding: 12px; font-weight: 600; color: var(--text-primary);">{agent}</td>'
+            table_html += f'<td style="padding: 12px; font-weight: 600; color: var(--text-primary);">{html.escape(str(agent))}</td>'
             for prio in ["Critical", "High", "Medium", "Low"]:
                 val = buckets.get(prio)
                 if val is None:
@@ -1175,10 +1175,10 @@ elif page == "Agent Pulse":
                 <div style="border-left: 5px solid {border_color}; background: {bg_color}; padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem; color: var(--text-primary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
                         <span style="font-weight: 800; color: {text_color}; font-size: 0.85rem;">{severity} ALERT</span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">{alert.get('type')}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">{html.escape(str(alert.get('type', '')))}</span>
                     </div>
-                    <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem;">{alert.get('message')}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Agent: {alert.get('agent')}</div>
+                    <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem;">{html.escape(str(alert.get('message', '')))}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Agent: {html.escape(str(alert.get('agent', '')))}</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
