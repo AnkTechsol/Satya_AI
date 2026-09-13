@@ -608,6 +608,20 @@ def format_time_ago(iso_str):
         return f"{diff.days // 30}mo ago"
     return f"{diff.days // 365}y ago"
 
+def format_date(iso_str):
+    try:
+        clean_iso = iso_str
+        if clean_iso.endswith('Z'):
+            clean_iso = clean_iso[:-1]
+            if not ('+' in clean_iso or '-' in clean_iso.split('T')[-1]):
+                clean_iso += '+00:00'
+        dt = datetime.fromisoformat(clean_iso)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.strftime("%b %d, %H:%M")
+    except:
+        return html.escape(str(iso_str or ""))
+
 
 with st.sidebar:
     st.markdown("""
