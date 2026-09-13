@@ -1,11 +1,11 @@
 import pytest
 import os
 from unittest.mock import patch, MagicMock
-from src.satya.sdk.adapters import ConsoleAdapter, OTLPAdapter, LangSmithAdapter
-from src.satya.sdk.client import SatyaClient
+from satya.sdk.adapters import ConsoleAdapter, OTLPAdapter, LangSmithAdapter
+from satya.sdk.client import SatyaClient
 
-@patch('src.satya.sdk.client.require_agent')
-@patch('src.satya.sdk.client.get_agent_key_from_env')
+@patch('satya.sdk.client.require_agent')
+@patch('satya.sdk.client.get_agent_key_from_env')
 def test_adapters_initialization(mock_get_key, mock_require_agent):
     mock_get_key.return_value = "mock_key"
     mock_require_agent.return_value = True
@@ -15,8 +15,8 @@ def test_adapters_initialization(mock_get_key, mock_require_agent):
     langsmith_adapter = LangSmithAdapter(api_key="mock", project_name="mock")
 
     # Use a dummy client to avoid directory access issues
-    with patch('src.satya.sdk.client.storage.ensure_satya_dirs'):
-        with patch('src.satya.sdk.client.GitHandler'):
+    with patch('satya.sdk.client.storage.ensure_satya_dirs'):
+        with patch('satya.sdk.client.GitHandler'):
             client = SatyaClient(agent_name="test_agent", repo_path="/tmp", adapters=[console_adapter, otlp_adapter, langsmith_adapter])
             assert len(client.adapters) == 3
 

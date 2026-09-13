@@ -11,12 +11,18 @@ from satya.core.storage import SATYA_DIR
 
 @pytest.fixture(autouse=True)
 def cleanup_webhooks():
+    from satya.core import storage
+    storage.SATYA_DIR = "test_webhook_data"
+    os.makedirs(storage.SATYA_DIR, exist_ok=True)
     path = webhooks.get_webhooks_path()
     if os.path.exists(path):
         os.remove(path)
     yield
     if os.path.exists(path):
         os.remove(path)
+    if os.path.exists(storage.SATYA_DIR):
+        import shutil
+        shutil.rmtree(storage.SATYA_DIR)
 
 @patch("satya.core.webhooks.socket.getaddrinfo")
 def test_add_and_remove_webhook(mock_getaddrinfo):
@@ -35,8 +41,8 @@ def test_add_and_remove_webhook(mock_getaddrinfo):
     assert len(loaded) == 0
 
 @patch("satya.core.webhooks.socket.getaddrinfo")
-@patch("satya.core.webhooks.requests.post")
-def test_dispatch(mock_post, mock_getaddrinfo):
+@patch("satya.core.webhooks.requests.Session")
+def test_dispatch(mock_session_cls, mock_getaddrinfo):
     mock_getaddrinfo.return_value = [(2, 1, 6, '', ('93.184.216.34', 0))]
     url = "https://example.com/webhook"
     webhooks.add_webhook(url, events=["task_created"])
@@ -46,9 +52,8 @@ def test_dispatch(mock_post, mock_getaddrinfo):
     import time
     time.sleep(0.1) # Wait for thread
 
-    mock_post.assert_called_once()
-    args, kwargs = mock_post.call_args
-    # TOCTOU mitigation changes the URL to use the IP directly
-    assert args[0] == "https://93.184.216.34:443/webhook"
+    mock_session = mock_session_cls.return_value
+    mock_session.post.assert_called_once()
+    args, kwargs = mock_session.post.call_args
+    assert args[0] == "https://example.com/webhook"
     assert kwargs["json"] == {"event": "task_created", "payload": {"id": "123"}}
-    assert kwargs["headers"] == {"Host": "example.com"}

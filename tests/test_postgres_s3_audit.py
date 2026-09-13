@@ -10,7 +10,7 @@ def mock_external_deps(monkeypatch):
     monkeypatch.setitem(sys.modules, 'psycopg2.extras', MagicMock())
     monkeypatch.setitem(sys.modules, 'boto3', MagicMock())
 
-from src.satya.core import db
+from satya.core import db
 
 @pytest.fixture
 def mock_env(monkeypatch):
@@ -18,8 +18,8 @@ def mock_env(monkeypatch):
     monkeypatch.setenv("SATYA_S3_BUCKET", "test-bucket")
     monkeypatch.setenv("SATYA_SQLITE_DB", "test_audit.db")
 
-@patch("src.satya.core.db.boto3")
-@patch("src.satya.core.db.psycopg2")
+@patch("satya.core.db.boto3")
+@patch("satya.core.db.psycopg2")
 def test_append_event_to_postgres_s3(mock_psycopg2, mock_boto3, mock_env):
     mock_s3_client = MagicMock()
     mock_boto3.client.return_value = mock_s3_client
