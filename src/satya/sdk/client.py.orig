@@ -1,21 +1,10 @@
 import os
 from datetime import datetime, timezone
 from ..core import storage, Tasks, Scraper, GitHandler
-from ..core.enforcer import RuntimeEnforcer
 from ..auth import require_agent, get_agent_key_from_env, append_audit_event
-from ..core.goal_guardian import load_goal, save_goal, GoalGuardian
-from ..core.pulse import compute_agent_health
-
-class GoalDriftError(ValueError):
-    """Raised when the agent deviates from the declared project goal."""
-    def __init__(self, message, score, goal, snapshot_path=None):
-        super().__init__(message)
-        self.score = score
-        self.goal = goal
-        self.snapshot_path = snapshot_path
 
 class SatyaClient:
-    def __init__(self, agent_name="default_agent", repo_path=".", adapters=None, skills=None):
+    def __init__(self, agent_name="default_agent", repo_path=".", adapters=None):
         self.agent_key = get_agent_key_from_env()
         require_agent(self.agent_key)
 
@@ -26,24 +15,9 @@ class SatyaClient:
         self.scraper = Scraper(repo_path)
         self.git = GitHandler(repo_path)
         self.adapters = adapters or []
-        self.skills = skills or []
-        self.enforcer = RuntimeEnforcer()
 
         self.current_task = None
         storage.ensure_satya_dirs()
-        
-        # Load persisted goal if it exists
-        goal_data = load_goal(self.agent_name)
-        if goal_data:
-            self.goal_guardian = GoalGuardian(
-                agent_name=self.agent_name,
-                goal=goal_data["goal"],
-                threshold=goal_data.get("threshold", 0.20),
-                halt_threshold=goal_data.get("halt_threshold", 0.10)
-            )
-        else:
-            self.goal_guardian = None
-
         # use daily log file format: agent_name_YYYYMMDD.log
         today_str = datetime.now().strftime("%Y%m%d")
         safe_agent_name = os.path.basename(self.agent_name)
@@ -65,46 +39,13 @@ class SatyaClient:
             "last_seen": now,
             "status": status,
             "agent_name": self.agent_name,
-            "skills": self.skills,
             "current_task_id": self.current_task["id"] if self.current_task else None
         }
         storage.save_heartbeat(self.agent_name, heartbeat_data)
 
     def log(self, message):
-        # Check goal alignment if Guardian is active
-        if hasattr(self, "goal_guardian") and self.goal_guardian:
-            alignment = self.goal_guardian.check(
-                message, current_task=self.current_task, log_path=self.log_path
-            )
-            if alignment["action"] == "halt":
-                err_msg = f"⛔ GOAL GUARDIAN HALT: Agent drift detected! Score: {alignment['score']}. Goal: {self.goal_guardian.goal}"
-                print(err_msg)
-                raise GoalDriftError(
-                    err_msg,
-                    score=alignment["score"],
-                    goal=self.goal_guardian.goal,
-                    snapshot_path=alignment["snapshot_path"]
-                )
-
-        # Check for drift/jailbreaks
-        drift_violations = self.enforcer.check_drift(message)
-        if drift_violations:
-            task_id = self.current_task["id"] if self.current_task else "no_task"
-            trace_id = self.current_task.get("trace_id", "unknown") if self.current_task else "unknown"
-            append_audit_event(
-                self.agent_name,
-                task_id,
-                trace_id,
-                "drift_detected",
-                f"Drift/Jailbreak keywords detected in log: {drift_violations}"
-            )
-            # We will still process the log, but alert the observers via audit event.
-
-        # Mask PII
-        safe_message = self.enforcer.process_text(message)
-
         timestamp = datetime.now(timezone.utc).isoformat() + "Z"
-        entry = f"[{timestamp}] {safe_message}\n"
+        entry = f"[{timestamp}] {message}\n"
 
         # Log to file (always)
         try:
@@ -117,7 +58,7 @@ class SatyaClient:
         if self.current_task:
             try:
                 # Add comment to the task file
-                self.tasks.add_comment(self.current_task["id"], safe_message, commit=False, agent_name=self.agent_name)
+                self.tasks.add_comment(self.current_task["id"], message, commit=False, agent_name=self.agent_name)
             except Exception as e:
                 print(f"Failed to add comment to task: {e}")
 
@@ -125,7 +66,7 @@ class SatyaClient:
         task_id = self.current_task["id"] if self.current_task else None
         for adapter in self.adapters:
             try:
-                adapter.export_log(self.agent_name, safe_message, task_id)
+                adapter.export_log(self.agent_name, message, task_id)
             except Exception as e:
                 pass
 
@@ -147,7 +88,7 @@ class SatyaClient:
         self.log(f"BLOCKED: '{action}' not permitted for task {task_id}")
         return False
 
-    def create_task(self, title, description, parent_trace_id=None, dependencies=None, required_skills=None):
+    def create_task(self, title, description, parent_trace_id=None):
         require_agent(self.agent_key)
         # GOVERNANCE RULE 1: Tasks must have meaningful descriptions
         if not description or len(description.strip()) < 10:
@@ -155,28 +96,13 @@ class SatyaClient:
             print(err_msg)
             raise ValueError(err_msg)
 
-        # Check for drift in the description/title
-        drift_violations = self.enforcer.check_drift(str(title) + " " + str(description))
-        if drift_violations:
-            append_audit_event(
-                self.agent_name,
-                "new_task",
-                parent_trace_id or "unknown",
-                "drift_detected",
-                f"Drift/Jailbreak keywords detected in task creation: {drift_violations}"
-            )
-
-        # Mask PII
-        safe_title = self.enforcer.process_text(title)
-        safe_description = self.enforcer.process_text(description)
-
-        self.log(f"Creating task: {safe_title}")
-        task = self.tasks.create_task(safe_title, safe_description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id, dependencies=dependencies, required_skills=required_skills)
+        self.log(f"Creating task: {title}")
+        task = self.tasks.create_task(title, description, assignee=self.agent_name, agent_name=self.agent_name, parent_trace_id=parent_trace_id)
         if task:
-            append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {safe_title}")
+            append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {title}")
             for adapter in self.adapters:
                 try:
-                    adapter.export_trace(task["trace_id"], self.agent_name, "task_created", {"task_id": task["id"], "title": safe_title})
+                    adapter.export_trace(task["trace_id"], self.agent_name, "task_created", {"task_id": task["id"], "title": title})
                 except Exception as e:
                     pass
         return task
@@ -241,38 +167,22 @@ class SatyaClient:
 
         # Guardrail: Check WIP limits (future: implement strict count)
 
-        done_task_ids = {t["id"] for t in all_tasks if t.get("status") == "done"}
-
-        todo_tasks = []
-        for t in all_tasks:
-            if t.get("status") != "queued":
-                continue
-
-            # Check dependencies (all must be done)
-            deps = t.get("dependencies", [])
-            if not all(d in done_task_ids for d in deps):
-                continue
-
-            # Check skills (agent must have all required skills)
-            req_skills = t.get("required_skills", [])
-            if not all(s in self.skills for s in req_skills):
-                continue
-
-            todo_tasks.append(t)
+        todo_tasks = [t for t in all_tasks if t.get("status") == "queued"]
 
         if not todo_tasks:
-            self.log("No available tasks in 'To Do' column (or blocked by dependencies/skills).")
+            self.log("No tasks in 'To Do' column.")
             return None
 
         # Prioritization Logic
         priority_map = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
 
-        # Find highest priority task by Priority (asc) then Created At (asc - oldest first)
-        # O(N) instead of O(N log N)
-        best_task = min(todo_tasks, key=lambda t: (
+        # Sort by Priority (asc) then Created At (asc - oldest first)
+        todo_tasks.sort(key=lambda t: (
             priority_map.get(t.get("priority", "Medium"), 2),
             t.get("created_at", "")
         ))
+
+        best_task = todo_tasks[0]
 
         # Assign and Start
         self.log(f"Picking highest priority task: {best_task['title']}")
@@ -323,8 +233,7 @@ class SatyaClient:
         Polls for manual override messages sent from the Agent Chat control panel.
         Returns a list of unread messages.
         """
-        safe_agent_name = os.path.basename(self.agent_name)
-        chat_dir = os.path.join(storage.SATYA_DIR, "chat", safe_agent_name)
+        chat_dir = os.path.join(storage.SATYA_DIR, "chat", self.agent_name)
         if not os.path.exists(chat_dir):
             return []
 
@@ -368,58 +277,3 @@ class SatyaClient:
                 str({"child_id": task.get("id"), "child_trace": task.get("trace_id")})
             )
         return task
-
-    def set_goal(self, goal: str, threshold: float = 0.20, halt_threshold: float = 0.10):
-        """Sets the project goal and initializes/resets the GoalGuardian."""
-        require_agent(self.agent_key)
-        save_goal(self.agent_name, goal, threshold, halt_threshold)
-        self.goal_guardian = GoalGuardian(
-            agent_name=self.agent_name,
-            goal=goal,
-            threshold=threshold,
-            halt_threshold=halt_threshold
-        )
-        self.log(f"Project goal updated: \"{goal}\"")
-        self.goal_guardian.reset_context()
-
-    def check_alignment(self, message: str) -> dict:
-        """Manually checks a message against the project goal."""
-        if not hasattr(self, "goal_guardian") or not self.goal_guardian:
-            return {"aligned": True, "score": 1.0, "action": "ok"}
-        
-        alignment = self.goal_guardian.check(
-            message, current_task=self.current_task, log_path=self.log_path
-        )
-        if alignment["action"] == "halt":
-            err_msg = f"⛔ GOAL GUARDIAN HALT: Agent drift detected! Score: {alignment['score']}. Goal: {self.goal_guardian.goal}"
-            print(err_msg)
-            raise GoalDriftError(
-                err_msg,
-                score=alignment["score"],
-                goal=self.goal_guardian.goal,
-                snapshot_path=alignment["snapshot_path"]
-            )
-        return alignment
-
-    def report_quality(self, task_id: str, score: float, notes: str) -> bool:
-        """Allows agents to self-report output quality. Updates task metadata."""
-        require_agent(self.agent_key)
-        task = self.tasks.get_task(task_id)
-        if not task:
-            self.log(f"report_quality: Task {task_id} not found.")
-            return False
-        
-        task["quality_score"] = score
-        task["quality_notes"] = notes
-        task["updated_at"] = datetime.now(timezone.utc).isoformat() + "Z"
-        
-        filepath = storage.get_task_path(task_id)
-        storage.save_json(filepath, task)
-        self.log(f"Self-reported task {task_id} quality: {score} ({notes})")
-        return True
-
-    def get_pulse(self) -> dict:
-        """Computes and returns the agent's current health score."""
-        tasks = self.tasks.list_all()
-        return compute_agent_health(self.agent_name, tasks)
-
