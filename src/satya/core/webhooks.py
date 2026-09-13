@@ -8,6 +8,24 @@ import ipaddress
 from urllib.parse import urlparse
 from . import storage
 
+class SSRFAdapter(requests.adapters.HTTPAdapter):
+    """Adapter to prevent SSRF by routing to a specific IP while keeping the original hostname for SNI."""
+    def __init__(self, target_ip, original_host, scheme, *args, **kwargs):
+        self.target_ip = target_ip
+        self.original_host = original_host
+        self.scheme = scheme
+        super().__init__(*args, **kwargs)
+
+    def get_connection(self, url, proxies=None):
+        conn = super().get_connection(url, proxies)
+        conn.host = self.target_ip
+        if self.scheme == 'https':
+            conn.assert_hostname = self.original_host
+            if not hasattr(conn, 'conn_kw'):
+                conn.conn_kw = {}
+            conn.conn_kw['server_hostname'] = self.original_host
+        return conn
+
 logger = logging.getLogger(__name__)
 
 def is_safe_url(url: str) -> bool:
@@ -105,17 +123,13 @@ def dispatch(event_type, payload):
                 if not safe_ip:
                     continue
 
-                # Reconstruct the URL using the safe IP instead of hostname to prevent DNS rebinding
-                # Note: This might break SNI if the server strictly requires it, but in webhooks
-                # where security vs reliability trade-offs are made, SSRF prevention is critical.
-                port = parsed.port if parsed.port else (443 if parsed.scheme == 'https' else 80)
-                safe_url = f"{parsed.scheme}://{safe_ip}:{port}{parsed.path}"
-                if parsed.query:
-                    safe_url += f"?{parsed.query}"
+                # TOCTOU & SNI mitigation: Use a custom adapter to route directly to the safe IP,
+                # avoiding DNS rebinding while preserving SNI and TLS validation.
+                session = requests.Session()
+                adapter = SSRFAdapter(target_ip=safe_ip, original_host=parsed.hostname, scheme=parsed.scheme)
+                session.mount(f"{parsed.scheme}://", adapter)
 
-                headers = {"Host": parsed.hostname}
-
-                requests.post(safe_url, json=data, timeout=5, allow_redirects=False, headers=headers, verify=False)
+                session.post(url, json=data, timeout=5, allow_redirects=False)
                 logger.info(f"Webhook dispatched to {url} for event {event_type}")
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")
