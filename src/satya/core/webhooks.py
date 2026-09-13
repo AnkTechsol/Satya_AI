@@ -115,7 +115,7 @@ def dispatch(event_type, payload):
 
                 headers = {"Host": parsed.hostname}
 
-                requests.post(safe_url, json=data, timeout=5, allow_redirects=False, headers=headers, verify=False)
+                requests.post(safe_url, json=data, timeout=5, allow_redirects=False, headers=headers, verify=True)
                 logger.info(f"Webhook dispatched to {url} for event {event_type}")
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")
