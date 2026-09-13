@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2026-06-08 - Authorization Bypass in Streamlit UI
+**Vulnerability:** A state-mutating UI control (`st.button("Deploy {template}")`) in the "Template Galleries" section of `app.py` was directly executing `tasks_manager.create_task` without wrapping the action in an `if is_admin:` block. This allowed any unauthenticated visitor to click the button and autonomously spawn tasks, bypassing the Admin Key access control.
+**Learning:** In Streamlit, because UI components are rendered and executed on every script rerun, any interactive widget that triggers an action modifying backend state (like writing to files or a database) must be explicitly gated by checking authorization state variables (e.g., `is_admin`) inside the widget's `if` condition. Missing this check leads to an immediate authorization bypass.
+**Prevention:** Always verify that every `st.button`, `st.form_submit_button`, or similar interactive widget that triggers state mutations is wrapped inside an `if is_admin:` (or equivalent permission check) block, and provide an `else:` branch with `st.error()` to notify unauthorized users.
