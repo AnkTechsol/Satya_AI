@@ -1142,7 +1142,7 @@ elif page == "Agent Pulse":
         for agent in agents:
             buckets = priority_buckets.get(agent, {})
             table_html += f'<tr style="border-bottom: 1px solid var(--border-color);">'
-            table_html += f'<td style="padding: 12px; font-weight: 600; color: var(--text-primary);">{agent}</td>'
+            table_html += f'<td style="padding: 12px; font-weight: 600; color: var(--text-primary);">{html.escape(agent)}</td>'
             for prio in ["Critical", "High", "Medium", "Low"]:
                 val = buckets.get(prio)
                 if val is None:
