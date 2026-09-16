@@ -10,6 +10,22 @@ from . import storage
 
 logger = logging.getLogger(__name__)
 
+
+class _SSRFAdapter(requests.adapters.HTTPAdapter):
+    def __init__(self, target_ip, *args, **kwargs):
+        self.target_ip = target_ip
+        super().__init__(*args, **kwargs)
+
+    def get_connection(self, url, proxies=None):
+        conn = super().get_connection(url, proxies)
+        parsed_url = urlparse(url)
+        conn.host = self.target_ip
+        if parsed_url.scheme == "https":
+            conn.assert_hostname = parsed_url.hostname
+            if getattr(conn, 'conn_kw', None) is not None:
+                conn.conn_kw['server_hostname'] = parsed_url.hostname
+        return conn
+
 def is_safe_url(url: str) -> bool:
     """Validates if a URL is safe to fetch, preventing SSRF."""
     parsed = urlparse(url)
@@ -105,17 +121,12 @@ def dispatch(event_type, payload):
                 if not safe_ip:
                     continue
 
-                # Reconstruct the URL using the safe IP instead of hostname to prevent DNS rebinding
-                # Note: This might break SNI if the server strictly requires it, but in webhooks
-                # where security vs reliability trade-offs are made, SSRF prevention is critical.
-                port = parsed.port if parsed.port else (443 if parsed.scheme == 'https' else 80)
-                safe_url = f"{parsed.scheme}://{safe_ip}:{port}{parsed.path}"
-                if parsed.query:
-                    safe_url += f"?{parsed.query}"
+                session = requests.Session()
+                session.mount('http://', _SSRFAdapter(safe_ip))
+                session.mount('https://', _SSRFAdapter(safe_ip))
 
-                headers = {"Host": parsed.hostname}
-
-                requests.post(safe_url, json=data, timeout=5, allow_redirects=False, headers=headers, verify=False)
+                with session:
+                    session.post(url, json=data, timeout=5, allow_redirects=False)
                 logger.info(f"Webhook dispatched to {url} for event {event_type}")
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")
