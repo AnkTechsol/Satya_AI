@@ -28,3 +28,7 @@ BOLT'S PHILOSOPHY:
 ## 2026-05-11 - Lock-free atomic writes with dynamic tmp files
 **Learning:** Using a static `.tmp` file with an exclusive write lock creates bottlenecks and potential blocking during concurrent writes.
 **Action:** Replaced static tmp files with dynamic UUID-based tmp files (`filepath + uuid + .tmp`) before atomic rename. This removes the need for any file locks (including `fcntl.LOCK_EX`) completely, enabling massively parallel lock-free writes and reads.
+
+## 2024-05-24 - O(n^2) Bottleneck in Dependency Resolution
+**Learning:** Found a severe O(n^2) bottleneck in cross-agent velocity matrix computation where dependencies were resolved via a nested list generator `next((x for x in tasks if x["id"] == dep_id), None)` inside an O(n) task loop.
+**Action:** When performing multiple lookups within an O(n) loop, pre-compute an O(1) dictionary lookup (e.g. `task_lookup = {t["id"]: t for t in tasks}`) before the loop to reduce overall complexity from O(n^2) to O(n).
