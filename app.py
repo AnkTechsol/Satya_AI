@@ -1174,11 +1174,11 @@ elif page == "Agent Pulse":
                 st.markdown(f"""
                 <div style="border-left: 5px solid {border_color}; background: {bg_color}; padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem; color: var(--text-primary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
-                        <span style="font-weight: 800; color: {text_color}; font-size: 0.85rem;">{severity} ALERT</span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">{alert.get('type')}</span>
+                        <span style="font-weight: 800; color: {text_color}; font-size: 0.85rem;">{html.escape(str(severity))} ALERT</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">{html.escape(str(alert.get('type', '')))}</span>
                     </div>
-                    <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem;">{alert.get('message')}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Agent: {alert.get('agent')}</div>
+                    <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem;">{html.escape(str(alert.get('message', '')))}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Agent: {html.escape(str(alert.get('agent', '')))}</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -1216,15 +1216,15 @@ elif page == "Agent Pulse":
                         <span style="font-size: 0.75rem; color: var(--text-muted);">{alert.get('timestamp')[:19].replace('T', ' ')}</span>
                     </div>
                     <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem;">
-                        Drift Score: {alert.get('score')}
+                        Drift Score: {html.escape(str(alert.get('score', '')))}
                     </div>
                     <div style="font-size: 0.8rem; font-style: italic; color: var(--text-secondary); margin-bottom: 0.2rem;">
-                        "{alert.get('message_excerpt')}"
+                        "{html.escape(str(alert.get('message_excerpt', '')))}"
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">
-                        Goal: {alert.get('goal')}
+                        Goal: {html.escape(str(alert.get('goal', '')))}
                     </div>
-                    {f'<div style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">Snapshot: {alert.get("snapshot_path")}</div>' if alert.get("snapshot_path") else ''}
+                    {f'<div style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">Snapshot: {html.escape(str(alert.get("snapshot_path", "")))}</div>' if alert.get("snapshot_path") else ''}
                 </div>
                 """, unsafe_allow_html=True)
 
