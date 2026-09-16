@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2024-07-26 - [CRITICAL] SNI/TLS vulnerability due to incorrect SSRF Mitigation
+**Vulnerability:** The TOCTOU SSRF mitigation constructed IP-based URLs with the `Host` header and bypassed TLS validation with `verify=False`, which exposes the system to severe Man-in-the-Middle (MitM) attacks.
+**Learning:** Overriding hostnames directly in the URL breaks Server Name Indication (SNI) and TLS certificate validation. Using `verify=False` to work around this creates critical vulnerabilities.
+**Prevention:** Implement a custom `requests.adapters.HTTPAdapter` overriding `get_connection` to route directly to the validated IP via `conn.host`, while preserving the original URL scheme and explicitly enforcing hostname verification using `conn.assert_hostname` and `conn.conn_kw['server_hostname']` for HTTPS.
