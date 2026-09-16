@@ -25,3 +25,8 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+
+## 2026-06-16 - Authorization Bypass in Template Gallery
+**Vulnerability:** The AI Template Galleries page allowed unauthenticated users to trigger task creation and deploy template swarms because the `st.button` handler lacked an `if is_admin:` check.
+**Learning:** In a Streamlit UI where multiple pages handle sensitive mutations, it is easy to forget authorization checks on new interactive widgets. Every `st.button` that modifies the application state must explicitly enforce authorization checks to prevent unauthorized privilege escalation.
+**Prevention:** Always wrap state-mutating actions triggered by interactive UI elements (like `st.button`) inside an `if is_admin:` block to strictly enforce authorization boundaries.
