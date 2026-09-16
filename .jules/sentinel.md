@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2024-05-27 - SSRF TOCTOU and Missing TLS Verification in Webhooks
+**Vulnerability:** The webhook dispatcher manually resolved IP addresses to prevent DNS Rebinding (TOCTOU) and constructed URLs using the resolved IP. To prevent TLS handshake failures (since the certificate was for the hostname, not the IP), `verify=False` was added to `requests.post()`, bypassing TLS verification and opening the webhook up to MITM attacks.
+**Learning:** Using `verify=False` to bypass SNI issues when connecting directly via IP is insecure. It leaves the connection vulnerable to MITM attacks. You can securely bind the connection to the IP while maintaining TLS verification by using a custom `requests.adapters.HTTPAdapter` to override `get_connection` and explicitly map the `conn.host` and `conn.assert_hostname`.
+**Prevention:** When resolving IPs manually and bypassing DNS for HTTP requests, do not use `verify=False`. Instead, implement a custom `HTTPAdapter` to handle the IP binding and properly assert the hostname via SNI on HTTPS connections.
