@@ -28,3 +28,7 @@ BOLT'S PHILOSOPHY:
 ## 2026-05-11 - Lock-free atomic writes with dynamic tmp files
 **Learning:** Using a static `.tmp` file with an exclusive write lock creates bottlenecks and potential blocking during concurrent writes.
 **Action:** Replaced static tmp files with dynamic UUID-based tmp files (`filepath + uuid + .tmp`) before atomic rename. This removes the need for any file locks (including `fcntl.LOCK_EX`) completely, enabling massively parallel lock-free writes and reads.
+
+## 2026-05-24 - Pre-loading shared data in Streamlit to eliminate N+1 file reads
+**Learning:** In a Streamlit layout loop (e.g., rendering cards for multiple agents), calling a filesystem read function (like `load_goal`) inside the loop triggers an N+1 disk I/O bottleneck. Each card render blocks the UI thread for a disk operation.
+**Action:** Hoist the read operation out of the loop by implementing an aggregate loader (e.g., `load_all_goals`) that fetches all necessary JSON files simultaneously, returning a dictionary. Inside the loop, access this pre-loaded dictionary directly in memory, reducing N file reads down to 1.
