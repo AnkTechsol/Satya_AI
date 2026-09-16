@@ -1,4 +1,5 @@
 import requests
+from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup
 import markdownify
 import socket
@@ -7,26 +8,19 @@ from urllib.parse import urlparse, urljoin
 from . import storage
 from .git_handler import GitHandler
 
-def _is_safe_url(url: str) -> bool:
-    """Validates if a URL is safe to fetch, preventing SSRF."""
-    parsed = urlparse(url)
-    if parsed.scheme not in ('http', 'https'):
-        return False
-    if not parsed.hostname:
-        return False
-    try:
-        # Resolve hostname to all IPs
-        addr_info = socket.getaddrinfo(parsed.hostname, None)
-        for result in addr_info:
-            ip_str = result[4][0]
-            ip_obj = ipaddress.ip_address(ip_str)
-            # Check if the IP is globally routable
-            # This prevents accessing loopback, private networks, and link-local (e.g., AWS metadata)
-            if not ip_obj.is_global:
-                return False
-        return True
-    except Exception:
-        return False
+class HostHeaderSSLAdapter(HTTPAdapter):
+    def __init__(self, target_ip, *args, **kwargs):
+        self.target_ip = target_ip
+        super().__init__(*args, **kwargs)
+
+    def get_connection(self, url, proxies=None):
+        conn = super().get_connection(url, proxies)
+        parsed = urlparse(url)
+        conn.host = self.target_ip
+        if parsed.scheme == 'https':
+            conn.assert_hostname = parsed.hostname
+            conn.conn_kw['server_hostname'] = parsed.hostname
+        return conn
 
 class Scraper:
     def __init__(self, repo_path="."):
@@ -41,12 +35,33 @@ class Scraper:
             response = None
 
             for _ in range(redirect_limit):
-                if not _is_safe_url(current_url):
+                parsed = urlparse(current_url)
+                if parsed.scheme not in ('http', 'https') or not parsed.hostname:
+                    print(f"Error scraping {current_url}: invalid scheme or hostname.")
+                    return None
+
+                safe_ip = None
+                try:
+                    addr_info = socket.getaddrinfo(parsed.hostname, None)
+                    for result in addr_info:
+                        ip_str = result[4][0]
+                        ip_obj = ipaddress.ip_address(ip_str)
+                        if ip_obj.is_global:
+                            safe_ip = ip_str
+                            break
+                except Exception:
+                    pass
+
+                if not safe_ip:
                     print(f"Error scraping {current_url}: URL resolved to unsafe IP or invalid scheme.")
                     return None
 
                 try:
-                    response = requests.get(current_url, timeout=10, allow_redirects=False)
+                    session = requests.Session()
+                    adapter = HostHeaderSSLAdapter(safe_ip)
+                    session.mount("https://", adapter)
+                    session.mount("http://", adapter)
+                    response = session.get(current_url, timeout=10, allow_redirects=False)
                 except requests.exceptions.Timeout:
                     print(f"Error scraping {current_url}: Request timed out.")
                     return None
