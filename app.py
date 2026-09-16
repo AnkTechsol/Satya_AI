@@ -889,9 +889,14 @@ if page == "Dashboard":
         sorted_tasks = sorted(all_tasks, key=lambda t: t.get("updated_at", ""), reverse=True)[:5]
 
         if sorted_tasks:
+            # ⚡ Bolt Optimization: Batching Streamlit markdown calls
+            # Rendering markdown individually inside loops creates heavy
+            # Streamlit communication overhead and UI thread blocking.
+            # We batch the HTML strings and render them with a single call.
+            batched_recent_tasks_html = []
             for task in sorted_tasks:
                 priority = task.get("priority", "Medium")
-                st.markdown(f"""
+                batched_recent_tasks_html.append(f"""
                 <div class="task-card {get_priority_class(priority)}">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="task-title">{html.escape(task.get('title', 'Untitled'))}</div>
@@ -903,7 +908,8 @@ if page == "Dashboard":
                         {format_time_ago(task.get('updated_at', ''))}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
+            st.markdown("".join(batched_recent_tasks_html), unsafe_allow_html=True)
         else:
             st.markdown("""
             <div class="empty-state">
