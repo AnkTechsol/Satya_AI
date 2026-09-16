@@ -7,26 +7,34 @@ from urllib.parse import urlparse, urljoin
 from . import storage
 from .git_handler import GitHandler
 
-def _is_safe_url(url: str) -> bool:
-    """Validates if a URL is safe to fetch, preventing SSRF."""
+def _get_safe_ip(url: str) -> str:
+    """Validates if a URL is safe to fetch and returns a safe IP, preventing SSRF."""
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
-        return False
+        return None
     if not parsed.hostname:
-        return False
+        return None
     try:
         # Resolve hostname to all IPs
         addr_info = socket.getaddrinfo(parsed.hostname, None)
+        safe_ip = None
         for result in addr_info:
             ip_str = result[4][0]
             ip_obj = ipaddress.ip_address(ip_str)
             # Check if the IP is globally routable
             # This prevents accessing loopback, private networks, and link-local (e.g., AWS metadata)
             if not ip_obj.is_global:
-                return False
-        return True
+                return None # If ANY IP is non-global, we reject
+            if safe_ip is None and ip_obj.version == 4:
+                safe_ip = ip_str # Prefer first IPv4 address
+
+        # If no IPv4 found, fallback to any available IP that passed the global check
+        if safe_ip is None and addr_info:
+             safe_ip = addr_info[0][4][0]
+
+        return safe_ip
     except Exception:
-        return False
+        return None
 
 class Scraper:
     def __init__(self, repo_path="."):
@@ -41,12 +49,33 @@ class Scraper:
             response = None
 
             for _ in range(redirect_limit):
-                if not _is_safe_url(current_url):
+                safe_ip = _get_safe_ip(current_url)
+                if not safe_ip:
                     print(f"Error scraping {current_url}: URL resolved to unsafe IP or invalid scheme.")
                     return None
 
                 try:
-                    response = requests.get(current_url, timeout=10, allow_redirects=False)
+                    import urllib3
+
+                    class CustomResolverAdapter(requests.adapters.HTTPAdapter):
+                        def __init__(self, target_ip, **kwargs):
+                            self.target_ip = target_ip
+                            super().__init__(**kwargs)
+
+                        def get_connection(self, url, proxies=None):
+                            conn = super().get_connection(url, proxies)
+                            # Intercept the connection and replace host with resolved IP
+                            if conn.host and url.startswith('https://'):
+                                conn.conn_kw['server_hostname'] = conn.host
+                            conn.host = self.target_ip
+                            return conn
+
+                    session = requests.Session()
+                    adapter = CustomResolverAdapter(target_ip=safe_ip)
+                    session.mount('http://', adapter)
+                    session.mount('https://', adapter)
+
+                    response = session.get(current_url, timeout=10, allow_redirects=False)
                 except requests.exceptions.Timeout:
                     print(f"Error scraping {current_url}: Request timed out.")
                     return None
