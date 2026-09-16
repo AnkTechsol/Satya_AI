@@ -25,3 +25,8 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+
+## 2025-07-09 - TOCTOU DNS Rebinding SSRF Mitigation
+**Vulnerability:** Scraper was resolving DNS to validate IP, but then passing the URL string to `requests.get`, leaving it open to a Time-of-Check to Time-of-Use DNS rebinding attack where the DNS resolves to a safe IP initially, but an internal IP upon actual request.
+**Learning:** Using `requests` with standard URL structures does not inherently prevent DNS rebinding. Replacing the host IP manually in `requests` can break SNI validation for HTTPS.
+**Prevention:** Create a custom `requests.adapters.HTTPAdapter` overriding `get_connection` to explicitly set `conn.host` to the validated IP, and setting `conn.assert_hostname` and `conn.conn_kw['server_hostname']` to preserve valid SNI routing while avoiding the secondary DNS lookup.
