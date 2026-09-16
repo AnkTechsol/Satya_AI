@@ -16,6 +16,7 @@ def example_module():
 
 
 def test_basic_workflow_example_runs(monkeypatch, tmp_path, example_module):
+    monkeypatch.setenv("SATYA_AGENT_KEY", "DEMO_KEY")
     monkeypatch.setenv("SATYA_AGENT_KEYS", "DEMO_KEY")
     monkeypatch.setenv("SATYA_AGENT_KEY", "DEMO_KEY")
     monkeypatch.setenv("AUDIT_SECRET", "test_audit_secret")
