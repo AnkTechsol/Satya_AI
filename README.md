@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-09-25T14:44:21.585244+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -420,6 +420,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 ## SUSTAINABLE_FEATURES
+
+- **Datadog Export Adapter**: Added on August 2026. A durable adapter that exports logs and traces natively to Datadog's API, giving enterprises full observability of agent workloads.
+  - *Validation command:* `pytest tests/test_datadog_adapter.py`
+  - *Runbook:* Initialize `SatyaClient(adapters=[DatadogAdapter(api_key="...", site="datadoghq.com")])`.
 
 - **CSV/JSONL Export Adapter**: Added on August 2026. A durable, flat-file based adapter that exports traces and logs to CSV and JSONL formats for offline analytics. Designed as a zero-infrastructure fallback.
   - *Validation command:* `pytest tests/test_csv_jsonl_adapter.py`
