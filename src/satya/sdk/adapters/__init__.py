@@ -4,5 +4,6 @@ from .otlp import OTLPAdapter
 from .langfuse import LangfuseAdapter
 from .langsmith import LangSmithAdapter
 from .csv_jsonl import CSVJSONLExportAdapter
+from .webhook import WebhookAdapter
 
-__all__ = ["ExportAdapter", "ConsoleAdapter", "OTLPAdapter", "LangfuseAdapter", "LangSmithAdapter", "CSVJSONLExportAdapter"]
+__all__ = ["ExportAdapter", "ConsoleAdapter", "OTLPAdapter", "LangfuseAdapter", "LangSmithAdapter", "CSVJSONLExportAdapter", "WebhookAdapter"]

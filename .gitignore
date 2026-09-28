@@ -32,3 +32,5 @@ venv/
 satya_data/
 verification/
 *.log
+.nltk_data/
+.coverage
