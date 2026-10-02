@@ -24,9 +24,34 @@ closed_issues = "Unknown"
 large_files = run_cmd('find . -type f -not -path "*/\\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -not -path "*/__pycache__/*" -exec ls -l {} + | sort -k 5 -nr | head -n 20').split('\n')
 largest_files = [f.split()[-1] for f in large_files if f]
 
+# Language breakdown
+lang_stats_out = run_cmd('find . -type f -not -path "*/\\.*" -not -path "*/venv/*" -not -path "*/satya_data/*" -not -path "*/__pycache__/*" | grep -E "\\.(py|md|json|html|js|css)$" | sed "s/.*\\.//" | sort | uniq -c | sort -nr')
+lang_breakdown = {}
+for line in lang_stats_out.split('\n'):
+    if line.strip():
+        parts = line.strip().split(maxsplit=1)
+        if len(parts) == 2:
+            lang_breakdown[parts[1]] = int(parts[0])
+
+# Runtime artifacts (files used by agent runtime)
+runtime_artifacts = run_cmd('find satya_data -type f | wc -l')
+
+# Linter presence
+has_linter = "Yes" if os.path.exists(".flake8") or os.path.exists("pylintrc") or "black" in run_cmd('cat requirements.txt pyproject.toml 2>/dev/null || true') else "No"
+
+# Dependencies scan (versions, known security flags if safety/bandit available)
+req_scan = run_cmd('cat requirements.txt pyproject.toml 2>/dev/null || true')
+deps_lines = len(req_scan.split('\n'))
+
+# Packaging & deploy: Dockerfile, k8s/helm, build artifacts
+has_docker = "Yes" if os.path.exists("Dockerfile") else "No"
+has_k8s = "Yes" if os.path.exists("k8s") or os.path.exists("helm") else "No"
+has_build_artifacts = "Yes" if os.path.exists("dist") or os.path.exists("build") else "No"
+
 # Tests
 has_tests = "Yes" if os.path.exists("tests") else "No"
 has_github_actions = "Yes" if os.path.exists(".github/workflows") else "No"
+test_coverage = run_cmd('python -m pytest --cov=src/satya tests/ | grep "TOTAL" | awk \'{print $4}\'') or "Unknown"
 
 test_out = run_cmd('PYTHONPATH=$PWD AUDIT_SECRET=dummy_secret SATYA_AGENT_KEY=DEMO_KEY SATYA_AGENT_KEYS=DEMO_KEY python -m pytest tests/ --maxfail=1 -q')
 failing_tests = "0" if "failed" not in test_out.lower() else "1+"
@@ -64,14 +89,28 @@ def main():
         },
         "tests": {
             "has_tests": has_tests,
-            "failing": failing_tests
+            "failing": failing_tests,
+            "coverage": test_coverage
         },
         "performance": {
             "task_create_median_s": create_median,
             "task_create_p95_s": create_p95
         },
         "code_health": {
-            "top_largest_files": largest_files
+            "top_largest_files": largest_files,
+            "language_breakdown": lang_breakdown,
+            "has_linter": has_linter
+        },
+        "dependencies": {
+            "scan_lines": deps_lines
+        },
+        "packaging": {
+            "docker": has_docker,
+            "k8s": has_k8s,
+            "build_artifacts": has_build_artifacts
+        },
+        "runtime": {
+            "artifacts_count": int(runtime_artifacts) if runtime_artifacts.isdigit() else 0
         }
     }
 
@@ -102,10 +141,24 @@ def main():
 - **P95 Task Creation Latency**: {analytics['performance']['task_create_p95_s']:.4f}s
 
 ## Code Health
+- **Has Linter**: {analytics['code_health']['has_linter']}
+
+**Language Breakdown:**
+{json.dumps(analytics['code_health']['language_breakdown'], indent=2)}
+
 **Top 20 Largest Files:**
 ```text
 {top_files}
 ```
+
+## Packaging & Dependencies
+- **Docker**: {analytics['packaging']['docker']}
+- **K8s/Helm**: {analytics['packaging']['k8s']}
+- **Build Artifacts**: {analytics['packaging']['build_artifacts']}
+- **Dependencies Scan Lines**: {analytics['dependencies']['scan_lines']}
+
+## Runtime
+- **Runtime Artifacts Count**: {analytics['runtime']['artifacts_count']}
 """
     with open('REPO_ANALYTICS.md', 'w') as f:
         f.write(md)

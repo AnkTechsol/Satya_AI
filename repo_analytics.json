@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-10-02T04:56:09.321309+00:00Z",
+  "timestamp": "2026-10-02T15:37:38.405752+00:00Z",
   "git_stats": {
     "total_commits": 1,
     "commits_90d": 1,
-    "last_commit_date": "Thu Oct 1 05:06:39 2026 +0000"
+    "last_commit_date": "Fri Oct 2 04:56:09 2026 +0000"
   },
   "issues": {
     "open": "Unknown",
@@ -15,11 +15,12 @@
   },
   "tests": {
     "has_tests": "Yes",
-    "failing": "0"
+    "failing": "0",
+    "coverage": "69%"
   },
   "performance": {
-    "task_create_median_s": 0.0005278587341308594,
-    "task_create_p95_s": 0.0007372379302978515
+    "task_create_median_s": 0.0009744167327880859,
+    "task_create_p95_s": 0.0013191699981689453
   },
   "code_health": {
     "top_largest_files": [
@@ -37,12 +38,30 @@
       "./satya-ai/satya/core/policy_engine.py",
       "./src/satya/core/tasks.py",
       "./tests/test_completion_checker.py",
+      "./generate_analytics.py",
       "./examples/basic_workflow/run_example.py",
       "./src/satya/core/db.py",
       "./src/satya/core/storage.py",
       "./tests/test_project_manager.py",
-      "./satya-ai/satya/core/audit_logger.py",
-      "./CODE_OF_CONDUCT.md"
-    ]
+      "./satya-ai/satya/core/audit_logger.py"
+    ],
+    "language_breakdown": {
+      "py": 91,
+      "md": 11,
+      "json": 1,
+      "html": 1
+    },
+    "has_linter": "No"
+  },
+  "dependencies": {
+    "scan_lines": 29
+  },
+  "packaging": {
+    "docker": "No",
+    "k8s": "No",
+    "build_artifacts": "No"
+  },
+  "runtime": {
+    "artifacts_count": 26
   }
 }
