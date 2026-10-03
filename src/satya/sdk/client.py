@@ -5,6 +5,7 @@ from ..core.enforcer import RuntimeEnforcer
 from ..auth import require_agent, get_agent_key_from_env, append_audit_event
 from ..core.goal_guardian import load_goal, save_goal, GoalGuardian
 from ..core.pulse import compute_agent_health
+from .schema import create_trace_payload
 
 class GoalDriftError(ValueError):
     """Raised when the agent deviates from the declared project goal."""
@@ -176,7 +177,8 @@ class SatyaClient:
             append_audit_event(self.agent_name, task["id"], task["trace_id"], "task_created", f"Created task: {safe_title}")
             for adapter in self.adapters:
                 try:
-                    adapter.export_trace(task["trace_id"], self.agent_name, "task_created", {"task_id": task["id"], "title": safe_title})
+                    payload = create_trace_payload(task["trace_id"], "task_created", self.agent_name, {"task_id": task["id"], "title": safe_title})
+                    adapter.export_trace(task["trace_id"], self.agent_name, "task_created", payload)
                 except Exception as e:
                     pass
         return task
@@ -202,7 +204,8 @@ class SatyaClient:
             append_audit_event(self.agent_name, task_id, trace_id, "status_updated", f"Status changed to {status}")
             for adapter in self.adapters:
                 try:
-                    adapter.export_trace(trace_id, self.agent_name, "status_updated", {"task_id": task_id, "status": status})
+                    payload = create_trace_payload(trace_id, "status_updated", self.agent_name, {"task_id": task_id, "status": status})
+                    adapter.export_trace(trace_id, self.agent_name, "status_updated", payload)
                 except Exception as e:
                     pass
         return result
