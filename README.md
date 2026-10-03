@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-10-03T14:46:55.211717+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -420,6 +420,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 ## SUSTAINABLE_FEATURES
+
+- **Lightweight Exportable Trace Format & Schema (Open Standard)**: Added on October 2026. Defines a structured schema (`src/satya/sdk/schema.py`) to enforce standard payload structure across all export adapters, simplifying integrations and preventing schema drift.
+  - *Validation command:* `pytest tests/test_schema.py`
+  - *Runbook:* Automatically used by `SatyaClient` when invoking `adapter.export_trace(...)`.
 
 - **CSV/JSONL Export Adapter**: Added on August 2026. A durable, flat-file based adapter that exports traces and logs to CSV and JSONL formats for offline analytics. Designed as a zero-infrastructure fallback.
   - *Validation command:* `pytest tests/test_csv_jsonl_adapter.py`
