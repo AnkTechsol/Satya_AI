@@ -28,3 +28,7 @@ BOLT'S PHILOSOPHY:
 ## 2026-05-11 - Lock-free atomic writes with dynamic tmp files
 **Learning:** Using a static `.tmp` file with an exclusive write lock creates bottlenecks and potential blocking during concurrent writes.
 **Action:** Replaced static tmp files with dynamic UUID-based tmp files (`filepath + uuid + .tmp`) before atomic rename. This removes the need for any file locks (including `fcntl.LOCK_EX`) completely, enabling massively parallel lock-free writes and reads.
+
+## 2026-06-18 - Optimize nested loops doing object lookups
+**Learning:** Using a list comprehension generator (like `next((x for x in tasks if x["id"] == dep_id), None)`) inside a loop over tasks results in an O(n²) time complexity. In large arrays, this can drastically reduce performance.
+**Action:** Pre-compute a lookup dictionary mapping IDs to objects (`{t["id"]: t for t in tasks}`) before the loop to achieve O(1) retrieval times.
