@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-10-04T15:01:57.112447+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -83,6 +83,10 @@ See `src/satya/sdk/client.py` for the `use_satya()` helper and `src/satya/auth.p
   - Implements a GitHub Action to continuously test agent deployment workflows and auto-update performance traces into `repo_analytics.json` and `REPO_ANALYTICS.md`, reducing doc rot and catching runtime regressions early.
   - Runbook: Commits on `main` automatically run the suite. For local execution, run `python generate_analytics.py`.
   - Validation: Ensure `.github/workflows/analytics_and_test.yml` runs successfully on pushes.
+
+- **Auto-README Updater Action**: Added on October 2026. A GitHub Action that runs the analytics script on push to `main` and updates `REPO_ANALYTICS.md` + README summary automatically.
+  - *Validation command:* Push to `main` and check the Actions tab.
+  - *Runbook:* Ensure the action is enabled in the repository settings.
 
 - **Export Adapter Framework (OTLP/Console/LangSmith)** (Added 2024-03, updated 2024-04)
   - Enables routing Satya's flat-file telemetry traces into enterprise observability stacks without breaking zero-DB architecture. Added LangSmith support for enterprise observability.
