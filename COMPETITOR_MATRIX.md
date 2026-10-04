@@ -5,7 +5,7 @@
 | Observability Depth | High (Log/Task level) | High (Token/Prompt level) | High (Token/Prompt level) |
 | Agent Runtime Support | Native (Task Board/Chat) | API only | API only |
 | Self-host Friendliness | Excellent (Zero infra, flat-file) | Complex (Docker/K8s) | Good (Docker) |
-| Enterprise Features | **NEW: Durable Postgres/S3 Audit** | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
+| Enterprise Features | **NEW: Durable Postgres/S3 Audit, Auto-README Analytics** | Full (SSO, RBAC, Audit) | Full (SSO, RBAC) |
 | Export Adapters | **NEW: OTLP/Langfuse/LangSmith/CSV/JSONL support** | N/A | N/A |
 | Pricing Model | OSS | Managed (SaaS) | Managed / OSS |
 
