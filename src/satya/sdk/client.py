@@ -424,3 +424,29 @@ class SatyaClient:
         tasks = self.tasks.list_all()
         return compute_agent_health(self.agent_name, tasks)
 
+    def log_llm_completion(self, prompt: str, response: str, tokens_used: int, model: str = "unknown"):
+        """Logs an LLM completion for observability and tracing."""
+        require_agent(self.agent_key)
+        trace_id = self.current_task.get("trace_id", "unknown") if self.current_task else "unknown"
+        data = {
+            "prompt": prompt,
+            "response": response,
+            "tokens": tokens_used,
+            "model": model,
+            "task_id": self.current_task["id"] if self.current_task else None
+        }
+
+        # Save to local file system
+        os.makedirs(os.path.join(storage.SATYA_DIR, "prompts"), exist_ok=True)
+        import uuid
+        filename = os.path.join(storage.SATYA_DIR, "prompts", f"{self.agent_name}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}.json")
+        storage.save_json(filename, data)
+
+        # Dispatch to adapters
+        for adapter in self.adapters:
+            try:
+                adapter.export_trace(trace_id, self.agent_name, "llm_completion", data)
+            except Exception:
+                pass
+        self.log(f"Logged LLM completion ({tokens_used} tokens)")
+        return data
