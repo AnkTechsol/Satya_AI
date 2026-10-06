@@ -51,7 +51,7 @@
 
 
 ## Repository Status
-- **Last Analytics Run:** 2026-08-07T15:06:10.750014+00:00Z
+- **Last Analytics Run:** 2026-10-06T14:50:25.908512+00:00Z
 - **Open Issues:** Unknown
 - **Recent CI Status:** passing
 
@@ -429,6 +429,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
   - *Validation command:* `pytest tests/test_postgres_s3_audit.py`
   - *Runbook:* Export `SATYA_POSTGRES_URI="postgresql://..."` and `SATYA_S3_BUCKET="my-bucket"` before starting the agent to enable durable auditing.
   - *Migration Plan:* For existing SQLite users, the schema will automatically run an `ALTER TABLE` to add the `s3_uri` column upon initialization, ensuring zero downtime and backward compatibility. For flat-file users migrating to Postgres, use the `scripts/migrate_to_postgres.py` (coming soon) to batch upload historical logs to your S3 bucket.
+
+- **Token & Prompt Observability**: Added on October 2026. Native method `log_llm_completion` to capture LLM prompts, responses, and token metrics. Saves to local flat files and automatically dispatches to configured export adapters (like LangSmith/Langfuse).
+  - *Validation command:* `pytest tests/test_sdk_llm_completion.py`
+  - *Runbook:* Call `client.log_llm_completion(prompt, response, tokens_used)` inside your agent loop.
 
 - **Export Adapter Framework (OTLP/Langfuse/LangSmith)**: Added on April 2026. A small, modular adapter system that enables Satya to export traces/events to Langfuse, LangSmith, or OTLP. It keeps the core lightweight while letting enterprises reuse existing investments.
   - *Validation command:* `pytest tests/test_langfuse_adapter.py` and `pytest tests/test_langsmith_adapter.py`
