@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2024-05-18 - [Fix SNI/TLS verification bypass in webhook SSRF mitigation]
+**Vulnerability:** The previous SSRF prevention mechanism reconstructed the URL using the resolved IP address and a `verify=False` flag, disabling TLS certificate verification.
+**Learning:** Hardcoding IPs in the host URL inherently breaks SNI, causing valid HTTPS certificates to fail validation unless ignored (`verify=False`). Bypassing validation opens the agent to Man-in-the-Middle (MitM) attacks.
+**Prevention:** Construct a custom `requests.adapters.HTTPAdapter` overriding `get_connection()` to forcefully route to a specific resolved safe IP (`conn.host = target_ip`), while keeping the original URL host intact. Additionally, ensure SNI is enforced by explicitly setting `conn.assert_hostname` and `conn.conn_kw['server_hostname']` on the `urllib3` connection for the HTTPS scheme.
