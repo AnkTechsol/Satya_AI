@@ -7,26 +7,48 @@ from urllib.parse import urlparse, urljoin
 from . import storage
 from .git_handler import GitHandler
 
-def _is_safe_url(url: str) -> bool:
-    """Validates if a URL is safe to fetch, preventing SSRF."""
+class SSRFSafeAdapter(requests.adapters.HTTPAdapter):
+    def __init__(self, target_ip, *args, **kwargs):
+        self.target_ip = target_ip
+        super().__init__(*args, **kwargs)
+
+    def get_connection(self, url, proxies=None):
+        conn = super().get_connection(url, proxies)
+        parsed = urlparse(url)
+        conn.host = self.target_ip
+        if parsed.scheme == 'https':
+            conn.assert_hostname = parsed.hostname
+            if not hasattr(conn, 'conn_kw') or conn.conn_kw is None:
+                conn.conn_kw = {}
+            conn.conn_kw['server_hostname'] = parsed.hostname
+        return conn
+
+def _get_safe_session(url: str):
+    """Validates if a URL is safe and returns a configured requests session to prevent TOCTOU SSRF."""
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
-        return False
+        return None, "Invalid scheme."
     if not parsed.hostname:
-        return False
+        return None, "Invalid hostname."
     try:
-        # Resolve hostname to all IPs
         addr_info = socket.getaddrinfo(parsed.hostname, None)
+        target_ip = None
         for result in addr_info:
             ip_str = result[4][0]
             ip_obj = ipaddress.ip_address(ip_str)
-            # Check if the IP is globally routable
-            # This prevents accessing loopback, private networks, and link-local (e.g., AWS metadata)
             if not ip_obj.is_global:
-                return False
-        return True
-    except Exception:
-        return False
+                return None, f"IP {ip_str} is not globally routable."
+            target_ip = ip_str
+            break
+        if not target_ip:
+            return None, "Could not resolve global IP."
+        session = requests.Session()
+        adapter = SSRFSafeAdapter(target_ip)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        return session, None
+    except Exception as e:
+        return None, str(e)
 
 class Scraper:
     def __init__(self, repo_path="."):
@@ -41,12 +63,13 @@ class Scraper:
             response = None
 
             for _ in range(redirect_limit):
-                if not _is_safe_url(current_url):
-                    print(f"Error scraping {current_url}: URL resolved to unsafe IP or invalid scheme.")
+                session, error = _get_safe_session(current_url)
+                if not session:
+                    print(f"Error scraping {current_url}: URL resolved to unsafe IP or invalid scheme. ({error})")
                     return None
 
                 try:
-                    response = requests.get(current_url, timeout=10, allow_redirects=False)
+                    response = session.get(current_url, timeout=10, allow_redirects=False)
                 except requests.exceptions.Timeout:
                     print(f"Error scraping {current_url}: Request timed out.")
                     return None
