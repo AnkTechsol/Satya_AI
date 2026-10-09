@@ -206,6 +206,7 @@ def compute_velocity_matrix(tasks: list[dict]) -> dict:
     bottlenecks = []
 
     done_task_ids = {t["id"] for t in tasks if t.get("status") == "done"}
+    task_lookup = {t["id"]: t for t in tasks}
 
     for t in tasks:
         assignee = t.get("assignee", "Unassigned")
@@ -235,7 +236,7 @@ def compute_velocity_matrix(tasks: list[dict]) -> dict:
         deps = t.get("dependencies", [])
         for dep_id in deps:
             if dep_id not in done_task_ids:
-                dep_task = next((x for x in tasks if x["id"] == dep_id), None)
+                dep_task = task_lookup.get(dep_id)
                 if dep_task:
                     bottlenecks.append({
                         "task_id": t["id"],
