@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2026-08-03 - SSRF mitigations that break SNI
+**Vulnerability:** The webhooks code tried to mitigate SSRF by constructing URLs with resolved safe IPs directly (e.g. `https://IP:PORT`) and setting `verify=False` and a `Host` header. This disables TLS validation, opening up Man-in-the-Middle attacks, and can break strict SNI requirements.
+**Learning:** Python `requests` doesn't natively support resolving a host to a specific IP without affecting the TLS hostname validation if done incorrectly. Using `verify=False` is an unacceptable security tradeoff.
+**Prevention:** Create a custom `requests.adapters.HTTPAdapter` that overrides `get_connection` to explicitly set the underlying `urllib3` connection's `host` to the resolved IP, while ensuring `assert_hostname` and `conn_kw['server_hostname']` are correctly populated for SNI when the scheme is `https`.
