@@ -25,3 +25,8 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+
+## 2024-05-27 - Prevent TypeError when Sanitizing Inputs for Path Traversal
+**Vulnerability:** When fixing a path traversal vulnerability in `src/satya/core/storage.py` by using `os.path.basename()` on the `timestamp` field from a JSON payload, a runtime regression was introduced. The `data.get("generated_at")` field could legitimately be a numeric value (integer or float). Because `os.path.basename()` strictly expects a string, passing a numeric value raises a `TypeError` and crashes the application.
+**Learning:** Any user-controlled input parsed from JSON (which could be arbitrarily typed as int, float, or bool) must be explicitly cast to a string before passing it to string-only functions like `os.path.basename()`.
+**Prevention:** Always use `os.path.basename(str(variable))` when sanitizing JSON-derived inputs for file path construction to ensure type safety and prevent Denial of Service via TypeErrors.
