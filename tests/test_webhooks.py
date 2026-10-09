@@ -49,6 +49,6 @@ def test_dispatch(mock_post, mock_getaddrinfo):
     mock_post.assert_called_once()
     args, kwargs = mock_post.call_args
     # TOCTOU mitigation changes the URL to use the IP directly
-    assert args[0] == "https://93.184.216.34:443/webhook"
+    assert args[0] == "https://example.com/webhook"
     assert kwargs["json"] == {"event": "task_created", "payload": {"id": "123"}}
     assert kwargs["headers"] == {"Host": "example.com"}
