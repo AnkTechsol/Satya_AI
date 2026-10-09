@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2024-07-20 - SSRF Mitigations breaking TLS Validation
+**Vulnerability:** In an effort to prevent SSRF via DNS rebinding, external webhook requests constructed IP-based URLs and passed `verify=False` to bypass hostname mismatch errors. This entirely disabled TLS validation, allowing Man-in-the-Middle (MitM) attacks.
+**Learning:** Attempting to force connections to specific IPs using the `Host` header breaks SNI validation in Python's `requests`.
+**Prevention:** Instead of using `verify=False` and IP-based URLs, create a custom `requests.adapters.HTTPAdapter` overriding `get_connection` to route to the specific IP by setting `conn.host`, while preserving the original URL and explicitly enforcing SNI hostname verification via `conn.assert_hostname`.
