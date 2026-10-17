@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2024-05-25 - Webhook SSRF IP Validation Blocked Internal IPs
+**Vulnerability:** The SSRF mitigation for webhooks checked `ip_obj.is_global` before dispatching. This overly restrictive rule blocked legitimate usage by failing to deliver webhooks to internal enterprise or local network endpoints.
+**Learning:** While blocking SSRF attacks is critical, enterprise integrations often necessitate routing to internal networks. Also attempting to reconstruct URLs using the raw IP (e.g. `https://<ip>`) while disabling SSL validation (`verify=False`) to avoid SNI errors broke TLS completely.
+**Prevention:** Use `ip_obj.is_link_local or ip_obj.is_loopback` to explicitly block only dangerous endpoints like AWS metadata (169.254.x.x) and loopback addresses, while permitting valid private network IPs (10.x.x.x). Let requests handle the DNS lookup to keep SNI active.

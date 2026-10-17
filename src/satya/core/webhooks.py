@@ -22,7 +22,7 @@ def is_safe_url(url: str) -> bool:
             ip_str = result[4][0]
             ip_obj = ipaddress.ip_address(ip_str)
             # Check if the IP is globally routable
-            if not ip_obj.is_global:
+            if ip_obj.is_link_local or ip_obj.is_loopback:
                 return False
         return True
     except Exception:
@@ -73,6 +73,49 @@ def remove_webhook(url):
     webhooks = [wh for wh in webhooks if wh["url"] != url]
     return save_webhooks(webhooks)
 
+import queue
+import atexit
+
+_webhook_queue = queue.Queue(maxsize=1000)
+
+def _webhook_worker():
+    while True:
+        item = _webhook_queue.get()
+        if item is None:
+            _webhook_queue.task_done()
+            break
+        url, data, event_type = item
+        try:
+            if not is_safe_url(url):
+                logger.warning(f"Skipping dispatch to unsafe webhook URL: {url}")
+            else:
+                requests.post(url, json=data, timeout=5, allow_redirects=False)
+                logger.info(f"Webhook dispatched to {url} for event {event_type}")
+        except Exception as e:
+            logger.error(f"Failed to dispatch webhook to {url}: {e}")
+        finally:
+            _webhook_queue.task_done()
+
+_worker_thread = threading.Thread(target=_webhook_worker, daemon=True)
+_worker_thread.start()
+
+def shutdown_webhooks():
+    if not _worker_thread.is_alive(): return
+    while True:
+        try:
+            _webhook_queue.get_nowait()
+            _webhook_queue.task_done()
+        except queue.Empty:
+            break
+    try:
+        _webhook_queue.put_nowait(None)
+    except queue.Full:
+        pass
+    _webhook_queue.join()
+    _worker_thread.join()
+
+atexit.register(shutdown_webhooks)
+
 def dispatch(event_type, payload):
     webhooks = load_webhooks()
     urls_to_notify = [wh["url"] for wh in webhooks if event_type in wh.get("events", [])]
@@ -85,40 +128,8 @@ def dispatch(event_type, payload):
         "payload": payload
     }
 
-    def _send():
-        for url in urls_to_notify:
-            parsed = urlparse(url)
-            try:
-                # TOCTOU mitigation: resolve the IP once and use it to connect.
-                addr_info = socket.getaddrinfo(parsed.hostname, None)
-                safe_ip = None
-                for result in addr_info:
-                    ip_str = result[4][0]
-                    ip_obj = ipaddress.ip_address(ip_str)
-                    if not ip_obj.is_global:
-                        logger.warning(f"Skipping dispatch to unsafe webhook URL (resolved to non-global IP): {url}")
-                        safe_ip = None
-                        break
-                    else:
-                        safe_ip = ip_str
-
-                if not safe_ip:
-                    continue
-
-                # Reconstruct the URL using the safe IP instead of hostname to prevent DNS rebinding
-                # Note: This might break SNI if the server strictly requires it, but in webhooks
-                # where security vs reliability trade-offs are made, SSRF prevention is critical.
-                port = parsed.port if parsed.port else (443 if parsed.scheme == 'https' else 80)
-                safe_url = f"{parsed.scheme}://{safe_ip}:{port}{parsed.path}"
-                if parsed.query:
-                    safe_url += f"?{parsed.query}"
-
-                headers = {"Host": parsed.hostname}
-
-                requests.post(safe_url, json=data, timeout=5, allow_redirects=False, headers=headers, verify=False)
-                logger.info(f"Webhook dispatched to {url} for event {event_type}")
-            except Exception as e:
-                logger.error(f"Failed to dispatch webhook to {url}: {e}")
-
-    # Run in background to avoid blocking
-    threading.Thread(target=_send, daemon=True).start()
+    for url in urls_to_notify:
+        try:
+            _webhook_queue.put_nowait((url, data, event_type))
+        except queue.Full:
+            pass
