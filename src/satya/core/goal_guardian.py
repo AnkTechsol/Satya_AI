@@ -147,7 +147,9 @@ def save_context_snapshot(agent_name: str, current_task: Optional[dict], log_pat
     now = datetime.now(timezone.utc)
     ctx_dir = _get_context_dir()
     snapshot_id = now.strftime("%Y%m%d_%H%M%S")
-    filepath = os.path.join(ctx_dir, f"{agent_name}_{snapshot_id}.json")
+    safe_agent_name = os.path.basename(str(agent_name))
+    safe_snapshot_id = os.path.basename(str(snapshot_id))
+    filepath = os.path.join(ctx_dir, f"{safe_agent_name}_{safe_snapshot_id}.json")
 
     # Read last N lines of agent log as context
     log_tail: list[str] = []
@@ -178,8 +180,9 @@ def get_latest_context_snapshot(agent_name: str) -> Optional[dict]:
     ctx_dir = _get_context_dir()
     if not os.path.exists(ctx_dir):
         return None
+    safe_agent_name = os.path.basename(str(agent_name))
     snapshots = sorted(
-        [f for f in os.listdir(ctx_dir) if f.startswith(agent_name) and f.endswith(".json")],
+        [f for f in os.listdir(ctx_dir) if f.startswith(safe_agent_name) and f.endswith(".json")],
         reverse=True,
     )
     if not snapshots:

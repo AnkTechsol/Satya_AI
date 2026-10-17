@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2025-05-24 - Prevent Path Traversal in Goal Guardian Snapshots
+**Vulnerability:** The application stored goal guardian snapshots by dynamically constructing file paths using `os.path.join()` with an unvalidated `agent_name` string in `src/satya/core/goal_guardian.py`. This created a critical path traversal vulnerability where a manipulated agent name (e.g., using `../../`) could write snapshot JSON files or read files outside the intended context directory.
+**Learning:** Similar to past path traversal issues in flat-file storage, any unvalidated ID or name used as a path component creates traversal risks. Defensive validation must be applied consistently across all components that perform file I/O using dynamic identifiers.
+**Prevention:** Always sanitize the `agent_name` and `snapshot_id` strings with `os.path.basename()` before passing them to `os.path.join()` when managing goal context snapshots, explicitly ensuring the string type casting (`str()`) is used before applying `os.path.basename()`.
