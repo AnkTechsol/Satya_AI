@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2026-06-08 - XSS Prevention in Agent Velocity Heatmap Table
+**Vulnerability:** The Agent Velocity heatmap table in `app.py` was directly injecting unescaped agent names into HTML strings that were then rendered via `st.markdown(table_html, unsafe_allow_html=True)`. This allowed potential XSS attacks if a malicious agent name was provided.
+**Learning:** Even internal data points like agent names must be explicitly escaped with `html.escape()` when constructing HTML strings to be rendered with Streamlit's `unsafe_allow_html=True`, as it serves as a direct sink for unsanitized data.
+**Prevention:** Always use `html.escape()` when interpolating any variable (even seemingly safe ones like agent names) into manually constructed HTML tables or components rendered via Streamlit.
