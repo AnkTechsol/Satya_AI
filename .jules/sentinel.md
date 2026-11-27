@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2026-08-25 - XSS Prevention in Goal Alerts Rendering
+**Vulnerability:** User input (agent names, goal alert messages, etc.) was rendered in Streamlit UI using `unsafe_allow_html=True` without HTML escaping, creating a Cross-Site Scripting (XSS) vulnerability.
+**Learning:** Any dynamic values (even those seemingly safe like 'agent' or 'goal') used in string interpolations that get passed to Streamlit's `st.markdown` with `unsafe_allow_html=True` must be explicitly HTML escaped.
+**Prevention:** Always use `html.escape(str(value))` for all dynamic data interpolated into HTML strings rendered by Streamlit.
