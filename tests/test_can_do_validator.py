@@ -7,6 +7,7 @@ import src.satya.auth as auth
 
 @pytest.fixture
 def test_client(monkeypatch):
+    monkeypatch.setenv("SATYA_AGENT_KEY", "DEMO_KEY")
     monkeypatch.setenv("SATYA_AGENT_KEYS", "DEMO_KEY")
     reload(auth)
     repo_path = "test_repo"
