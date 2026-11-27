@@ -1,12 +1,27 @@
 import json
 import os
 import requests
+
 import threading
 import logging
 import socket
 import ipaddress
 from urllib.parse import urlparse
 from . import storage
+
+class HostHeaderSSLAdapter(requests.adapters.HTTPAdapter):
+    def __init__(self, target_ip, *args, **kwargs):
+        self.target_ip = target_ip
+        super().__init__(*args, **kwargs)
+
+    def get_connection(self, url, proxies=None):
+        conn = super().get_connection(url, proxies)
+        conn.host = self.target_ip
+        parsed = urlparse(url)
+        if parsed.scheme == 'https':
+            conn.assert_hostname = parsed.hostname
+            conn.conn_kw['server_hostname'] = parsed.hostname
+        return conn
 
 logger = logging.getLogger(__name__)
 
@@ -105,17 +120,12 @@ def dispatch(event_type, payload):
                 if not safe_ip:
                     continue
 
-                # Reconstruct the URL using the safe IP instead of hostname to prevent DNS rebinding
-                # Note: This might break SNI if the server strictly requires it, but in webhooks
-                # where security vs reliability trade-offs are made, SSRF prevention is critical.
-                port = parsed.port if parsed.port else (443 if parsed.scheme == 'https' else 80)
-                safe_url = f"{parsed.scheme}://{safe_ip}:{port}{parsed.path}"
-                if parsed.query:
-                    safe_url += f"?{parsed.query}"
+                session = requests.Session()
+                adapter = HostHeaderSSLAdapter(safe_ip)
+                session.mount("https://", adapter)
+                session.mount("http://", adapter)
 
-                headers = {"Host": parsed.hostname}
-
-                requests.post(safe_url, json=data, timeout=5, allow_redirects=False, headers=headers, verify=False)
+                session.post(url, json=data, timeout=5, allow_redirects=False)
                 logger.info(f"Webhook dispatched to {url} for event {event_type}")
             except Exception as e:
                 logger.error(f"Failed to dispatch webhook to {url}: {e}")

@@ -35,8 +35,9 @@ def test_add_and_remove_webhook(mock_getaddrinfo):
     assert len(loaded) == 0
 
 @patch("satya.core.webhooks.socket.getaddrinfo")
-@patch("satya.core.webhooks.requests.post")
-def test_dispatch(mock_post, mock_getaddrinfo):
+@patch("satya.core.webhooks.requests.Session")
+def test_dispatch(mock_session_cls, mock_getaddrinfo):
+    mock_session = mock_session_cls.return_value
     mock_getaddrinfo.return_value = [(2, 1, 6, '', ('93.184.216.34', 0))]
     url = "https://example.com/webhook"
     webhooks.add_webhook(url, events=["task_created"])
@@ -46,9 +47,9 @@ def test_dispatch(mock_post, mock_getaddrinfo):
     import time
     time.sleep(0.1) # Wait for thread
 
-    mock_post.assert_called_once()
-    args, kwargs = mock_post.call_args
-    # TOCTOU mitigation changes the URL to use the IP directly
-    assert args[0] == "https://93.184.216.34:443/webhook"
+    mock_session.post.assert_called_once()
+    args, kwargs = mock_session.post.call_args
+
+    # check that we called post on the original url
+    assert args[0] == "https://example.com/webhook"
     assert kwargs["json"] == {"event": "task_created", "payload": {"id": "123"}}
-    assert kwargs["headers"] == {"Host": "example.com"}
