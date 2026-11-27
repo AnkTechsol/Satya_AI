@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2025-02-18 - [MitM/SSRF via verify=False]
+**Vulnerability:** `verify=False` was used in `requests.post` during webhook dispatch to bypass TLS errors caused by routing requests to raw IP addresses in the Host header for SSRF prevention. This disabled TLS certificate verification entirely, introducing a MitM vulnerability.
+**Learning:** Preventing DNS rebinding (TOCTOU) by constructing IP-based URLs with the `Host` header breaks TLS/SNI verification. Bypassing this with `verify=False` is highly insecure.
+**Prevention:** Create a custom `requests.adapters.HTTPAdapter` to override `get_connection` and set `conn.host = target_ip`. Enforce valid SNI by setting `conn.assert_hostname = parsed.hostname` and `conn.conn_kw['server_hostname'] = parsed.hostname` strictly when `parsed.scheme == 'https'`.
