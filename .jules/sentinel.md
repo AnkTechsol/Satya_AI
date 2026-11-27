@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2024-07-01 - Missing Admin Check on State-Mutating UI Element
+**Vulnerability:** Authorization bypass (Missing `is_admin` check on `st.button` for deploying templates).
+**Learning:** Any interactive widget in Streamlit that triggers state mutation must explicitly enforce authorization checks.
+**Prevention:** Always wrap state-mutating widget logic in `if is_admin:` blocks, as UI visibility alone doesn't prevent execution.
