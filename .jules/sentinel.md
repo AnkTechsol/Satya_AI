@@ -25,3 +25,7 @@
 **Vulnerability:** A hardcoded "DEMO_KEY" fallback for API keys existed, providing default backdoor access if configuration is missing.
 **Learning:** Default keys intended for developer convenience bypass configuration checks and can become major security vulnerabilities.
 **Prevention:** Remove fallback defaults for critical keys; explicitly fail via exceptions when required security environment variables are missing.
+## 2025-02-20 - Cross-Site Scripting (XSS) in Streamlit Rendering
+**Vulnerability:** In `app.py`, the "Agent Pulse" page displays "Semantic & Cascade Alerts" and "Goal Guardian Auditor" alerts using Streamlit's `st.markdown(..., unsafe_allow_html=True)`. The values extracted from the `alert` dictionaries were interpolated into HTML string blocks directly without escaping, creating a Cross-Site Scripting (XSS) vulnerability.
+**Learning:** Any user-controlled data or dynamic data from dictionaries that is rendered into HTML using `unsafe_allow_html=True` must be explicitly escaped to prevent malicious scripts from executing on the frontend.
+**Prevention:** Always wrap dynamic string values injected into raw HTML with `html.escape(str(value))`.
