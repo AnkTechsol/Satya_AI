@@ -1036,10 +1036,14 @@ elif page == "Agent Pulse":
     # Compute latest pulse snapshot
     from src.satya.core.pulse import snapshot_pulse
     from src.satya.core.storage import get_pulse_latest, get_pulse_history
-    from src.satya.core.goal_guardian import load_goal, load_goal_alerts
+    from src.satya.core.goal_guardian import load_goal, load_all_goals, load_goal_alerts
     
     pulse_data = snapshot_pulse(all_tasks, heartbeats)
     
+    # Pre-load shared data to prevent N+1 file reads
+    all_goals_data = load_all_goals()
+    all_goal_alerts = load_goal_alerts()
+
     # 1. Summary Metrics cards
     summary = pulse_data.get("summary", {})
     col1, col2, col3, col4 = st.columns(4)
@@ -1050,7 +1054,7 @@ elif page == "Agent Pulse":
     with col3:
         st.metric("Average Health", f"{summary.get('avg_health', 0)}%")
     with col4:
-        st.metric("Goal Alerts", len(load_goal_alerts()))
+        st.metric("Goal Alerts", len(all_goal_alerts))
 
     # 2. Agent Health Scores section
     st.markdown("### Agent Health Scores")
@@ -1083,7 +1087,7 @@ elif page == "Agent Pulse":
 
             with col_target:
                 # Retrieve goal if set
-                g_data = load_goal(agent_name)
+                g_data = all_goals_data.get(agent_name)
                 goal_str = g_data.get("goal") if g_data else "No project goal set."
                 st.markdown(f"""
                 <div style="border: 2px solid {border_color}; border-radius: 12px; padding: 1.2rem; background: var(--bg-card); margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -1165,13 +1169,14 @@ elif page == "Agent Pulse":
         if not alerts:
             st.success("✅ No health anomalies or cascade failures detected.")
         else:
+            alerts_html = []
             for alert in alerts:
                 severity = alert.get("severity", "warning").upper()
                 bg_color = "rgba(231, 76, 60, 0.15)" if severity == "CRITICAL" else "rgba(241, 196, 15, 0.15)"
                 border_color = "#e74c3c" if severity == "CRITICAL" else "#f1c40f"
                 text_color = "#e74c3c" if severity == "CRITICAL" else "#d35400"
                 
-                st.markdown(f"""
+                alerts_html.append(f"""
                 <div style="border-left: 5px solid {border_color}; background: {bg_color}; padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem; color: var(--text-primary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
                         <span style="font-weight: 800; color: {text_color}; font-size: 0.85rem;">{severity} ALERT</span>
@@ -1180,7 +1185,9 @@ elif page == "Agent Pulse":
                     <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem;">{alert.get('message')}</div>
                     <div style="font-size: 0.75rem; color: var(--text-secondary);">Agent: {alert.get('agent')}</div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
+            if alerts_html:
+                st.markdown("".join(alerts_html), unsafe_allow_html=True)
                 
     with col_b:
         st.markdown("### Goal Guardian Auditor")
@@ -1199,17 +1206,18 @@ elif page == "Agent Pulse":
                         st.rerun()
 
         # Display Goal Alerts
-        goal_alerts = load_goal_alerts()
+        goal_alerts = all_goal_alerts
         if not goal_alerts:
             st.success("✅ Goal Guardian reports zero agent drifts.")
         else:
+            goal_alerts_html = []
             for alert in reversed(goal_alerts[-10:]):
                 action = alert.get("action", "warn").upper()
                 bg_color = "rgba(231, 76, 60, 0.15)" if action == "HALT" else "rgba(241, 196, 15, 0.15)"
                 border_color = "#e74c3c" if action == "HALT" else "#f1c40f"
                 text_color = "#e74c3c" if action == "HALT" else "#d35400"
                 
-                st.markdown(f"""
+                goal_alerts_html.append(f"""
                 <div style="border-left: 5px solid {border_color}; background: {bg_color}; padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem; color: var(--text-primary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
                         <span style="font-weight: 800; color: {text_color}; font-size: 0.85rem;">GOAL DRIFT {action}</span>
@@ -1226,7 +1234,9 @@ elif page == "Agent Pulse":
                     </div>
                     {f'<div style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">Snapshot: {alert.get("snapshot_path")}</div>' if alert.get("snapshot_path") else ''}
                 </div>
-                """, unsafe_allow_html=True)
+                """)
+            if goal_alerts_html:
+                st.markdown("".join(goal_alerts_html), unsafe_allow_html=True)
 
 # ─── TASK BOARD PAGE ────────────────────────────────────
 elif page == "Task Board":
