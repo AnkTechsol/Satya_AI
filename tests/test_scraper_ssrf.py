@@ -1,6 +1,6 @@
 import pytest
 import socket
-from src.satya.core.scraper import _is_safe_url
+from src.satya.core.scraper import _get_safe_ip_and_validate
 
 def test_safe_url_global_ip(monkeypatch):
     # Mock socket.getaddrinfo to return a globally routable IP structure
@@ -9,7 +9,7 @@ def test_safe_url_global_ip(monkeypatch):
         return [(2, 1, 6, '', ('93.184.216.34', 0))]
     monkeypatch.setattr(socket, "getaddrinfo", mock_getaddrinfo)
 
-    assert _is_safe_url("https://example.com") is True
+    assert _get_safe_ip_and_validate("https://example.com") == "93.184.216.34"
 
 def test_unsafe_url_local_ip(monkeypatch):
     # Mock to return a private IP
@@ -17,7 +17,7 @@ def test_unsafe_url_local_ip(monkeypatch):
         return [(2, 1, 6, '', ('127.0.0.1', 0))]
     monkeypatch.setattr(socket, "getaddrinfo", mock_getaddrinfo)
 
-    assert _is_safe_url("https://localhost") is False
+    assert _get_safe_ip_and_validate("https://localhost") is None
 
 def test_unsafe_url_mixed_ips(monkeypatch):
     # Mock to return one global IP and one private IP
@@ -28,10 +28,10 @@ def test_unsafe_url_mixed_ips(monkeypatch):
         ]
     monkeypatch.setattr(socket, "getaddrinfo", mock_getaddrinfo)
 
-    assert _is_safe_url("https://malicious-domain.com") is False
+    assert _get_safe_ip_and_validate("https://malicious-domain.com") is None
 
 def test_invalid_scheme():
-    assert _is_safe_url("ftp://example.com") is False
+    assert _get_safe_ip_and_validate("ftp://example.com") is None
 
 def test_empty_hostname():
-    assert _is_safe_url("https://") is False
+    assert _get_safe_ip_and_validate("https://") is None
